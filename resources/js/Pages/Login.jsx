@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Link } from "react-router-dom";
 import { notify } from "@/lib/notify";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Loader2 } from "lucide-react";
+import { Loader2, Eye, EyeOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function Login() {
@@ -87,12 +87,19 @@ export default function Login() {
     };
 
     return (
-        <div className="flex h-screen flex-col items-center justify-center text-foreground relative px-4 py-6 bg-background">
+        <div className="flex h-screen flex-col items-center justify-center text-foreground relative px-4 py-6 overflow-hidden">
+            {/* Fondo: imagen a pantalla completa */}
+            <div
+                className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat"
+                style={{ backgroundImage: "url(/images/auth-hero.png)" }}
+                aria-hidden
+            />
+            {/* Capa mica: blur suave + tinte */}
             <div
                 className={cn(
-                    "absolute inset-0 z-0 pointer-events-none overflow-hidden",
-                    "bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,hsl(var(--muted)_/_0.15),transparent),radial-gradient(ellipse_60%_40%_at_100%_100%,hsl(var(--muted)_/_0.08),transparent)]",
-                    "before:content-[''] before:absolute before:inset-0 before:opacity-70 before:bg-[length:24px_24px] before:bg-[radial-gradient(circle_at_1px_1px,hsl(var(--foreground)_/_0.07)_1px,transparent_0)]"
+                    "absolute inset-0 z-[1] pointer-events-none",
+                    "backdrop-blur-[6px] sm:backdrop-blur-[8px]",
+                    "bg-background/40 dark:bg-background/50"
                 )}
                 aria-hidden
             />
@@ -100,16 +107,16 @@ export default function Login() {
                 type="button"
                 variant="ghost"
                 onClick={toggleTheme}
-                className="absolute top-4 right-4 z-10 h-auto text-xs font-semibold text-muted-foreground hover:text-foreground border border-border px-3 py-1 rounded-full bg-background/80 backdrop-blur hover:bg-transparent"
+                className="absolute top-4 right-4 z-10 h-auto text-xs font-semibold text-muted-foreground hover:text-foreground border border-border px-3 py-1 rounded-full bg-background/70 dark:bg-background/60 backdrop-blur-md hover:bg-background/80"
                 aria-label={t("login.toggleTheme")}
             >
                 {isDark ? t("login.themeLight") : t("login.themeDark")}
             </Button>
-            <Card className="relative z-10 w-full max-w-[400px] shadow-xl border-border/80 bg-card/95 backdrop-blur-sm">
+            <Card className="relative z-10 w-full max-w-[400px] shadow-2xl border-border/80 bg-card/90 dark:bg-card/85 backdrop-blur-md">
                 <CardHeader className="text-center space-y-1">
-                    <CardTitle className="text-xl">{t("brand.title")}</CardTitle>
-                    <p className="text-sm text-muted-foreground font-medium">{t("brand.subtitle")}</p>
-                    <p className="text-xs text-muted-foreground pt-1">{t("login.lead")}</p>
+                    <CardTitle className="text-xl text-foreground">{t("brand.title")}</CardTitle>
+                    <p className="text-sm text-foreground/80 font-medium">{t("brand.subtitle")}</p>
+                    <p className="text-xs text-foreground/75 pt-1">{t("login.lead")}</p>
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={handleSubmit} className="space-y-4">
@@ -146,13 +153,17 @@ export default function Login() {
                                 <Button
                                     type="button"
                                     variant="ghost"
-                                    size="sm"
+                                    size="icon"
                                     onClick={() => setShowPassword((v) => !v)}
-                                    className="absolute right-2 top-1/2 -translate-y-1/2 h-auto px-2 py-1 text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-transparent"
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground hover:bg-transparent"
                                     disabled={loading}
                                     aria-label={showPassword ? t("login.hidePassword") : t("login.showPassword")}
                                 >
-                                    {showPassword ? t("login.hidePassword") : t("login.showPassword")}
+                                    {showPassword ? (
+                                        <EyeOff className="h-4 w-4" aria-hidden />
+                                    ) : (
+                                        <Eye className="h-4 w-4" aria-hidden />
+                                    )}
                                 </Button>
                             </div>
                             <p className="text-right">
@@ -190,17 +201,17 @@ export default function Login() {
                             <span>{loading ? t("login.submitting") : t("login.submit")}</span>
                         </Button>
 
-                        <p className="text-center text-xs text-muted-foreground">
+                        <p className="text-center text-xs text-foreground/80">
                             {t("login.noAccount")}{" "}
-                            <Link to="/register" className="text-primary hover:underline">
+                            <Link to="/register" className="text-primary hover:underline font-medium">
                                 {t("login.register")}
                             </Link>
                         </p>
                     </form>
                 </CardContent>
             </Card>
-            <div className="relative z-10 mt-6 text-center text-xs text-muted-foreground space-y-1">
-                <p>{t("login.help")}</p>
+            <div className="relative z-10 mt-6 text-center text-xs space-y-1 px-4 py-3 rounded-xl bg-background/85 dark:bg-background/90 backdrop-blur-sm border border-border/50 shadow-lg">
+                <p className="text-foreground font-medium">{t("login.help")}</p>
                 <Button
                     type="button"
                     variant="link"

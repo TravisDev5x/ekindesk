@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import axios from "@/lib/axios";
 import { passwordWithConfirmationSchema } from "@/lib/passwordSchema";
 import { useTheme } from "@/hooks/useTheme";
@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Link } from "react-router-dom";
+import { Eye, EyeOff, Check, X } from "lucide-react";
 
 export default function Register() {
     const { isDark, toggleTheme } = useTheme();
@@ -27,6 +28,24 @@ export default function Register() {
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
     const [loading, setLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
+    const [showPasswordConfirmation, setShowPasswordConfirmation] = useState(false);
+
+    const passwordChecks = useMemo(() => {
+        const p = form.password;
+        return {
+            length: p.length >= 12,
+            lowercase: /[a-z]/.test(p),
+            uppercase: /[A-Z]/.test(p),
+            number: /[0-9]/.test(p),
+            special: /[^A-Za-z0-9]/.test(p),
+        };
+    }, [form.password]);
+
+    const passwordsMatch =
+        form.password.length > 0 &&
+        form.password_confirmation.length > 0 &&
+        form.password === form.password_confirmation;
 
     const validate = () => {
         if (!form.employee_number.trim()) return "El número de empleado es obligatorio.";
@@ -101,17 +120,28 @@ export default function Register() {
     };
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-background text-foreground p-6 relative">
+        <div className="flex min-h-screen items-center justify-center text-foreground p-6 relative overflow-hidden">
+            {/* Fondo: imagen a pantalla completa */}
+            <div
+                className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat"
+                style={{ backgroundImage: "url(/images/auth-hero.png)" }}
+                aria-hidden
+            />
+            {/* Capa mica: blur suave + tinte */}
+            <div
+                className="absolute inset-0 z-[1] pointer-events-none backdrop-blur-[6px] sm:backdrop-blur-[8px] bg-background/40 dark:bg-background/50"
+                aria-hidden
+            />
             <Button
                 type="button"
                 variant="ghost"
                 onClick={toggleTheme}
-                className="absolute top-4 right-4 h-auto text-xs font-semibold text-muted-foreground hover:text-foreground border border-border px-3 py-1 rounded-full bg-background/80 backdrop-blur hover:bg-transparent"
+                className="absolute top-4 right-4 z-10 h-auto text-xs font-semibold text-muted-foreground hover:text-foreground border border-border px-3 py-1 rounded-full bg-background/70 dark:bg-background/60 backdrop-blur-md hover:bg-background/80"
                 aria-label="Cambiar tema"
             >
                 {isDark ? "Modo claro" : "Modo oscuro"}
             </Button>
-            <Card className="w-[460px]">
+            <Card className="relative z-10 w-[460px] shadow-2xl border-border/80 bg-card/80 dark:bg-card/70 backdrop-blur-md">
                 <CardHeader>
                     <CardTitle className="text-center">Registro de Usuario</CardTitle>
                 </CardHeader>
@@ -179,25 +209,94 @@ export default function Register() {
                         </div>
 
                         <div className="space-y-2">
-                            <Label>Contraseña</Label>
-                            <Input
-                                type="password"
-                                value={form.password}
-                                onChange={(e) => setForm({ ...form, password: e.target.value })}
-                                autoComplete="new-password"
-                                disabled={loading}
-                            />
+                            <Label htmlFor="reg-password">Contraseña</Label>
+                            <div className="relative">
+                                <Input
+                                    id="reg-password"
+                                    type={showPassword ? "text" : "password"}
+                                    value={form.password}
+                                    onChange={(e) => setForm({ ...form, password: e.target.value })}
+                                    autoComplete="new-password"
+                                    disabled={loading}
+                                    className="pr-12"
+                                />
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => setShowPassword((v) => !v)}
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground hover:bg-transparent"
+                                    disabled={loading}
+                                    aria-label={showPassword ? "Ocultar contraseña" : "Ver contraseña"}
+                                >
+                                    {showPassword ? (
+                                        <EyeOff className="h-4 w-4" aria-hidden />
+                                    ) : (
+                                        <Eye className="h-4 w-4" aria-hidden />
+                                    )}
+                                </Button>
+                            </div>
+                            <div className="rounded-md border border-border/60 bg-muted/30 px-3 py-2 text-xs space-y-1.5">
+                                <p className="font-medium text-muted-foreground">Requisitos de la contraseña:</p>
+                                <ul className="space-y-1">
+                                    <li className={passwordChecks.length ? "text-emerald-600 dark:text-emerald-400 flex items-center gap-2" : "text-muted-foreground flex items-center gap-2"}>
+                                        {passwordChecks.length ? <Check className="h-3.5 w-3.5 shrink-0" /> : <X className="h-3.5 w-3.5 shrink-0 opacity-50" />}
+                                        Mínimo 12 caracteres
+                                    </li>
+                                    <li className={passwordChecks.lowercase ? "text-emerald-600 dark:text-emerald-400 flex items-center gap-2" : "text-muted-foreground flex items-center gap-2"}>
+                                        {passwordChecks.lowercase ? <Check className="h-3.5 w-3.5 shrink-0" /> : <X className="h-3.5 w-3.5 shrink-0 opacity-50" />}
+                                        Al menos una minúscula
+                                    </li>
+                                    <li className={passwordChecks.uppercase ? "text-emerald-600 dark:text-emerald-400 flex items-center gap-2" : "text-muted-foreground flex items-center gap-2"}>
+                                        {passwordChecks.uppercase ? <Check className="h-3.5 w-3.5 shrink-0" /> : <X className="h-3.5 w-3.5 shrink-0 opacity-50" />}
+                                        Al menos una mayúscula
+                                    </li>
+                                    <li className={passwordChecks.number ? "text-emerald-600 dark:text-emerald-400 flex items-center gap-2" : "text-muted-foreground flex items-center gap-2"}>
+                                        {passwordChecks.number ? <Check className="h-3.5 w-3.5 shrink-0" /> : <X className="h-3.5 w-3.5 shrink-0 opacity-50" />}
+                                        Al menos un número
+                                    </li>
+                                    <li className={passwordChecks.special ? "text-emerald-600 dark:text-emerald-400 flex items-center gap-2" : "text-muted-foreground flex items-center gap-2"}>
+                                        {passwordChecks.special ? <Check className="h-3.5 w-3.5 shrink-0" /> : <X className="h-3.5 w-3.5 shrink-0 opacity-50" />}
+                                        Al menos un carácter especial (!@#$%^&*…)
+                                    </li>
+                                </ul>
+                            </div>
                         </div>
 
                         <div className="space-y-2">
-                            <Label>Confirmar contraseña</Label>
-                            <Input
-                                type="password"
-                                value={form.password_confirmation}
-                                onChange={(e) => setForm({ ...form, password_confirmation: e.target.value })}
-                                autoComplete="new-password"
-                                disabled={loading}
-                            />
+                            <Label htmlFor="reg-password-confirmation">Confirmar contraseña</Label>
+                            <div className="relative">
+                                <Input
+                                    id="reg-password-confirmation"
+                                    type={showPasswordConfirmation ? "text" : "password"}
+                                    value={form.password_confirmation}
+                                    onChange={(e) => setForm({ ...form, password_confirmation: e.target.value })}
+                                    autoComplete="new-password"
+                                    disabled={loading}
+                                    className="pr-12"
+                                />
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => setShowPasswordConfirmation((v) => !v)}
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground hover:bg-transparent"
+                                    disabled={loading}
+                                    aria-label={showPasswordConfirmation ? "Ocultar contraseña" : "Ver contraseña"}
+                                >
+                                    {showPasswordConfirmation ? (
+                                        <EyeOff className="h-4 w-4" aria-hidden />
+                                    ) : (
+                                        <Eye className="h-4 w-4" aria-hidden />
+                                    )}
+                                </Button>
+                            </div>
+                            {form.password_confirmation.length > 0 && (
+                                <p className={passwordsMatch ? "text-emerald-600 dark:text-emerald-400 text-xs flex items-center gap-1.5" : "text-amber-600 dark:text-amber-400 text-xs flex items-center gap-1.5"}>
+                                    {passwordsMatch ? <Check className="h-3.5 w-3.5" /> : <X className="h-3.5 w-3.5" />}
+                                    {passwordsMatch ? "Las contraseñas coinciden" : "Las contraseñas no coinciden"}
+                                </p>
+                            )}
                         </div>
 
                         <p className="text-xs text-muted-foreground">

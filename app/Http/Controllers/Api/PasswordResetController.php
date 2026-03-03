@@ -15,14 +15,20 @@ use Illuminate\Validation\ValidationException;
 class PasswordResetController extends Controller
 {
     /**
-     * Solicitar enlace de restablecimiento.
+     * Solicitar restablecimiento de contraseña.
+     * Acepta correo (envía enlace) o número de empleado (crea solicitud para que un admin restablezca y comunique por medios empresariales).
      */
     public function forgot(Request $request)
     {
         $request->validate([
-            'email' => 'required|email',
+            'identifier' => 'required|string|max:255',
             'hcaptcha_token' => 'nullable|string',
         ]);
+
+        $identifier = trim($request->input('identifier'));
+        if ($identifier === '') {
+            return response()->json(['message' => 'Indica tu correo o número de empleado.'], 422);
+        }
 
         // Verificar hCaptcha si está configurado
         $secret = config('services.hcaptcha.secret');
@@ -41,25 +47,41 @@ class PasswordResetController extends Controller
             }
         }
 
-        /** @var User|null $user */
-        $user = User::where('email', $request->email)->first();
+        $isEmail = filter_var($identifier, FILTER_VALIDATE_EMAIL) !== false;
 
-        // Si no hay usuario con correo, notificamos al admin y respondemos 202 genérico
-        if (!$user || !$user->email) {
+        if ($isEmail) {
+            $user = User::where('email', $identifier)->first();
+            if ($user && $user->email) {
+                $status = Password::sendResetLink(['email' => $identifier]);
+                return $status === Password::RESET_LINK_SENT
+                    ? response()->json(['message' => __('passwords.sent')])
+                    : response()->json(['message' => __('passwords.throttled')], 429);
+            }
             DB::table('admin_notifications')->insert([
                 'type' => 'password_reset_missing_email',
-                'payload' => json_encode(['requested_email' => $request->email, 'at' => now()->toIso8601String()]),
+                'payload' => json_encode(['requested_email' => $identifier, 'at' => now()->toIso8601String()]),
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
             return response()->json(['message' => __('passwords.sent')], 202);
         }
 
-        $status = Password::sendResetLink($request->only('email'));
+        // Identificador como número de empleado: crear solicitud para que admin restablezca (usuario puede no tener correo)
+        $user = User::where('employee_number', $identifier)->first();
+        if ($user) {
+            DB::table('admin_notifications')->insert([
+                'type' => 'password_reset_request',
+                'payload' => json_encode([
+                    'user_id' => $user->id,
+                    'requested_at' => now()->toIso8601String(),
+                    'requested_via' => 'employee_number',
+                ]),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
 
-        return $status === Password::RESET_LINK_SENT
-            ? response()->json(['message' => __('passwords.sent')])
-            : response()->json(['message' => __('passwords.throttled')], 429);
+        return response()->json(['message' => __('passwords.sent')], 202);
     }
 
     /**

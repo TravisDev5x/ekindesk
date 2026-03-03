@@ -2,7 +2,7 @@
 
 return [
     'subject' => 'Restablecer contraseña',
-    'sent' => 'Si el correo existe, enviamos instrucciones para restablecer tu contraseña.',
+    'sent' => 'Si el correo o número de empleado está registrado, recibirás un enlace por correo o un administrador atenderá tu solicitud.',
     'throttled' => 'Por favor espera antes de volver a intentarlo.',
     'token' => 'El token de restablecimiento no es válido o expiró.',
     'user' => "No encontramos un usuario con ese correo.",

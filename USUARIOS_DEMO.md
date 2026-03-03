@@ -1,8 +1,8 @@
-# Usuario administrador (FullDemoSeeder mínimo)
+# Usuario administrador y datos demo (Faker)
 
-El seed por defecto crea **un solo usuario administrador** y la configuración base de catálogos, roles y sedes.
+El seed por defecto crea **un usuario administrador con todos los permisos**, catálogos base y, con **FakerFullSeeder**, **al menos 50 usuarios**, **50 tickets** y **50 incidencias** de ejemplo.
 
-## Credenciales del administrador
+## Credenciales del administrador (ve todo)
 
 | Campo | Valor |
 |-------|--------|
@@ -10,11 +10,13 @@ El seed por defecto crea **un solo usuario administrador** y la configuración b
 | **Número de empleado** | `ADMIN001` |
 | **Contraseña** | `AdminHelpdesk2025!` |
 
+Este usuario tiene **todos los permisos** (helpdesk, SIGUA, asistencias) y puede ver y gestionar todo.
+
 ## Roles creados (4)
 
 | Rol | Descripción |
 |-----|-------------|
-| **admin** | Todos los permisos (helpdesk + SIGUA). |
+| **admin** | Todos los permisos (helpdesk + SIGUA + asistencias). |
 | **soporte** | Ver área, comentar, cambiar estado, asignar tickets, filtrar por sede. |
 | **usuario** | Crear tickets y ver los propios. |
 | **consultor** | Ver por área y ver propios. |
@@ -25,25 +27,29 @@ El seed por defecto crea **un solo usuario administrador** y la configuración b
 - **Vallejo** (código: VALLEJO)
 - **Toledo** (código: TOLEDO)
 
-## Cómo ejecutar el seeder
+## Cómo ejecutar los seeders
 
-Con migraciones ya ejecutadas:
-
-```bash
-php artisan db:seed --class=FullDemoSeeder
-```
-
-Para vaciar la base y volver a migrar + sembrar todo:
+**Vaciar base, migrar y sembrar todo (recomendado):**
 
 ```bash
 php artisan migrate:fresh --seed
 ```
 
-## Qué genera el seeder
+**Solo datos Faker (catálogos y admin ya existen):**
 
-- **Catálogos**: campaña General, áreas (Sistemas / TI, Soporte, Operaciones), puestos (Usuario Final, Soporte, Supervisor), las 3 sedes anteriores, prioridades y estados de ticket, tipos de ticket básicos.
-- **Roles y permisos**: admin, soporte, usuario, consultor (permisos de helpdesk; los de SIGUA se añaden con `SiguaPermissionsSeeder`).
-- **1 usuario**: administrador con rol `admin` y sede Tlalpan.
-- **SIGUA**: permisos y configuración base se cargan con `SiguaPermissionsSeeder` y `SiguaConfiguracionSeeder` desde `DatabaseSeeder`.
+```bash
+php artisan db:seed --class=FakerFullSeeder
+```
 
-No se generan usuarios demo masivos ni tickets de ejemplo.
+**Solo usuario admin (mínimo):**
+
+```bash
+php artisan db:seed --class=FullDemoSeeder
+```
+
+## Qué genera el seeder por defecto
+
+- **Catálogos**: campaña General, áreas, puestos, 3 sedes, prioridades y estados de ticket, tipos de ticket, catálogos de incidencias, ubicaciones por sede.
+- **Roles y permisos**: admin (todos los permisos), soporte, usuario, consultor; permisos de SIGUA y asistencias.
+- **1 admin**: `admin@helpdesk.local` / `ADMIN001` con **todos los permisos**.
+- **FakerFullSeeder**: al menos **50 usuarios** (Faker), **50 tickets** (Faker), **50 incidencias** (Faker).

@@ -62,8 +62,10 @@ export default function Settings() {
     const [notifications, setNotifications] = useState([]);
     const [loadingNotif, setLoadingNotif] = useState(false);
     const [tempPass, setTempPass] = useState("");
+    const [tempPassConfirm, setTempPassConfirm] = useState("");
     const [tempUserId, setTempUserId] = useState("");
     const [tempComment, setTempComment] = useState("");
+    const [communicationMethod, setCommunicationMethod] = useState("");
 
     useEffect(() => { setPendingTheme(theme || DEFAULT_PREFS.theme); }, [theme]);
     useEffect(() => { setPendingDensity(density || DEFAULT_PREFS.ui_density); }, [density]);
@@ -128,22 +130,32 @@ export default function Settings() {
     };
 
     const resolveNotification = async (notif) => {
-        if (!tempUserId || !tempPass) {
-            notify.error("ID y clave son obligatorios");
+        if (!tempUserId || !tempPass || !tempPassConfirm) {
+            notify.error("ID de usuario, contraseña y confirmación son obligatorios.");
+            return;
+        }
+        if (tempPass !== tempPassConfirm) {
+            notify.error("La contraseña y la confirmación no coinciden.");
+            return;
+        }
+        if (!communicationMethod) {
+            notify.error("Indica el medio por el que comunicarás la contraseña al empleado.");
             return;
         }
         try {
             await axios.post(`/api/admin/notifications/${notif.id}/resolve-password`, {
                 user_id: Number(tempUserId),
                 password: tempPass,
-                comment: tempComment,
+                password_confirmation: tempPassConfirm,
+                communication_method: communicationMethod,
+                comment: tempComment || undefined,
             });
             await axios.post(`/api/admin/notifications/${notif.id}/read`);
-            setTempPass(""); setTempUserId(""); setTempComment("");
+            setTempPass(""); setTempPassConfirm(""); setTempUserId(""); setTempComment(""); setCommunicationMethod("");
             loadNotifications();
-            notify.success("Resuelto con éxito");
+            notify.success("Contraseña restablecida. Comunica la nueva contraseña al empleado por el medio indicado.");
         } catch (e) {
-            notify.error("Error al resolver");
+            notify.error(e?.response?.data?.message || "Error al resolver");
         }
     };
 
@@ -324,7 +336,7 @@ export default function Settings() {
                             </div>
                             <div className="text-left">
                                 <CardTitle className="text-xl">Gestión de Restablecimientos</CardTitle>
-                                <CardDescription>Asignación de contraseñas temporales por auditoría.</CardDescription>
+                                <CardDescription>Restablece contraseñas y comunica la nueva clave al empleado por WhatsApp empresarial, teléfono, personal o personalmente.</CardDescription>
                             </div>
                         </div>
                         <Badge variant={notifications.length > 0 ? "destructive" : "secondary"} className={notifications.length > 0 ? "animate-pulse" : ""}>
@@ -333,26 +345,47 @@ export default function Settings() {
                     </div>
                 </CardHeader>
                 <CardContent className="pt-8 space-y-8">
-                    {/* Formulario de resolución rápido */}
-                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 p-5 bg-card border rounded-2xl shadow-inner group">
+                    {/* Formulario de resolución: contraseña + medio de comunicación */}
+                    <p className="text-sm text-muted-foreground px-1">
+                        Tras restablecer la contraseña, deberás comunicarla al empleado por el medio seleccionado (WhatsApp empresarial, teléfono empresarial, personal si está permitido o personalmente).
+                    </p>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-5 gap-4 p-5 bg-card border rounded-2xl shadow-inner group">
                         <div className="space-y-2 text-left">
                             <label className="text-[10px] uppercase font-bold text-muted-foreground ml-1 italic">ID Usuario</label>
                             <Input placeholder="Ej: 450" value={tempUserId} onChange={(e) => setTempUserId(e.target.value)} className="bg-muted/30 h-11" />
                         </div>
                         <div className="space-y-2 text-left">
-                            <label className="text-[10px] uppercase font-bold text-muted-foreground ml-1 italic">Nueva Clave</label>
+                            <label className="text-[10px] uppercase font-bold text-muted-foreground ml-1 italic">Nueva contraseña</label>
                             <Input placeholder="••••••••" type="password" value={tempPass} onChange={(e) => setTempPass(e.target.value)} className="bg-muted/30 h-11" />
                         </div>
                         <div className="space-y-2 text-left">
-                            <label className="text-[10px] uppercase font-bold text-muted-foreground ml-1 italic">Comentario / Vía</label>
-                            <Input placeholder="Ej: Llamada" value={tempComment} onChange={(e) => setTempComment(e.target.value)} className="bg-muted/30 h-11" />
+                            <label className="text-[10px] uppercase font-bold text-muted-foreground ml-1 italic">Confirmar contraseña</label>
+                            <Input placeholder="••••••••" type="password" value={tempPassConfirm} onChange={(e) => setTempPassConfirm(e.target.value)} className="bg-muted/30 h-11" />
                         </div>
-                        <div className="flex items-end">
-                            <Button variant="outline" onClick={loadNotifications} disabled={loadingNotif} className="h-11 w-full flex items-center gap-2 hover:bg-primary hover:text-white transition-all">
-                                <RefreshCw className={`h-4 w-4 ${loadingNotif ? 'animate-spin' : ''}`} />
-                                Refrescar
-                            </Button>
+                        <div className="space-y-2 text-left">
+                            <label className="text-[10px] uppercase font-bold text-muted-foreground ml-1 italic">Medio de comunicación al empleado</label>
+                            <Select value={communicationMethod} onValueChange={setCommunicationMethod}>
+                                <SelectTrigger className="h-11 bg-muted/30">
+                                    <SelectValue placeholder="Selecciona..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="whatsapp_empresarial">WhatsApp empresarial</SelectItem>
+                                    <SelectItem value="telefono_empresarial">Teléfono empresarial</SelectItem>
+                                    <SelectItem value="personal">Personal (si está permitido)</SelectItem>
+                                    <SelectItem value="personalmente">Personalmente</SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
+                        <div className="space-y-2 text-left">
+                            <label className="text-[10px] uppercase font-bold text-muted-foreground ml-1 italic">Comentario (opcional)</label>
+                            <Input placeholder="Ej: Llamada 10:00" value={tempComment} onChange={(e) => setTempComment(e.target.value)} className="bg-muted/30 h-11" />
+                        </div>
+                    </div>
+                    <div className="flex justify-end">
+                        <Button variant="outline" onClick={loadNotifications} disabled={loadingNotif} className="h-11 flex items-center gap-2 hover:bg-primary hover:text-white transition-all">
+                            <RefreshCw className={`h-4 w-4 ${loadingNotif ? 'animate-spin' : ''}`} />
+                            Refrescar solicitudes
+                        </Button>
                     </div>
 
                     <div className="space-y-4">
@@ -383,8 +416,18 @@ export default function Settings() {
                                                         {payload.user_employee_number && <Badge variant="secondary" className="text-[10px] h-4">{payload.user_employee_number}</Badge>}
                                                     </p>
                                                     <div className="grid grid-cols-1 gap-0.5 text-[11px] text-muted-foreground italic">
-                                                        <span className="flex items-center gap-1 opacity-80"><BellRing className="h-3 w-3" /> {n.type}</span>
+                                                        <span className="flex items-center gap-1 opacity-80">
+                                                            <BellRing className="h-3 w-3" />
+                                                            {n.type === "password_reset_request"
+                                                                ? "Solicitud de restablecimiento (sin correo o por número de empleado)"
+                                                                : n.type === "password_reset_missing_email"
+                                                                ? "Restablecimiento solicitado (correo no encontrado)"
+                                                                : n.type}
+                                                        </span>
                                                         {payload.user_email && <span className="underline decoration-primary/30">{payload.user_email}</span>}
+                                                        {!payload.user_email && payload.requested_email && (
+                                                            <span className="text-amber-600 dark:text-amber-400">Solicitado: {payload.requested_email}</span>
+                                                        )}
                                                     </div>
                                                     {suggestedUser && (
                                                         <Button
