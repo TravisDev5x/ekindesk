@@ -132,6 +132,10 @@ Route::middleware(['auth:sanctum','locale','perm:catalogs.manage'])->group(funct
         ->only(['index', 'store', 'update', 'destroy']);
     Route::apiResource('priorities', \App\Http\Controllers\Api\PriorityController::class)
         ->only(['index', 'store', 'update', 'destroy']);
+    Route::apiResource('impact-levels', \App\Http\Controllers\Api\ImpactLevelController::class)
+        ->only(['index', 'store', 'update', 'destroy']);
+    Route::apiResource('urgency-levels', \App\Http\Controllers\Api\UrgencyLevelController::class)
+        ->only(['index', 'store', 'update', 'destroy']);
     Route::apiResource('ticket-states', \App\Http\Controllers\Api\TicketStateController::class)
         ->only(['index', 'store', 'update', 'destroy']);
     Route::apiResource('ticket-types', \App\Http\Controllers\Api\TicketTypeController::class)
@@ -144,6 +148,8 @@ Route::middleware(['auth:sanctum','locale','perm:catalogs.manage'])->group(funct
         ->only(['index', 'store', 'update', 'destroy']);
     Route::apiResource('schedules', ScheduleController::class)
         ->only(['index', 'show', 'store', 'update', 'destroy']);
+    Route::get('priority-matrix', [\App\Http\Controllers\Api\PriorityMatrixController::class, 'index']);
+    Route::post('priority-matrix/bulk', [\App\Http\Controllers\Api\PriorityMatrixController::class, 'updateBulk']);
 });
 
 // Mis Tickets: solo solicitante (requester_id = user). Sin permisos operativos. Desacoplado del módulo Tickets.
@@ -165,6 +171,8 @@ Route::middleware(['auth:sanctum','locale','throttle:tickets','perm:tickets.mana
         ->middleware('report.audit');
     Route::get('tickets/summary', [\App\Http\Controllers\Api\TicketController::class, 'summary'])
         ->middleware('report.audit');
+    Route::get('tickets/audit-logs', [\App\Http\Controllers\Api\TicketController::class, 'indexAuditLogs']);
+    Route::get('tickets/audit-export', [\App\Http\Controllers\Api\TicketController::class, 'exportAudit']);
     Route::get('tickets/export', [\App\Http\Controllers\Api\TicketController::class, 'export'])
         ->middleware('report.audit');
     Route::post('tickets/{ticket}/take', [\App\Http\Controllers\Api\TicketController::class, 'take']);
@@ -176,8 +184,12 @@ Route::middleware(['auth:sanctum','locale','throttle:tickets','perm:tickets.mana
     Route::post('tickets/{ticket}/attachments', [\App\Http\Controllers\Api\TicketAttachmentController::class, 'store']);
     Route::delete('tickets/{ticket}/attachments/{attachment}', [\App\Http\Controllers\Api\TicketAttachmentController::class, 'destroy']);
     Route::get('tickets/{ticket}/attachments/{attachment}/download', [\App\Http\Controllers\Api\TicketAttachmentController::class, 'download']);
+    Route::get('tickets/{ticket}/audit', [\App\Http\Controllers\Api\TicketController::class, 'audit']);
     Route::apiResource('tickets', \App\Http\Controllers\Api\TicketController::class)
         ->only(['index', 'store', 'update', 'show']);
+    Route::get('ticket-macros', [\App\Http\Controllers\Api\TicketMacroController::class, 'index']);
+    Route::apiResource('ticket-macros', \App\Http\Controllers\Api\TicketMacroController::class)
+        ->only(['show', 'store', 'update', 'destroy']);
 });
 
 // Incidencias: acceso con auth + permisos especificos (Policies refuerzan alcance)

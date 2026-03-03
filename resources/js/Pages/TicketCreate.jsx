@@ -18,7 +18,7 @@ export default function TicketCreate() {
     const { user, can } = useAuth();
     const navigate = useNavigate();
     const [catalogs, setCatalogs] = useState({
-        areas: [], sedes: [], priorities: [], ticket_states: [], ticket_types: [],
+        areas: [], sedes: [], priorities: [], impact_levels: [], urgency_levels: [], priority_matrix: [], ticket_states: [], ticket_types: [],
     });
     const [loadingCatalogs, setLoadingCatalogs] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -29,13 +29,14 @@ export default function TicketCreate() {
         area_origin_id: "",
         area_current_id: "",
         ticket_type_id: "",
-        priority_id: "",
+        impact_level_id: "",
+        urgency_level_id: "",
         ticket_state_id: "",
     });
 
     useEffect(() => {
         let mounted = true;
-        loadCatalogs()
+        loadCatalogs(true, ["core", "tickets"])
             .then((data) => { if (mounted) setCatalogs(data); })
             .catch(() => { if (mounted) notify.error("No se pudieron cargar los catálogos"); })
             .finally(() => { if (mounted) setLoadingCatalogs(false); });
@@ -50,10 +51,11 @@ export default function TicketCreate() {
             sede_id: prev.sede_id || String(user?.sede_id || user?.sede?.id || ""),
             area_origin_id: prev.area_origin_id || String(user?.area_id || ""),
             ticket_type_id: prev.ticket_type_id || String(catalogs.ticket_types?.[0]?.id || ""),
-            priority_id: prev.priority_id || String(catalogs.priorities?.[0]?.id || ""),
+            impact_level_id: prev.impact_level_id || String(catalogs.impact_levels?.[0]?.id || ""),
+            urgency_level_id: prev.urgency_level_id || String(catalogs.urgency_levels?.[0]?.id || ""),
             ticket_state_id: String(openState?.id || ""),
         }));
-    }, [loadingCatalogs, catalogs.ticket_states, catalogs.ticket_types, catalogs.priorities, user?.sede_id, user?.sede?.id, user?.area_id]);
+    }, [loadingCatalogs, catalogs.ticket_states, catalogs.ticket_types, catalogs.impact_levels, catalogs.urgency_levels, user?.sede_id, user?.sede?.id, user?.area_id]);
 
     const isSolicitanteOnly = !can("tickets.manage_all") && !can("tickets.view_area");
     const backTo = isSolicitanteOnly ? "/" : "/tickets";
@@ -64,8 +66,8 @@ export default function TicketCreate() {
             notify.error("El asunto es obligatorio");
             return;
         }
-        if (!form.sede_id || !form.area_origin_id || !form.area_current_id || !form.ticket_type_id || !form.priority_id || !form.ticket_state_id) {
-            notify.error("Completa todos los campos obligatorios");
+        if (!form.sede_id || !form.area_origin_id || !form.area_current_id || !form.ticket_type_id || !form.impact_level_id || !form.urgency_level_id || !form.ticket_state_id) {
+            notify.error("Completa todos los campos obligatorios (incl. Impacto y Urgencia)");
             return;
         }
         setSaving(true);
@@ -77,7 +79,8 @@ export default function TicketCreate() {
                 sede_id: Number(form.sede_id),
                 area_origin_id: Number(form.area_origin_id),
                 area_current_id: Number(form.area_current_id),
-                priority_id: Number(form.priority_id),
+                impact_level_id: Number(form.impact_level_id),
+                urgency_level_id: Number(form.urgency_level_id),
                 ticket_type_id: Number(form.ticket_type_id),
                 ticket_state_id: Number(form.ticket_state_id),
                 created_at: now,
@@ -148,15 +151,40 @@ export default function TicketCreate() {
                                 </Select>
                             </div>
                             <div className="space-y-2">
-                                <Label>Prioridad</Label>
-                                <Select value={form.priority_id} onValueChange={(v) => setForm({ ...form, priority_id: v })}>
+                                <Label>Impacto <span className="text-destructive">*</span></Label>
+                                <Select value={form.impact_level_id} onValueChange={(v) => setForm({ ...form, impact_level_id: v })}>
                                     <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
                                     <SelectContent>
-                                        {(catalogs.priorities || []).map((p) => (
-                                            <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
+                                        {(catalogs.impact_levels || []).map((i) => (
+                                            <SelectItem key={i.id} value={String(i.id)}>{i.name}</SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Urgencia <span className="text-destructive">*</span></Label>
+                                <Select value={form.urgency_level_id} onValueChange={(v) => setForm({ ...form, urgency_level_id: v })}>
+                                    <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
+                                    <SelectContent>
+                                        {(catalogs.urgency_levels || []).map((u) => (
+                                            <SelectItem key={u.id} value={String(u.id)}>{u.name}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Prioridad (calculada)</Label>
+                                <Input
+                                    readOnly
+                                    className="bg-muted"
+                                    value={(() => {
+                                        const matrix = catalogs.priority_matrix || [];
+                                        const row = matrix.find((m) => Number(m.impact_level_id) === Number(form.impact_level_id) && Number(m.urgency_level_id) === Number(form.urgency_level_id));
+                                        const pid = row?.priority_id;
+                                        const p = (catalogs.priorities || []).find((x) => Number(x.id) === Number(pid));
+                                        return p ? p.name : (form.impact_level_id && form.urgency_level_id ? "—" : "Selecciona Impacto y Urgencia");
+                                    })()}
+                                />
                             </div>
                         </div>
 

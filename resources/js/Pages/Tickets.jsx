@@ -312,7 +312,7 @@ export default function Tickets() {
             delete summaryParams.per_page;
 
             const [catalogResult, ticketResult, summaryResult] = await Promise.allSettled([
-                loadCatalogs(),
+                loadCatalogs(false, ["core", "tickets"]),
                 axios.get("/api/tickets", { params }),
                 axios.get("/api/tickets/summary", { params: summaryParams }),
             ]);

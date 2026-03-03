@@ -107,12 +107,7 @@ class RequesterTicketService
      */
     public function cancel(Ticket $ticket, User $requester): Ticket
     {
-        $cancelStateId = TicketState::where('code', 'cancelado')->value('id')
-            ?? TicketState::where('name', 'Cancelado')->value('id');
-
-        if (! $cancelStateId) {
-            throw new \RuntimeException('No existe el estado Cancelado en el sistema');
-        }
+        $cancelStateId = TicketState::getCancelStateId();
 
         return DB::transaction(function () use ($ticket, $requester, $cancelStateId) {
             $beforeStateId = $ticket->ticket_state_id;

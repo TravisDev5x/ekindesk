@@ -33,16 +33,39 @@ export default function TicketDetalle() {
     const [alertMessage, setAlertMessage] = useState("");
     const [sendingAlert, setSendingAlert] = useState(false);
     const [cancelling, setCancelling] = useState(false);
+    const [macros, setMacros] = useState([]);
+    const [macrosLoading, setMacrosLoading] = useState(false);
+    const [selectedMacroId, setSelectedMacroId] = useState("");
+
+    useEffect(() => {
+        let mounted = true;
+        setMacrosLoading(true);
+        axios.get("/api/ticket-macros", { params: { active_only: 1 } })
+            .then((res) => { if (mounted) setMacros(Array.isArray(res.data) ? res.data : []); })
+            .catch(() => { if (mounted) notify.error("No se pudieron cargar las plantillas"); })
+            .finally(() => { if (mounted) setMacrosLoading(false); });
+        return () => { mounted = false; };
+    }, []);
+
+    const insertMacro = (macroId) => {
+        const macro = macros.find((m) => String(m.id) === String(macroId));
+        if (!macro) return;
+        setNote((prev) => (prev?.trim() ? prev + "\n\n" + macro.content : macro.content));
+        setSelectedMacroId("");
+    };
 
     const load = async () => {
         try {
             const [catalogData, ticketRes] = await Promise.all([
-                loadCatalogs(),
+                loadCatalogs(false, ["core", "tickets"]),
                 axios.get(`/api/tickets/${id}`),
             ]);
             setCatalogs({
                 areas: catalogData.areas || [],
                 priorities: catalogData.priorities || [],
+                impact_levels: catalogData.impact_levels || [],
+                urgency_levels: catalogData.urgency_levels || [],
+                priority_matrix: catalogData.priority_matrix || [],
                 ticket_states: catalogData.ticket_states || [],
                 area_users: catalogData.area_users || [],
                 positions: catalogData.positions || [],
@@ -331,11 +354,22 @@ export default function TicketDetalle() {
                         <div><strong className="text-muted-foreground">Área origen:</strong> {ticket.area_origin?.name}</div>
                         <div><strong className="text-muted-foreground">Tipo:</strong> {ticket.ticket_type?.name}</div>
                         <div><strong className="text-muted-foreground">Prioridad:</strong> {ticket.priority?.name}</div>
+                        {(ticket.impact_level_id || ticket.urgency_level_id) && (
+                            <>
+                                <div><strong className="text-muted-foreground">Impacto:</strong> {ticket.impactLevel?.name ?? "—"}</div>
+                                <div><strong className="text-muted-foreground">Urgencia:</strong> {ticket.urgencyLevel?.name ?? "—"}</div>
+                            </>
+                        )}
                         <div><strong className="text-muted-foreground">Sede:</strong> {ticket.sede?.name}</div>
                         {ticket.ubicacion && <div><strong className="text-muted-foreground">Ubicación:</strong> {ticket.ubicacion?.name}</div>}
                         <div><strong className="text-muted-foreground">Solicitante:</strong> {ticket.requester?.name}</div>
                         <div><strong className="text-muted-foreground">Responsable:</strong> {assignedUser ? `${assignedUser.name}${assignedUser.position?.name ? " — " + assignedUser.position.name : ""}` : "Sin asignar"}</div>
                         <div><strong className="text-muted-foreground">Fecha límite:</strong> {ticket.due_at ? new Date(ticket.due_at).toLocaleString() : "—"}</div>
+                        <div><strong className="text-muted-foreground">Primera respuesta:</strong> {ticket.first_response_at ? (
+                            <span>{new Date(ticket.first_response_at).toLocaleString()}{ticket.first_response_time_text ? <span className="text-muted-foreground ml-1">({ticket.first_response_time_text})</span> : ""}</span>
+                        ) : (
+                            <Badge variant="outline" className="text-muted-foreground font-normal">Sin respuesta aún</Badge>
+                        )}</div>
                         {ticket.sla_status_text && (
                             <div><strong className="text-muted-foreground">SLA:</strong> <span className={ticket.is_overdue ? "text-destructive font-medium" : "text-muted-foreground"}>{ticket.sla_status_text}</span></div>
                         )}
@@ -372,10 +406,44 @@ export default function TicketDetalle() {
                             <SelectTrigger><SelectValue placeholder="Área actual" /></SelectTrigger>
                             <SelectContent>{catalogs.areas.map((a) => <SelectItem key={a.id} value={String(a.id)}>{a.name}</SelectItem>)}</SelectContent>
                         </Select>
-                        <Select value={String(ticket.priority_id)} onValueChange={(v) => update({ priority_id: Number(v) })} disabled={!canChangeStatus || updating}>
-                            <SelectTrigger><SelectValue placeholder="Prioridad" /></SelectTrigger>
-                            <SelectContent>{catalogs.priorities.map((p) => <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>)}</SelectContent>
-                        </Select>
+                        <div className="space-y-1">
+                            <Label className="text-xs text-muted-foreground">Impacto</Label>
+                            <Select
+                                value={ticket.impact_level_id ? String(ticket.impact_level_id) : ""}
+                                onValueChange={(v) => {
+                                    const imp = v ? Number(v) : null;
+                                    const urg = ticket.urgency_level_id || (catalogs.urgency_levels?.[0]?.id);
+                                    if (imp && urg) update({ impact_level_id: imp, urgency_level_id: urg });
+                                }}
+                                disabled={!canChangeStatus || updating}
+                            >
+                                <SelectTrigger><SelectValue placeholder="Impacto" /></SelectTrigger>
+                                <SelectContent>{(catalogs.impact_levels || []).map((i) => <SelectItem key={i.id} value={String(i.id)}>{i.name}</SelectItem>)}</SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-1">
+                            <Label className="text-xs text-muted-foreground">Urgencia</Label>
+                            <Select
+                                value={ticket.urgency_level_id ? String(ticket.urgency_level_id) : ""}
+                                onValueChange={(v) => {
+                                    const urg = v ? Number(v) : null;
+                                    const imp = ticket.impact_level_id || (catalogs.impact_levels?.[0]?.id);
+                                    if (imp && urg) update({ impact_level_id: imp, urgency_level_id: urg });
+                                }}
+                                disabled={!canChangeStatus || updating}
+                            >
+                                <SelectTrigger><SelectValue placeholder="Urgencia" /></SelectTrigger>
+                                <SelectContent>{(catalogs.urgency_levels || []).map((u) => <SelectItem key={u.id} value={String(u.id)}>{u.name}</SelectItem>)}</SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-1 md:col-span-3">
+                            <Label className="text-xs text-muted-foreground">Prioridad (calculada)</Label>
+                            <Input
+                                readOnly
+                                className="bg-muted h-9"
+                                value={ticket.priority?.name ?? "—"}
+                            />
+                        </div>
                         <Select value={String(ticket.ticket_state_id)} onValueChange={(v) => update({ ticket_state_id: Number(v) })} disabled={!canChangeStatus || updating}>
                             <SelectTrigger><SelectValue placeholder="Estado" /></SelectTrigger>
                             <SelectContent>{catalogs.ticket_states.map((s) => <SelectItem key={s.id} value={String(s.id)}>{s.name}</SelectItem>)}</SelectContent>
@@ -402,6 +470,22 @@ export default function TicketDetalle() {
                             </Button>
                         </div>
                         <div className="md:col-span-3 space-y-2">
+                            {canComment && macros.length > 0 && (
+                                <div className="flex items-center gap-2">
+                                    <Label className="text-xs text-muted-foreground">Plantilla:</Label>
+                                    <Select value={selectedMacroId || "none"} onValueChange={(v) => { if (v && v !== "none") insertMacro(v); }} disabled={macrosLoading}>
+                                        <SelectTrigger className="w-[220px] h-8 text-xs">
+                                            <SelectValue placeholder="Insertar plantilla" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="none">Insertar plantilla…</SelectItem>
+                                            {macros.map((m) => (
+                                                <SelectItem key={m.id} value={String(m.id)}>{m.name}{m.category ? ` (${m.category})` : ""}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            )}
                             <Textarea placeholder="Nota o comentario (opcional)" value={note} onChange={(e) => setNote(e.target.value)} disabled={!canComment || updating} />
                             {canComment && (
                                 <div className="flex flex-wrap items-center gap-3">

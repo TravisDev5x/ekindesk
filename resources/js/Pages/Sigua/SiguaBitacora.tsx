@@ -68,7 +68,7 @@ export default function SiguaBitacora() {
 
   useEffect(() => {
     getSistemas().then((r) => r.data && setSistemas(r.data));
-    loadCatalogs().then((c: { sedes?: Array<{ id: number; name: string }> }) => setCatalogs({ sedes: c?.sedes ?? [] }));
+    loadCatalogs(false, ["core"]).then((c: { sedes?: Array<{ id: number; name: string }> }) => setCatalogs({ sedes: c?.sedes ?? [] }));
   }, []);
 
   useEffect(() => {

@@ -9,8 +9,8 @@ use App\Models\Ticket;
 use App\Models\TicketAreaAccess;
 use App\Models\TicketAttachment;
 use App\Models\TicketHistory;
-use App\Policies\RequesterTicketPolicy;
 use App\Services\RequesterTicketService;
+use Illuminate\Support\Facades\Gate;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -38,10 +38,7 @@ class MyTicketsController extends Controller
             return response()->json(['message' => 'No autorizado'], 401);
         }
 
-        $policy = app(RequesterTicketPolicy::class);
-        if (! $policy->viewAny($user)) {
-            return response()->json(['message' => 'No autorizado'], 403);
-        }
+        Gate::authorize('requester.viewAny.ticket');
 
         $query = Ticket::query()
             ->requesterOnly($user->id)
@@ -74,10 +71,7 @@ class MyTicketsController extends Controller
             return response()->json(['message' => 'No autorizado'], 401);
         }
 
-        $policy = app(RequesterTicketPolicy::class);
-        if (! $policy->view($user, $ticket)) {
-            return response()->json(['message' => 'No autorizado'], 403);
-        }
+        Gate::authorize('requester.view.ticket', $ticket);
 
         $ticket->load([
             'areaOrigin:id,name',
@@ -117,10 +111,7 @@ class MyTicketsController extends Controller
             return response()->json(['message' => 'No autorizado'], 401);
         }
 
-        $policy = app(RequesterTicketPolicy::class);
-        if (! $policy->create($user)) {
-            return response()->json(['message' => 'No autorizado'], 403);
-        }
+        Gate::authorize('requester.create.ticket');
 
         $data = $request->validated();
         $data['requester_id'] = $user->id;
@@ -186,10 +177,7 @@ class MyTicketsController extends Controller
             return response()->json(['message' => 'No autorizado'], 401);
         }
 
-        $policy = app(RequesterTicketPolicy::class);
-        if (! $policy->alert($user, $ticket)) {
-            return response()->json(['message' => 'No autorizado'], 403);
-        }
+        Gate::authorize('requester.alert.ticket', $ticket);
 
         $data = $request->validate([
             'message' => 'nullable|string|max:1000',
@@ -230,10 +218,7 @@ class MyTicketsController extends Controller
             return response()->json(['message' => 'No autorizado'], 401);
         }
 
-        $policy = app(RequesterTicketPolicy::class);
-        if (! $policy->comment($user, $ticket)) {
-            return response()->json(['message' => 'No autorizado'], 403);
-        }
+        Gate::authorize('requester.comment.ticket', $ticket);
 
         $data = $request->validate([
             'note' => 'required|string|max:10000',
@@ -268,10 +253,7 @@ class MyTicketsController extends Controller
             return response()->json(['message' => 'No autorizado'], 401);
         }
 
-        $policy = app(RequesterTicketPolicy::class);
-        if (! $policy->attach($user, $ticket)) {
-            return response()->json(['message' => 'No autorizado'], 403);
-        }
+        Gate::authorize('requester.attach.ticket', $ticket);
 
         $data = $request->validate([
             'attachments' => 'required|array',
@@ -307,8 +289,9 @@ class MyTicketsController extends Controller
             return response()->json(['message' => 'No autorizado'], 401);
         }
 
-        $policy = app(RequesterTicketPolicy::class);
-        if (! $policy->cancel($user, $ticket)) {
+        try {
+            Gate::authorize('requester.cancel.ticket', $ticket);
+        } catch (\Illuminate\Auth\Access\AuthorizationException $e) {
             $message = $ticket->assigned_user_id
                 ? 'Solo puedes cancelar antes de que soporte tome el ticket.'
                 : 'No puedes cancelar este ticket.';
@@ -350,10 +333,7 @@ class MyTicketsController extends Controller
             return response()->json(['message' => 'No autorizado'], 401);
         }
 
-        $policy = app(RequesterTicketPolicy::class);
-        if (! $policy->view($user, $ticket)) {
-            return response()->json(['message' => 'No autorizado'], 403);
-        }
+        Gate::authorize('requester.view.ticket', $ticket);
 
         if ((int) $attachment->ticket_id !== (int) $ticket->id) {
             return response()->json(['message' => 'Adjunto no válido'], 404);
@@ -398,13 +378,13 @@ class MyTicketsController extends Controller
     protected function withRequesterAbilities(Ticket $ticket): Ticket
     {
         $user = Auth::user();
-        $policy = app(RequesterTicketPolicy::class);
+        $gate = $user ? Gate::forUser($user) : null;
 
         $ticket->setAttribute('abilities', [
-            'alert' => $user && $policy->alert($user, $ticket),
-            'comment' => $user && $policy->comment($user, $ticket),
-            'attach' => $user && $policy->attach($user, $ticket),
-            'cancel' => $user && $policy->cancel($user, $ticket),
+            'alert' => $gate ? $gate->allows('requester.alert.ticket', $ticket) : false,
+            'comment' => $gate ? $gate->allows('requester.comment.ticket', $ticket) : false,
+            'attach' => $gate ? $gate->allows('requester.attach.ticket', $ticket) : false,
+            'cancel' => $gate ? $gate->allows('requester.cancel.ticket', $ticket) : false,
         ]);
 
         return $ticket;

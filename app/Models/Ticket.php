@@ -29,13 +29,17 @@ class Ticket extends Model
         'assigned_at',
         'ticket_type_id',
         'priority_id',
+        'impact_level_id',
+        'urgency_level_id',
         'ticket_state_id',
         'resolved_at',
+        'first_response_at',
         'due_at',
     ];
 
     protected $casts = [
         'resolved_at' => 'datetime',
+        'first_response_at' => 'datetime',
         'due_at' => 'datetime',
         'assigned_at' => 'datetime',
     ];
@@ -45,6 +49,7 @@ class Ticket extends Model
         'is_overdue',
         'sla_due_at',
         'sla_status_text',
+        'first_response_time_text',
     ];
 
     public function areaOrigin(): BelongsTo { return $this->belongsTo(\App\Models\Area::class, 'area_origin_id'); }
@@ -56,6 +61,8 @@ class Ticket extends Model
     public function assignedUser(): BelongsTo { return $this->belongsTo(\App\Models\User::class, 'assigned_user_id'); }
     public function ticketType(): BelongsTo { return $this->belongsTo(\App\Models\TicketType::class, 'ticket_type_id'); }
     public function priority(): BelongsTo { return $this->belongsTo(\App\Models\Priority::class, 'priority_id'); }
+    public function impactLevel(): BelongsTo { return $this->belongsTo(\App\Models\ImpactLevel::class, 'impact_level_id'); }
+    public function urgencyLevel(): BelongsTo { return $this->belongsTo(\App\Models\UrgencyLevel::class, 'urgency_level_id'); }
     public function state(): BelongsTo { return $this->belongsTo(\App\Models\TicketState::class, 'ticket_state_id'); }
 
     public function histories(): HasMany
@@ -138,5 +145,36 @@ class Ticket extends Model
     public function getIsBurnedAttribute(): bool
     {
         return $this->is_overdue;
+    }
+
+    /**
+     * Tiempo transcurrido entre created_at y first_response_at en formato legible (ej. "2h 15m", "45m").
+     * Null si aún no hay primera respuesta.
+     */
+    public function getFirstResponseTimeTextAttribute(): ?string
+    {
+        if (!$this->first_response_at || !$this->created_at) {
+            return null;
+        }
+        $created = $this->created_at instanceof Carbon ? $this->created_at : Carbon::parse($this->created_at);
+        $firstResponse = $this->first_response_at instanceof Carbon ? $this->first_response_at : Carbon::parse($this->first_response_at);
+        $totalMinutes = (int) $created->diffInMinutes($firstResponse);
+        if ($totalMinutes < 1) {
+            return '<1m';
+        }
+        $days = (int) floor($totalMinutes / 1440);
+        $hours = (int) floor(($totalMinutes % 1440) / 60);
+        $minutes = (int) ($totalMinutes % 60);
+        $parts = [];
+        if ($days > 0) {
+            $parts[] = $days . 'd';
+        }
+        if ($hours > 0) {
+            $parts[] = $hours . 'h';
+        }
+        if ($minutes > 0 || empty($parts)) {
+            $parts[] = $minutes . 'm';
+        }
+        return implode(' ', $parts);
     }
 }

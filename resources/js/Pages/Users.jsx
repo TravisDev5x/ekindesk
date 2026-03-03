@@ -467,11 +467,11 @@ export default function Users() {
     useEffect(() => {
         const loadCatalogsFromCache = async () => {
             try {
-                let data = await fetchCatalogs();
+                let data = await fetchCatalogs(false, ["core"]);
                 // Si roles o ubicaciones vienen vacíos: limpiar caché y/o cargar desde endpoints específicos
                 if (!data.roles?.length) {
                     clearCatalogCache();
-                    data = await fetchCatalogs();
+                    data = await fetchCatalogs(false, ["core"]);
                 }
                 const roles = Array.isArray(data.roles) ? data.roles : [];
                 let rolesToSet = roles;

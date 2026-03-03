@@ -68,7 +68,7 @@ export default function SiguaBitacoraSede() {
   const dataList = Array.isArray(bitacoraData) ? bitacoraData : [];
 
   useEffect(() => {
-    loadCatalogs().then((c: { sedes?: Array<{ id: number; name: string }> }) => setCatalogs({ sedes: c?.sedes ?? [] }));
+    loadCatalogs(false, ["core"]).then((c: { sedes?: Array<{ id: number; name: string }> }) => setCatalogs({ sedes: c?.sedes ?? [] }));
   }, []);
 
   useEffect(() => {

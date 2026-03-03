@@ -21,6 +21,7 @@ const messages = {
         'nav.schedules': 'Horarios',
         'nav.scheduleAssignments': 'Gestión de Horarios',
         'nav.timedesk': 'TimeDesk',
+        'nav.resolbeb': 'Resolbeb',
         'nav.sessions': 'Sesiones activas',
 
         'timedesk.title': 'TimeDesk',
@@ -142,6 +143,7 @@ const messages = {
         'nav.schedules': 'Schedules',
         'nav.scheduleAssignments': 'Schedule assignments',
         'nav.timedesk': 'TimeDesk',
+        'nav.resolbeb': 'Resolbeb',
         'nav.sessions': 'Active sessions',
 
         'timedesk.title': 'TimeDesk',

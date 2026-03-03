@@ -221,7 +221,7 @@ export default function Incidents() {
             }
 
             const [catalogResult, incidentResult] = await Promise.allSettled([
-                loadCatalogs(),
+                loadCatalogs(false, ["core", "incidents"]),
                 axios.get("/api/incidents", { params }),
             ]);
 

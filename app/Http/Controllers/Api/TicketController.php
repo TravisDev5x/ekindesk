@@ -5,10 +5,12 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Ticket;
 use App\Models\TicketAlert;
+use App\Models\TicketAuditLog;
 use App\Models\TicketHistory;
 use App\Models\TicketAreaAccess;
 use App\Models\TicketState;
 use App\Models\User;
+use App\Models\PriorityMatrix;
 use App\Notifications\Tickets\TicketAssignedNotification;
 use App\Notifications\Tickets\TicketReassignedNotification;
 use App\Notifications\Tickets\TicketEscalatedNotification;
@@ -17,10 +19,12 @@ use App\Notifications\Tickets\TicketRequesterCommentNotification;
 use App\Notifications\Tickets\TicketRequesterAlertNotification;
 use App\Events\TicketCreated;
 use App\Events\TicketUpdated;
+use App\Exports\TicketAuditExport;
 use App\Http\Requests\StoreTicketRequest;
 use App\Http\Requests\UpdateTicketRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
@@ -52,6 +56,8 @@ class TicketController extends Controller
             'assignedUser:id,name,position_id',
             'ticketType:id,name',
             'priority:id,name,level',
+            'impactLevel:id,name',
+            'urgencyLevel:id,name',
             'state:id,name,code',
         ]);
 
@@ -166,14 +172,11 @@ class TicketController extends Controller
 
         $finalStateIds = $states->filter(fn ($s) => $s->is_final)->keys();
         $burnedCount = (clone $query)
-            ->where('created_at', '<=', now()->subHours(72))
+            ->where('created_at', '<=', now()->subHours(Ticket::SLA_LIMIT_HOURS))
             ->when($finalStateIds->isNotEmpty(), fn ($q) => $q->whereNotIn('ticket_state_id', $finalStateIds))
             ->count();
 
-        $cancelStateId = TicketState::where('code', 'cancelado')->value('id');
-        if (!$cancelStateId) {
-            $cancelStateId = TicketState::where('name', 'Cancelado')->value('id');
-        }
+        $cancelStateId = TicketState::getCancelStateIdOrNull();
         $canceledCount = $cancelStateId
             ? (clone $query)->where('ticket_state_id', $cancelStateId)->count()
             : 0;
@@ -285,9 +288,11 @@ class TicketController extends Controller
             'requesterPosition:id,name',
             'assignedUser:id,name,position_id',
             'assignedUser.position:id,name',
-            'ticketType:id,name',
-            'priority:id,name,level',
-            'state:id,name,code,is_final',
+'ticketType:id,name',
+                'priority:id,name,level',
+                'impactLevel:id,name',
+                'urgencyLevel:id,name',
+                'state:id,name,code,is_final',
             'histories' => function ($q) {
                 $q->orderByDesc('created_at');
                 $q->with([
@@ -310,6 +315,104 @@ class TicketController extends Controller
         return $this->withAbilities($ticket);
     }
 
+    /**
+     * Listado de logs de auditoría con filtros (Centro de Mando).
+     * Solo usuarios con tickets.manage_all.
+     */
+    public function indexAuditLogs(Request $request)
+    {
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json(['message' => 'No autorizado'], 401);
+        }
+        if (!$user->can('tickets.manage_all')) {
+            return response()->json(['message' => 'Solo administradores pueden acceder al centro de auditoría'], 403);
+        }
+
+        $query = TicketAuditLog::query()->with('user:id,name,email');
+
+        $from = $request->input('from');
+        $to = $request->input('to');
+        if ($from) {
+            $query->where('created_at', '>=', Carbon::parse($from)->startOfDay());
+        }
+        if ($to) {
+            $query->where('created_at', '<=', Carbon::parse($to)->endOfDay());
+        }
+
+        $ticketIds = $request->input('ticket_ids');
+        if ($ticketIds !== null && $ticketIds !== '') {
+            $ids = array_filter(array_map('intval', explode(',', (string) $ticketIds)));
+            if (!empty($ids)) {
+                $query->whereIn('ticket_id', $ids);
+            }
+        }
+
+        $logs = $query->orderByDesc('created_at')->get();
+
+        return response()->json(['data' => $logs]);
+    }
+
+    /**
+     * Exportar logs de auditoría a Excel (mismos filtros que indexAuditLogs).
+     * Solo usuarios con tickets.manage_all.
+     *
+     * Parámetros: start_date, end_date (YYYY-MM-DD), ticket_ids (opcional, separados por comas).
+     */
+    public function exportAudit(Request $request): BinaryFileResponse
+    {
+        $user = Auth::user();
+        if (!$user) {
+            abort(401, 'No autorizado');
+        }
+        if (!$user->can('tickets.manage_all')) {
+            abort(403, 'Solo administradores pueden exportar auditoría');
+        }
+
+        $startDate = $request->input('start_date') ?: $request->input('from');
+        $endDate = $request->input('end_date') ?: $request->input('to');
+        $ticketIdsRaw = $request->input('ticket_ids');
+        $ticketIds = null;
+        if ($ticketIdsRaw !== null && $ticketIdsRaw !== '') {
+            $ticketIds = array_filter(array_map('intval', explode(',', (string) $ticketIdsRaw)));
+        }
+
+        $export = new TicketAuditExport($startDate, $endDate, $ticketIds ?: null);
+        $filename = 'auditoria_tickets_' . now()->format('Ymd_His') . '.xlsx';
+        $tempName = 'audit_export_' . substr(uniqid('', true), -8) . '.xlsx';
+        $path = storage_path('app' . DIRECTORY_SEPARATOR . $tempName);
+        $export->exportToPath($path);
+
+        // Limpiar buffer de salida para evitar espacios/saltos que corrompan el binario Excel
+        if (ob_get_length() > 0) {
+            ob_end_clean();
+        }
+
+        return response()->download($path, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ])->deleteFileAfterSend(true);
+    }
+
+    /**
+     * Logs de auditoría del ticket (trazabilidad tipo ISO 27001).
+     */
+    public function audit(Ticket $ticket)
+    {
+        $user = Auth::user();
+        if ($user && !$user->can('tickets.manage_all') && $user->can('tickets.view_area') && !$user->area_id) {
+            Log::warning('tickets.audit sin area_id', ['user_id' => $user->id, 'ticket_id' => $ticket->id]);
+            return response()->json(['message' => 'Asigna tu área para acceder a tickets'], 403);
+        }
+        Gate::authorize('view', $ticket);
+
+        $logs = TicketAuditLog::where('ticket_id', $ticket->id)
+            ->with('user:id,name,email')
+            ->orderByDesc('created_at')
+            ->get();
+
+        return response()->json(['data' => $logs]);
+    }
+
     public function store(StoreTicketRequest $request)
     {
         $user = Auth::user();
@@ -320,6 +423,18 @@ class TicketController extends Controller
         }
 
         $data = $request->validated();
+
+        if (!empty($data['impact_level_id']) && !empty($data['urgency_level_id'])) {
+            $matrix = PriorityMatrix::where('impact_level_id', $data['impact_level_id'])
+                ->where('urgency_level_id', $data['urgency_level_id'])
+                ->first();
+            if ($matrix) {
+                $data['priority_id'] = $matrix->priority_id;
+            }
+        }
+        if (empty($data['priority_id'])) {
+            return response()->json(['message' => 'Indica la prioridad o el par Impacto y Urgencia para calcularla.'], 422);
+        }
 
         $data['requester_id'] = $user->id;
         $data['requester_position_id'] = $user->position_id ?? null;
@@ -367,6 +482,8 @@ class TicketController extends Controller
                 'ubicacion:id,name',
                 'ticketType:id,name',
                 'priority:id,name,level',
+                'impactLevel:id,name',
+                'urgencyLevel:id,name',
                 'state:id,name'
             );
             return response()->json($this->withAbilities($ticket), 201);
@@ -385,6 +502,15 @@ class TicketController extends Controller
 
         $data = $request->validated();
 
+        if (!empty($data['impact_level_id']) && !empty($data['urgency_level_id'])) {
+            $matrix = PriorityMatrix::where('impact_level_id', $data['impact_level_id'])
+                ->where('urgency_level_id', $data['urgency_level_id'])
+                ->first();
+            if ($matrix) {
+                $data['priority_id'] = $matrix->priority_id;
+            }
+        }
+
         return DB::transaction(function () use ($data, $ticket, $user) {
             $beforeStateId = $ticket->ticket_state_id;
             $beforePriorityId = $ticket->priority_id;
@@ -402,6 +528,12 @@ class TicketController extends Controller
             if (isset($data['priority_id'])) {
                 Gate::authorize('changeStatus', $ticket);
                 $ticket->priority_id = $data['priority_id'];
+            }
+            if (array_key_exists('impact_level_id', $data)) {
+                $ticket->impact_level_id = $data['impact_level_id'];
+            }
+            if (array_key_exists('urgency_level_id', $data)) {
+                $ticket->urgency_level_id = $data['urgency_level_id'];
             }
             if (isset($data['area_current_id'])) {
                 Gate::authorize('changeArea', $ticket);
@@ -478,6 +610,11 @@ class TicketController extends Controller
                 'to_assignee_id' => $didEscalate ? null : null,
             ]);
 
+            if ($action === 'comment' && !$isInternal && $ticket->first_response_at === null) {
+                $ticket->first_response_at = now();
+                $ticket->save();
+            }
+
             $changes = [];
             if ((int) $beforeStateId !== (int) $ticket->ticket_state_id) {
                 $changes['ticket_state_id'] = ['from' => $beforeStateId, 'to' => $ticket->ticket_state_id];
@@ -546,6 +683,8 @@ class TicketController extends Controller
                 'assignedUser.position:id,name',
                 'ticketType:id,name',
                 'priority:id,name,level',
+                'impactLevel:id,name',
+                'urgencyLevel:id,name',
                 'state:id,name',
                 'histories.actor:id,name,email',
                 'histories.fromAssignee:id,name,position_id',
@@ -570,8 +709,8 @@ class TicketController extends Controller
         }
 
         return DB::transaction(function () use ($ticket, $user) {
-            $openStateId = TicketState::where('code', 'abierto')->value('id');
-            $progressStateId = TicketState::where('code', 'en_progreso')->value('id');
+            $openStateId = TicketState::findIdByCode(TicketState::CODE_OPEN);
+            $progressStateId = TicketState::findIdByCode(TicketState::CODE_IN_PROGRESS);
             $beforeStateId = $ticket->ticket_state_id;
             $beforeAssigneeId = $ticket->assigned_user_id;
 
@@ -613,6 +752,8 @@ class TicketController extends Controller
                 'assignedUser.position:id,name',
                 'ticketType:id,name',
                 'priority:id,name,level',
+                'impactLevel:id,name',
+                'urgencyLevel:id,name',
                 'state:id,name',
                 'histories.actor:id,name,email',
                 'histories.fromAssignee:id,name,position_id',
@@ -684,6 +825,8 @@ class TicketController extends Controller
                 'assignedUser.position:id,name',
                 'ticketType:id,name',
                 'priority:id,name,level',
+                'impactLevel:id,name',
+                'urgencyLevel:id,name',
                 'state:id,name',
                 'histories.actor:id,name,email',
                 'histories.fromAssignee:id,name,position_id',
@@ -738,6 +881,8 @@ class TicketController extends Controller
                 'assignedUser.position:id,name',
                 'ticketType:id,name',
                 'priority:id,name,level',
+                'impactLevel:id,name',
+                'urgencyLevel:id,name',
                 'state:id,name',
                 'histories.actor:id,name,email',
                 'histories.fromAssignee:id,name,position_id',
@@ -818,6 +963,8 @@ class TicketController extends Controller
             'assignedUser:id,name,position_id',
             'ticketType:id,name',
             'priority:id,name,level',
+            'impactLevel:id,name',
+            'urgencyLevel:id,name',
             'state:id,name,code',
         ]);
         return response()->json([
@@ -836,12 +983,10 @@ class TicketController extends Controller
 
         Gate::authorize('cancel', $ticket);
 
-        $cancelStateId = TicketState::where('code', 'cancelado')->value('id');
-        if (!$cancelStateId) {
-            $cancelStateId = TicketState::where('name', 'Cancelado')->value('id');
-        }
-        if (!$cancelStateId) {
-            return response()->json(['message' => 'No existe el estado Cancelado en el sistema'], 422);
+        try {
+            $cancelStateId = TicketState::getCancelStateId();
+        } catch (\RuntimeException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
         }
 
         return DB::transaction(function () use ($ticket, $user, $cancelStateId) {
@@ -874,6 +1019,8 @@ class TicketController extends Controller
                 'assignedUser:id,name,position_id',
                 'ticketType:id,name',
                 'priority:id,name,level',
+                'impactLevel:id,name',
+                'urgencyLevel:id,name',
                 'state:id,name,code',
                 'histories' => function ($q) {
                     $q->orderByDesc('created_at');
@@ -957,6 +1104,8 @@ class TicketController extends Controller
                 'assignedUser.position:id,name',
                 'ticketType:id,name',
                 'priority:id,name,level',
+                'impactLevel:id,name',
+                'urgencyLevel:id,name',
                 'state:id,name',
                 'histories.actor:id,name,email',
                 'histories.fromAssignee:id,name,position_id',

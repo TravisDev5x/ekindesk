@@ -141,11 +141,11 @@ export default function Register() {
             >
                 {isDark ? "Modo claro" : "Modo oscuro"}
             </Button>
-            <Card className="relative z-10 w-[460px] shadow-2xl border-border/80 bg-card/80 dark:bg-card/70 backdrop-blur-md">
-                <CardHeader>
+            <Card className="relative z-10 w-[460px] max-h-[90vh] flex flex-col shadow-2xl border-border/80 bg-card/80 dark:bg-card/70 backdrop-blur-md overflow-hidden">
+                <CardHeader className="shrink-0">
                     <CardTitle className="text-center">Registro de Usuario</CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="min-h-0 overflow-y-auto">
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div className="space-y-2">
                             <Label>Número de empleado</Label>

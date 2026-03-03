@@ -36,7 +36,7 @@ export default function IncidentDetalle() {
     const load = async () => {
         try {
             const [catalogData, incidentRes] = await Promise.all([
-                loadCatalogs(),
+                loadCatalogs(false, ["core", "incidents"]),
                 axios.get(`/api/incidents/${id}`),
             ]);
             setCatalogs({

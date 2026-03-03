@@ -1,0 +1,99 @@
+import { useEffect, useState } from "react";
+import axios from "@/lib/axios";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Switch } from "@/components/ui/switch";
+import { notify } from "@/lib/notify";
+import { clearCatalogCache } from "@/lib/catalogCache";
+import { getApiErrorMessage } from "@/lib/apiErrors";
+
+export default function UrgencyLevels() {
+    const [list, setList] = useState([]);
+    const [name, setName] = useState("");
+    const [weight, setWeight] = useState(1);
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+
+    const load = async () => {
+        setLoading(true);
+        try {
+            const { data } = await axios.get("/api/urgency-levels");
+            setList(data);
+        } catch (err) {
+            notify.error(getApiErrorMessage(err, "No se pudieron cargar"));
+        } finally { setLoading(false); }
+    };
+
+    useEffect(() => { load(); }, []);
+
+    const create = async (e) => {
+        e.preventDefault();
+        if (!name.trim()) return;
+        setSaving(true);
+        try {
+            const { data } = await axios.post("/api/urgency-levels", { name: name.trim(), weight, is_active: true });
+            setList((prev) => [data, ...prev].sort((a, b) => a.weight - b.weight));
+            clearCatalogCache();
+            setName(""); setWeight(1);
+            notify.success("Nivel de urgencia creado");
+        } catch (err) {
+            notify.error(getApiErrorMessage(err, "No se pudo crear"));
+        } finally { setSaving(false); }
+    };
+
+    const toggle = async (item) => {
+        try {
+            const { data } = await axios.put(`/api/urgency-levels/${item.id}`, { ...item, is_active: !item.is_active });
+            setList((prev) => prev.map((p) => p.id === data.id ? data : p));
+            clearCatalogCache();
+            notify.success("Actualizado");
+        } catch (err) {
+            notify.error(getApiErrorMessage(err, "No se pudo actualizar"));
+        }
+    };
+
+    return (
+        <div className="space-y-6">
+            <div className="flex items-start justify-between gap-3">
+                <div>
+                    <h1 className="text-2xl font-semibold">Niveles de urgencia</h1>
+                    <p className="text-muted-foreground text-sm">Catálogo para la matriz de prioridades (Impacto × Urgencia).</p>
+                </div>
+                <form onSubmit={create} className="flex flex-wrap gap-2">
+                    <Input placeholder="Nombre" value={name} onChange={(e) => setName(e.target.value)} className="w-48" />
+                    <Input type="number" min={1} max={10} value={weight} onChange={(e) => setWeight(Number(e.target.value) || 1)} className="w-24" />
+                    <Button type="submit" disabled={saving || !name.trim()}>Agregar</Button>
+                </form>
+            </div>
+            <Card>
+                <CardHeader><CardTitle>Listado</CardTitle></CardHeader>
+                <CardContent>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Peso</TableHead>
+                                <TableHead>Nombre</TableHead>
+                                <TableHead className="text-right">Activo</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {loading ? (
+                                <TableRow><TableCell colSpan={3} className="text-center">Cargando...</TableCell></TableRow>
+                            ) : list.length === 0 ? (
+                                <TableRow><TableCell colSpan={3} className="text-center text-muted-foreground">Sin registros. Agrega niveles de urgencia.</TableCell></TableRow>
+                            ) : list.map((item) => (
+                                <TableRow key={item.id}>
+                                    <TableCell>{item.weight}</TableCell>
+                                    <TableCell>{item.name}</TableCell>
+                                    <TableCell className="text-right"><Switch checked={item.is_active} onCheckedChange={() => toggle(item)} /></TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
+        </div>
+    );
+}

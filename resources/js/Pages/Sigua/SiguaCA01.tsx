@@ -99,7 +99,7 @@ export default function SiguaCA01() {
     getSistemas().then((r) => r.data && setSistemas(r.data));
   }, []);
   useEffect(() => {
-    loadCatalogs().then((c: { sedes?: Array<{ id: number; name: string }>; campaigns?: Array<{ id: number; name: string }> }) =>
+    loadCatalogs(false, ["core"]).then((c: { sedes?: Array<{ id: number; name: string }>; campaigns?: Array<{ id: number; name: string }> }) =>
       setCatalogs({ sedes: c?.sedes ?? [], campaigns: c?.campaigns ?? [] })
     );
   }, []);

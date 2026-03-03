@@ -31,7 +31,7 @@ import {
     LogOut, Sun, Moon, ChevronsLeft, ChevronsRight, ChevronDown,
     ChevronRight, Bell, BellOff, Layers, Shield, Maximize2,
     Minimize2, Square, SquareDashed, MoreHorizontal, Monitor, Check, CircleDot,
-    CalendarDays, BookOpen, UserCheck, Upload, GitMerge, FileSpreadsheet, FileCheck, Clock, Link2,
+    CalendarDays, BookOpen, UserCheck, Upload, GitMerge, FileSpreadsheet, FileCheck, FileText, Clock, Link2, Grid3X3,
     Activity, LogIn
 } from 'lucide-react'
 
@@ -252,6 +252,24 @@ function Sidebar({ collapsed, onToggle, nav, sidebarPosition = 'left' }) {
             return next
         })
     }
+    const [resolbebOpen, setResolbebOpen] = useState(() => {
+        if (typeof window === 'undefined') return true
+        try {
+            const v = localStorage.getItem('sidebar-resolbeb-open')
+            return v !== '0'
+        } catch {
+            return true
+        }
+    })
+    const toggleResolbebOpen = () => {
+        setResolbebOpen(prev => {
+            const next = !prev
+            try {
+                localStorage.setItem('sidebar-resolbeb-open', next ? '1' : '0')
+            } catch { /* ignore */ }
+            return next
+        })
+    }
 
     const [toggleBtnTooltipOpen, setToggleBtnTooltipOpen] = useState(false)
 
@@ -308,7 +326,8 @@ function Sidebar({ collapsed, onToggle, nav, sidebarPosition = 'left' }) {
                         const isCatalogs = section.label === t('nav.catalogs')
                         const isSigua = section.label === 'SIGUA'
                         const isTimeDesk = section.label === t('nav.timedesk')
-                        const showSection = (!isCatalogs || catalogsOpen) && (!isSigua || siguaOpen) && (!isTimeDesk || timedeskOpen)
+                        const isResolbeb = section.label === t('nav.resolbeb')
+                        const showSection = (!isCatalogs || catalogsOpen) && (!isSigua || siguaOpen) && (!isTimeDesk || timedeskOpen) && (!isResolbeb || resolbebOpen)
 
                         return (
                             <div key={index} className="space-y-1">
@@ -339,6 +358,14 @@ function Sidebar({ collapsed, onToggle, nav, sidebarPosition = 'left' }) {
                                                 {section.label}
                                                 <ChevronDown className={cn("h-3 w-3 transition-transform opacity-0 group-hover:opacity-100", !timedeskOpen && "-rotate-90")} />
                                             </button>
+                                        ) : isResolbeb ? (
+                                            <button
+                                                onClick={toggleResolbebOpen}
+                                                className="flex w-full items-center justify-between text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50 hover:text-foreground transition-colors"
+                                            >
+                                                {section.label}
+                                                <ChevronDown className={cn("h-3 w-3 transition-transform opacity-0 group-hover:opacity-100", !resolbebOpen && "-rotate-90")} />
+                                            </button>
                                         ) : (
                                             <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50">
                                                 {section.label}
@@ -358,6 +385,11 @@ function Sidebar({ collapsed, onToggle, nav, sidebarPosition = 'left' }) {
                                     </div>
                                 )}
                                 {collapsed && isTimeDesk && (
+                                    <div className="flex justify-center py-2">
+                                        <MoreHorizontal className="h-4 w-4 text-muted-foreground/30" />
+                                    </div>
+                                )}
+                                {collapsed && isResolbeb && (
                                     <div className="flex justify-center py-2">
                                         <MoreHorizontal className="h-4 w-4 text-muted-foreground/30" />
                                     </div>
@@ -558,8 +590,6 @@ export default function AppLayout() {
             { to: '/', label: t('nav.home'), icon: LayoutDashboard, emphasis: true },
             ...(canSeeAttendance ? [{ to: '/attendance', label: t('nav.attendance'), icon: Clock, emphasis: true }] : []),
             { to: '/calendario', label: t('nav.calendar'), icon: CalendarDays, emphasis: true },
-            ...(canSeeMyTickets ? [{ to: '/mis-tickets', label: t('nav.myTickets'), icon: Ticket, emphasis: true }] : []),
-            ...(canSeeTicketsModule ? [{ to: '/tickets', label: t('nav.tickets'), icon: Ticket, emphasis: true }] : []),
         ]
         if (canSeeIncidents) generalItems.push({ to: '/incidents', label: t('nav.incidents'), icon: AlertTriangle, emphasis: true })
         if (canSeeUsers) generalItems.push({ to: '/users', label: t('nav.users'), icon: Users, emphasis: true })
@@ -578,6 +608,19 @@ export default function AppLayout() {
         if (can('sigua.dashboard') || can('sigua.cuentas.manage') || can('sigua.importar')) siguaChildren.push({ to: '/sigua/configuracion', label: 'Configuración', icon: Settings })
         if (can('sigua.reportes')) siguaChildren.push({ to: '/sigua/reportes', label: 'Reportes', icon: FileSpreadsheet })
 
+        const resolbebChildren = []
+        const canSeeResolbeb = canSeeTicketsModule || canSeeMyTickets
+        if (canSeeResolbeb) {
+            resolbebChildren.push({ to: '/resolbeb', label: 'Dashboard', icon: LayoutDashboard })
+            if (canSeeMyTickets) resolbebChildren.push({ to: '/resolbeb/mis-tickets', label: t('nav.myTickets'), icon: Ticket })
+            if (canSeeTicketsModule) resolbebChildren.push({ to: '/resolbeb/tickets', label: t('nav.tickets'), icon: Ticket })
+            if (can('tickets.create') || can('tickets.manage_all')) resolbebChildren.push({ to: '/resolbeb/tickets/new', label: 'Nuevo ticket', icon: Layers })
+            if (canSeeCatalogs) {
+                resolbebChildren.push({ to: '/resolbeb/estados', label: t('nav.ticketStates'), icon: Workflow })
+                resolbebChildren.push({ to: '/resolbeb/tipos', label: t('nav.ticketTypes'), icon: Tags })
+            }
+        }
+
         const timedeskChildren = []
         if (canSeeTimeDesk) {
             timedeskChildren.push({ to: '/timedesk', label: t('timedesk.dashboard'), icon: LayoutDashboard })
@@ -593,6 +636,14 @@ export default function AppLayout() {
         const sections = [
             { label: t('nav.general'), items: generalItems },
         ]
+        if (canSeeResolbeb && resolbebChildren.length > 0) {
+            sections.push({
+                label: t('nav.resolbeb'),
+                items: [
+                    { label: t('nav.resolbeb'), icon: Ticket, emphasis: false, children: resolbebChildren },
+                ],
+            })
+        }
         if (canSeeTimeDesk && timedeskChildren.length > 0) {
             sections.push({
                 label: t('nav.timedesk'),
@@ -617,8 +668,10 @@ export default function AppLayout() {
                     icon: Layers,
                     children: [
                         { to: '/priorities', label: t('nav.priorities'), icon: SignalHigh },
-                        { to: '/ticket-states', label: t('nav.ticketStates'), icon: Workflow },
-                        { to: '/ticket-types', label: t('nav.ticketTypes'), icon: Tags },
+                        { to: '/impact-levels', label: 'Niveles de impacto', icon: SignalHigh },
+                        { to: '/urgency-levels', label: 'Niveles de urgencia', icon: SignalHigh },
+                        { to: '/priority-matrix', label: 'Matriz de prioridades', icon: Grid3X3 },
+                        { to: '/ticket-macros', label: 'Plantillas de respuesta', icon: FileText },
                     ],
                 },
                 {
@@ -656,6 +709,7 @@ export default function AppLayout() {
             label: t('nav.system'),
             items: [
                 ...(can('users.manage') ? [{ to: '/sessions', label: t('nav.sessions'), icon: Monitor }] : []),
+                ...(can('tickets.manage_all') ? [{ to: '/audit-command', label: 'Centro de auditoría', icon: ShieldCheck }] : []),
                 { to: '/settings', label: t('nav.settings'), icon: Settings },
             ],
         })
@@ -673,11 +727,19 @@ export default function AppLayout() {
         '/permissions': t('nav.permissions'),
         '/settings': t('nav.settings'),
         '/sessions': t('nav.sessions'),
+        '/audit-command': 'Centro de auditoría',
         '/sedes': t('nav.sedes'),
         '/ubicaciones': t('nav.ubicaciones'),
         '/mis-tickets': t('section.myTickets'),
         '/tickets': t('section.tickets'),
         '/tickets/new': t('section.tickets'),
+        '/resolbeb': 'Resolbeb',
+        '/resolbeb/mis-tickets': t('section.myTickets'),
+        '/resolbeb/tickets': t('section.tickets'),
+        '/resolbeb/tickets/new': t('section.tickets'),
+        '/resolbeb/estados': 'Resolbeb · Estados',
+        '/resolbeb/tipos': 'Resolbeb · Tipos',
+        '/ticket-macros': 'Plantillas de respuesta',
         '/incidents': t('section.incidents'),
         '/profile': t('layout.profile'),
         '/attendance': t('nav.attendance'),
@@ -709,6 +771,7 @@ export default function AppLayout() {
         pathname?.match(/^\/sigua\/ca01\/\d+$/) ? 'SIGUA · CA-01 Detalle' :
         pathname?.match(/^\/sigua\/incidentes\/\d+$/) ? 'SIGUA · Incidente' :
         pathname?.match(/^\/sigua\/empleados-rh\/\d+$/) ? 'SIGUA · Empleado RH' :
+        pathname?.match(/^\/resolbeb\/tickets\/\d+$/) ? 'Resolbeb · Ticket' :
         t('layout.section.default')
     )
 
@@ -924,7 +987,7 @@ export default function AppLayout() {
                                                     return ticketId ? (
                                                         <Link
                                                             key={n.id}
-                                                            to={`/tickets/${ticketId}`}
+                                                            to={`/resolbeb/tickets/${ticketId}`}
                                                             onClick={() => {
                                                                 markOneRead(n.id)
                                                                 setNotifOpen(false)

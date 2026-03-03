@@ -6,8 +6,10 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import axios from "@/lib/axios";
 import { strongPasswordSchema } from "@/lib/passwordSchema";
+import { useTheme } from "@/hooks/useTheme";
 
 export default function ResetPassword() {
+    const { isDark, toggleTheme } = useTheme();
     const [params] = useSearchParams();
     const navigate = useNavigate();
     const token = params.get("token") || "";
@@ -49,8 +51,28 @@ export default function ResetPassword() {
     };
 
     return (
-        <div className="flex h-screen items-center justify-center bg-background text-foreground">
-            <Card className="w-[420px]">
+        <div className="flex h-screen flex-col items-center justify-center text-foreground relative px-4 py-6 overflow-hidden">
+            {/* Fondo: imagen a pantalla completa (fixed para que siempre cubra el viewport) */}
+            <div
+                className="fixed inset-0 z-0 bg-cover bg-center bg-no-repeat bg-muted"
+                style={{ backgroundImage: "url(/images/auth-hero.png)" }}
+                aria-hidden
+            />
+            {/* Capa mica: blur suave + tinte */}
+            <div
+                className="fixed inset-0 z-[1] pointer-events-none backdrop-blur-[6px] sm:backdrop-blur-[8px] bg-background/40 dark:bg-background/50"
+                aria-hidden
+            />
+            <Button
+                type="button"
+                variant="ghost"
+                onClick={toggleTheme}
+                className="absolute top-4 right-4 z-10 h-auto text-xs font-semibold text-muted-foreground hover:text-foreground border border-border px-3 py-1 rounded-full bg-background/70 dark:bg-background/60 backdrop-blur-md hover:bg-background/80"
+                aria-label="Cambiar tema"
+            >
+                {isDark ? "Modo claro" : "Modo oscuro"}
+            </Button>
+            <Card className="relative z-10 w-[420px] shadow-2xl border-border/80 bg-card/80 dark:bg-card/70 backdrop-blur-md">
                 <CardHeader>
                     <CardTitle className="text-center">Nueva contraseña</CardTitle>
                 </CardHeader>

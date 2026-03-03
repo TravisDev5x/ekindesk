@@ -19,6 +19,8 @@ class UpdateTicketRequest extends FormRequest
         return [
             'ticket_state_id' => 'nullable|exists:ticket_states,id',
             'priority_id' => 'nullable|exists:priorities,id',
+            'impact_level_id' => 'nullable|exists:impact_levels,id',
+            'urgency_level_id' => 'nullable|exists:urgency_levels,id',
             'area_current_id' => 'nullable|exists:areas,id',
             'note' => 'nullable|string|max:1000',
             'is_internal' => 'nullable|boolean',

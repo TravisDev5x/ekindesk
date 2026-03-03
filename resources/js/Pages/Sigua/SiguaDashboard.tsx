@@ -186,7 +186,7 @@ export default function SiguaDashboard() {
 
   useEffect(() => {
     let mounted = true;
-    loadCatalogs()
+    loadCatalogs(false, ["core"])
       .then((res: { sedes?: Array<{ id: number; name: string }> }) => mounted && setCatalogs({ sedes: res?.sedes ?? [] }))
       .catch(() => {});
     return () => { mounted = false; };

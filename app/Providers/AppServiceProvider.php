@@ -6,6 +6,8 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Gate;
 use App\Models\Ticket;
 use App\Models\Incident;
+use App\Observers\TicketObserver;
+use App\Policies\RequesterTicketPolicy;
 use App\Policies\TicketPolicy;
 use App\Policies\IncidentPolicy;
 use Illuminate\Support\Facades\Event;
@@ -46,6 +48,17 @@ class AppServiceProvider extends ServiceProvider
 
         Gate::policy(Ticket::class, TicketPolicy::class);
         Gate::policy(Incident::class, IncidentPolicy::class);
+
+        // Gates para contexto "Mis Tickets" (solicitante). No reemplazan TicketPolicy en rutas operativas.
+        Gate::define('requester.viewAny.ticket', fn ($user) => app(RequesterTicketPolicy::class)->viewAny($user));
+        Gate::define('requester.view.ticket', [RequesterTicketPolicy::class, 'view']);
+        Gate::define('requester.create.ticket', fn ($user) => app(RequesterTicketPolicy::class)->create($user));
+        Gate::define('requester.alert.ticket', [RequesterTicketPolicy::class, 'alert']);
+        Gate::define('requester.comment.ticket', [RequesterTicketPolicy::class, 'comment']);
+        Gate::define('requester.attach.ticket', [RequesterTicketPolicy::class, 'attach']);
+        Gate::define('requester.cancel.ticket', [RequesterTicketPolicy::class, 'cancel']);
+
+        Ticket::observe(TicketObserver::class);
 
         Event::listen(\App\Events\TicketCreated::class, \App\Listeners\SendTicketNotification::class);
         Event::listen(\App\Events\TicketUpdated::class, \App\Listeners\SendTicketNotification::class);

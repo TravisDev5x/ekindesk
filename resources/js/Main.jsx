@@ -19,11 +19,22 @@ const Positions = lazy(() => import("@/Pages/Positions"));
 const Sedes = lazy(() => import("@/Pages/Sedes"));
 const Ubicaciones = lazy(() => import("@/Pages/Ubicaciones"));
 const Prioridades = lazy(() => import("@/Pages/Prioridades"));
+const ImpactLevels = lazy(() => import("@/Pages/ImpactLevels"));
+const UrgencyLevels = lazy(() => import("@/Pages/UrgencyLevels"));
+const PriorityMatrixSettings = lazy(() => import("@/Pages/Settings/PriorityMatrix/Index"));
 const TicketEstados = lazy(() => import("@/Pages/TicketEstados"));
 const TicketTipos = lazy(() => import("@/Pages/TicketTipos"));
+const TicketMacros = lazy(() => import("@/Pages/TicketMacros"));
 const TicketDetalle = lazy(() => import("@/Pages/TicketDetalle"));
 const TicketCreate = lazy(() => import("@/Pages/TicketCreate"));
 const Tickets = lazy(() => import("@/Pages/Tickets"));
+// Resolbeb (ticketera en módulo propio, como TimeDesk/SIGUA)
+const ResolbebDashboard = lazy(() => import("@/Pages/Resolbeb/Dashboard"));
+const ResolbebIndex = lazy(() => import("@/Pages/Resolbeb/Index"));
+const ResolbebCreate = lazy(() => import("@/Pages/Resolbeb/Create"));
+const ResolbebDetalle = lazy(() => import("@/Pages/Resolbeb/Detalle"));
+const ResolbebEstados = lazy(() => import("@/Pages/Resolbeb/Estados/Index"));
+const ResolbebTipos = lazy(() => import("@/Pages/Resolbeb/Tipos/Index"));
 const Calendario = lazy(() => import("@/Pages/Calendario"));
 const Incidents = lazy(() => import("@/Pages/Incidents"));
 const IncidentDetalle = lazy(() => import("@/Pages/IncidentDetalle"));
@@ -33,6 +44,7 @@ const IncidentEstados = lazy(() => import("@/Pages/IncidentEstados"));
 const Settings = lazy(() => import("@/Pages/Settings"));
 const Sessions = lazy(() => import("@/Pages/Sessions"));
 const Permissions = lazy(() => import("@/Pages/Permissions"));
+const AuditCommandCenter = lazy(() => import("@/Pages/AuditCommandCenter"));
 const Profile = lazy(() => import("@/Pages/Profile"));
 const Attendance = lazy(() => import("@/Pages/Attendance"));
 const Schedules = lazy(() => import("@/Pages/Schedules"));
@@ -152,12 +164,24 @@ export default function Main() {
                                     <Route path="/sedes" element={<Sedes />} />
                                     <Route path="/ubicaciones" element={<Ubicaciones />} />
                                     <Route path="/priorities" element={<Prioridades />} />
+                                    <Route path="/impact-levels" element={<ImpactLevels />} />
+                                    <Route path="/urgency-levels" element={<UrgencyLevels />} />
+                                    <Route path="/priority-matrix" element={<PriorityMatrixSettings />} />
                                     <Route path="/ticket-states" element={<TicketEstados />} />
                                     <Route path="/ticket-types" element={<TicketTipos />} />
+                                    <Route path="/ticket-macros" element={<TicketMacros />} />
                                     <Route path="/mis-tickets" element={<Tickets />} />
                                     <Route path="/tickets" element={<Tickets />} />
                                     <Route path="/tickets/new" element={<TicketCreate />} />
                                     <Route path="/tickets/:id" element={<TicketDetalle />} />
+                                    {/* Resolbeb: ticketera en módulo (rutas principales) */}
+                                    <Route path="/resolbeb" element={<ResolbebDashboard />} />
+                                    <Route path="/resolbeb/mis-tickets" element={<ResolbebIndex />} />
+                                    <Route path="/resolbeb/tickets" element={<ResolbebIndex />} />
+                                    <Route path="/resolbeb/tickets/new" element={<ResolbebCreate />} />
+                                    <Route path="/resolbeb/tickets/:id" element={<ResolbebDetalle />} />
+                                    <Route path="/resolbeb/estados" element={<ResolbebEstados />} />
+                                    <Route path="/resolbeb/tipos" element={<ResolbebTipos />} />
                                     <Route path="/calendario" element={<Calendario />} />
                                     <Route path="/incidents" element={<Incidents />} />
                                     <Route path="/incidents/:id" element={<IncidentDetalle />} />
@@ -168,6 +192,7 @@ export default function Main() {
                                     <Route path="/settings" element={<Settings />} />
                                     <Route path="/sessions" element={<Sessions />} />
                                     <Route path="/permissions" element={<Permissions />} />
+                                    <Route path="/audit-command" element={<AuditCommandCenter />} />
                                     <Route path="/profile" element={<Profile />} />
                                     <Route path="/attendance" element={<Attendance />} />
                                     <Route path="/schedules" element={<Schedules />} />

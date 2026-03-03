@@ -64,7 +64,7 @@ class TicketAnalyticsController extends Controller
 
             // Tickets quemados
             $burnedCount = (clone $base)
-                ->where('created_at', '<=', now()->subHours(72))
+                ->where('created_at', '<=', now()->subHours(Ticket::SLA_LIMIT_HOURS))
                 ->when($hasFinalStates, fn($q) => $q->whereNotIn('ticket_state_id', $finalStateIds))
                 ->count();
 

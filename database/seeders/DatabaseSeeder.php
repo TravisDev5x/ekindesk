@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             FullDemoSeeder::class,             // Configuración mínima (catálogos, roles, admin)
+            PriorityMatrixSeeder::class,       // Matriz Impacto x Urgencia -> Prioridad (requiere priorities)
             ScheduleSeeder::class,             // Horario "Por defecto" para asistencias
             AttendancePermissionsSeeder::class, // Permisos de asistencias y asignación a roles
             TerminationReasonSeeder::class,   // Catálogo de motivos de baja (RH/TimeDesk)
