@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers\Sigua;
 
+use App\Exceptions\Sigua\SiguaException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Sigua\ImportarArchivoRequest;
 use App\Models\Sigua\Importacion;
 use App\Services\Sigua\ImportacionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class ImportacionController extends Controller
@@ -22,6 +24,7 @@ class ImportacionController extends Controller
      */
     public function importar(ImportarArchivoRequest $request): JsonResponse
     {
+        $fullPath = null;
         try {
             $file = $request->file('archivo');
             $tipo = $request->input('tipo');
@@ -43,22 +46,26 @@ class ImportacionController extends Controller
                 default => throw new \InvalidArgumentException("Tipo de importación no soportado: {$tipo}"),
             };
 
-            @unlink($fullPath);
-
             return response()->json([
                 'data' => $import->load('importadoPor'),
                 'message' => 'Importación completada.',
             ], 201);
         } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::warning('SIGUA importar: ' . $e->getMessage(), [
+            Log::warning('SIGUA importar: ' . $e->getMessage(), [
                 'exception' => $e,
                 'tipo' => $request->input('tipo'),
             ]);
-            $msg = $e->getMessage();
-            if (preg_match('/[A-Za-z]:[\\\\\/]|\\\\var\\\\|\\/var\\/|\\/home\\/|storage\\/|vendor\\//', $msg)) {
-                $msg = 'Error al procesar el archivo.';
+            $msg = $e instanceof SiguaException
+                ? $e->getMessage()
+                : 'Error al procesar el archivo. Compruebe que sea un formato válido (CSV o Excel).';
+            if (! $e instanceof SiguaException && preg_match('/[A-Za-z]:[\\\\\/]|\\\\var\\\\|\\/var\\/|\\/home\\/|storage\\/|vendor\\//', (string) $e->getMessage())) {
+                $msg = 'Error al procesar el archivo. Compruebe que sea un formato válido (CSV o Excel).';
             }
             return response()->json(['message' => 'Error al importar: ' . $msg], 422);
+        } finally {
+            if (isset($fullPath) && file_exists($fullPath)) {
+                @unlink($fullPath);
+            }
         }
     }
 
@@ -77,11 +84,11 @@ class ImportacionController extends Controller
             'sistema_id' => ['required', 'integer', 'exists:sigua_systems,id'],
         ]);
 
+        $fullPath = null;
         try {
             $path = $request->file('archivo')->store('sigua/imports/temp', ['disk' => 'local']);
             $fullPath = Storage::disk('local')->path($path);
             $result = $this->importacionService->preview($fullPath, (int) $request->input('sistema_id'));
-            @unlink($fullPath);
             $data = array_merge($result, [
                 'filas' => count($result['preview'] ?? []),
                 'columnas' => $result['columnas_detectadas'] ?? [],
@@ -90,11 +97,17 @@ class ImportacionController extends Controller
             ]);
             return response()->json(['data' => $data, 'message' => 'OK']);
         } catch (\Throwable $e) {
-            $msg = $e->getMessage();
-            if (preg_match('/[A-Za-z]:[\\\\\/]|\\\\var\\\\|\\/var\\/|\\/home\\/|storage\\/|vendor\\//', $msg)) {
-                $msg = 'Error al procesar el archivo.';
+            $msg = $e instanceof SiguaException
+                ? $e->getMessage()
+                : 'Error al procesar el archivo. Compruebe que sea un formato válido (CSV o Excel).';
+            if (! $e instanceof SiguaException && preg_match('/[A-Za-z]:[\\\\\/]|\\\\var\\\\|\\/var\\/|\\/home\\/|storage\\/|vendor\\//', (string) $e->getMessage())) {
+                $msg = 'Error al procesar el archivo. Compruebe que sea un formato válido (CSV o Excel).';
             }
             return response()->json(['message' => 'Error en preview: ' . $msg], 422);
+        } finally {
+            if (isset($fullPath) && file_exists($fullPath)) {
+                @unlink($fullPath);
+            }
         }
     }
 

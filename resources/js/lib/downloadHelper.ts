@@ -1,0 +1,14 @@
+/**
+ * Utilidad reutilizable para descargar archivos binarios (blob) en el navegador.
+ * Crea un enlace temporal, dispara la descarga y revoca el object URL para evitar fugas de memoria.
+ */
+export function downloadBlob(data: Blob, filename: string): void {
+  const url = window.URL.createObjectURL(data);
+  const link = document.createElement("a");
+  link.href = url;
+  link.setAttribute("download", filename);
+  document.body.appendChild(link);
+  link.click();
+  link.parentNode?.removeChild(link);
+  window.URL.revokeObjectURL(url);
+}

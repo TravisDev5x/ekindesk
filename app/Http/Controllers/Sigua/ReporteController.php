@@ -94,6 +94,9 @@ class ReporteController extends Controller
 
             $filename = 'sigua_cuentas_' . date('Y-m-d_His') . '.csv';
 
+            if (ob_get_length() > 0) {
+                ob_end_clean();
+            }
             return response()->streamDownload(function () use ($cuentas) {
                 $out = fopen('php://output', 'w');
                 fputcsv($out, ['usuario_cuenta', 'nombre_cuenta', 'sistema', 'sede', 'campaña', 'estado', 'isla', 'perfil']);
@@ -150,6 +153,9 @@ class ReporteController extends Controller
 
             $filename = 'sigua_bitacora_' . date('Y-m-d_His') . '.csv';
 
+            if (ob_get_length() > 0) {
+                ob_end_clean();
+            }
             return response()->streamDownload(function () use ($registros) {
                 $out = fopen('php://output', 'w');
                 fputcsv($out, ['fecha', 'turno', 'cuenta', 'agente_nombre', 'agente_num_empleado', 'sede', 'supervisor', 'hora_inicio', 'hora_fin']);
@@ -192,6 +198,9 @@ class ReporteController extends Controller
 
             $filename = 'sigua_cruce_' . $cruce->id . '_' . date('Y-m-d_His') . '.csv';
 
+            if (ob_get_length() > 0) {
+                ob_end_clean();
+            }
             return response()->streamDownload(function () use ($cruce, $rows) {
                 $out = fopen('php://output', 'w');
                 fputcsv($out, ['tipo_cruce', 'fecha_ejecucion', 'total_analizados', 'coincidencias', 'sin_match']);

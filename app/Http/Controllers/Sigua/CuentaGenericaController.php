@@ -22,7 +22,13 @@ class CuentaGenericaController extends Controller
         }
 
         try {
-            $query = CuentaGenerica::with(['sistema:id,name,slug', 'sede:id,name,code', 'campaign:id,name', 'ca01Vigente']);
+            $query = CuentaGenerica::with([
+                'sistema:id,name,slug',
+                'sede:id,name,code',
+                'campaign:id,name',
+                'ca01Vigente',
+                'formatosCA01:id,estado,fecha_vencimiento',
+            ]);
 
             if ($request->filled('sede_id')) {
                 $query->porSede((int) $request->input('sede_id'));
@@ -35,6 +41,9 @@ class CuentaGenericaController extends Controller
             }
             if ($request->filled('campaign_id')) {
                 $query->where('campaign_id', $request->input('campaign_id'));
+            }
+            if ($request->boolean('es_generica')) {
+                $query->where('tipo', 'generica');
             }
             if ($request->filled('search')) {
                 $term = $request->input('search');

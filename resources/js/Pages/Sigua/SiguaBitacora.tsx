@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { notify } from "@/lib/notify";
+import { downloadBlob } from "@/lib/downloadHelper";
 import { cn } from "@/lib/utils";
 import type { CuentaGenerica, RegistroBitacora, SiguaFilters, Sistema } from "@/types/sigua";
 import { Search, Download, ChevronLeft, ChevronRight, Loader2, AlertTriangle } from "lucide-react";
@@ -143,18 +144,17 @@ export default function SiguaBitacora() {
   }, [regSedeId, regFecha, regTurno, rows, cuentasSede, registrarBulk, registrarSinUso]);
 
   const handleExport = useCallback(async () => {
-    const res = await exportarBitacora(consultarFilters);
-    if (res.error || !res.data) {
-      notify.error(res.error ?? "Error al exportar");
-      return;
+    try {
+      const res = await exportarBitacora(consultarFilters);
+      if (res.error || !res.data) {
+        notify.error(res.error ?? "Error al exportar");
+        return;
+      }
+      downloadBlob(res.data, `bitacora_${consultarFilters.fecha ?? "reporte"}.csv`);
+      notify.success("Exportado correctamente");
+    } catch {
+      notify.error("Error al descargar el archivo.");
     }
-    const url = URL.createObjectURL(res.data);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `bitacora_${consultarFilters.fecha ?? "reporte"}.xlsx`;
-    a.click();
-    URL.revokeObjectURL(url);
-    notify.success("Exportado correctamente");
   }, [consultarFilters]);
 
   if (!canView && !canRegistrar) {

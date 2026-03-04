@@ -29,7 +29,7 @@ import {
 import { SiguaCuentaForm } from "./SiguaCuentaForm";
 import { notify } from "@/lib/notify";
 import { cn } from "@/lib/utils";
-import type { CuentaGenerica, SiguaFilters, Sistema, TipoCuenta } from "@/types/sigua";
+import type { Ca01EstadoCuenta, CuentaGenerica, SiguaFilters, Sistema, TipoCuenta } from "@/types/sigua";
 import type { CreateCuentaPayload } from "@/services/siguaApi";
 import {
   Plus,
@@ -43,6 +43,9 @@ import {
   Loader2,
   AlertTriangle,
   FileCheck,
+  FileX,
+  FileWarning,
+  Link2,
 } from "lucide-react";
 
 const ESTADO_LABELS: Record<string, string> = {
@@ -71,6 +74,27 @@ const TIPO_VARIANTS: Record<TipoCuenta, string> = {
   servicio: "bg-violet-500/15 text-violet-700 dark:text-violet-400 border-violet-500/30",
   prueba: "bg-slate-500/15 text-slate-600 dark:text-slate-400 border-slate-500/30",
   desconocida: "bg-muted text-muted-foreground",
+};
+
+/** Deriva estado CA-01 para una cuenta a partir de relaciones cargadas. */
+function getCa01Estado(row: CuentaGenerica): Ca01EstadoCuenta {
+  const vigente = row.ca01_vigente ?? (row as unknown as { ca01Vigente?: unknown[] }).ca01Vigente;
+  const formatos = row.formatos_ca01 ?? (row as unknown as { formatosCA01?: unknown[] }).formatosCA01;
+  if (Array.isArray(vigente) && vigente.length > 0) return "vigente";
+  if (Array.isArray(formatos) && formatos.length > 0) return "vencido";
+  return "faltante";
+}
+
+const CA01_ESTADO_LABELS: Record<Ca01EstadoCuenta, string> = {
+  vigente: "Vigente",
+  vencido: "Vencido",
+  faltante: "Faltante",
+};
+
+const CA01_ESTADO_VARIANTS: Record<Ca01EstadoCuenta, string> = {
+  vigente: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/30",
+  vencido: "bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/30",
+  faltante: "bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/30",
 };
 
 function useSiguaCuentasColumns({
@@ -212,16 +236,13 @@ function useSiguaCuentasColumns({
         id: "ca01",
         header: "CA-01",
         cell: ({ row }: { row: { original: CuentaGenerica } }) => {
-          const vigente = row.original.ca01_vigente ?? (row.original as unknown as { ca01Vigente?: unknown }).ca01Vigente;
-          if (vigente) {
-            return (
-              <Badge variant="outline" className="text-[10px] bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30">
-                <FileCheck className="h-3 w-3 mr-1" /> Vigente
-              </Badge>
-            );
-          }
+          const estado = getCa01Estado(row.original);
+          const icon = estado === "vigente" ? <FileCheck className="h-3 w-3 mr-1" /> : estado === "vencido" ? <FileWarning className="h-3 w-3 mr-1" /> : <FileX className="h-3 w-3 mr-1" />;
           return (
-            <span className="text-[10px] text-muted-foreground">Sin formato</span>
+            <Badge variant="outline" className={cn("text-[10px] font-medium", CA01_ESTADO_VARIANTS[estado])}>
+              {icon}
+              {CA01_ESTADO_LABELS[estado]}
+            </Badge>
           );
         },
       },
@@ -230,8 +251,18 @@ function useSiguaCuentasColumns({
         header: "Acciones",
         cell: ({ row }: { row: { original: CuentaGenerica } }) => {
           const c = row.original;
+          const esGenerica = (c.tipo ?? "") === "generica";
+          const ca01Estado = getCa01Estado(c);
+          const necesitaCa01 = esGenerica && (ca01Estado === "faltante" || ca01Estado === "vencido");
           return (
             <div className="flex items-center justify-end gap-1">
+              {necesitaCa01 && canManage && (
+                <Button variant="outline" size="sm" asChild className="h-8 text-amber-700 dark:text-amber-400 border-amber-500/50">
+                  <Link to={`/sigua/cuentas/${c.id}#ca01`} title="Vincular/Crear CA-01">
+                    <Link2 className="h-4 w-4 mr-1" /> CA-01
+                  </Link>
+                </Button>
+              )}
               <Button variant="ghost" size="sm" asChild className="h-8">
                 <Link to={`/sigua/cuentas/${c.id}`}>
                   <Eye className="h-4 w-4" />
@@ -278,6 +309,7 @@ export default function SiguaCuentas() {
     campaign_id: null,
     search: null,
     tipo: null,
+    es_generica: false,
   });
   const [searchInput, setSearchInput] = useState("");
   const [page, setPage] = useState(1);
@@ -515,6 +547,15 @@ export default function SiguaCuentas() {
                 ))}
               </SelectContent>
             </Select>
+            <label className="flex items-center gap-2 shrink-0 cursor-pointer">
+              <Checkbox
+                checked={filters.es_generica === true}
+                onCheckedChange={(checked) =>
+                  setFilters((p) => ({ ...p, es_generica: checked === true }))
+                }
+              />
+              <span className="text-sm whitespace-nowrap">Solo genéricas</span>
+            </label>
           </div>
           {selectedIds.length > 0 && canManage && (
             <div className="flex items-center gap-2">

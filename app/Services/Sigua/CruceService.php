@@ -58,7 +58,7 @@ class CruceService
                 'ejecutado_por' => $ejecutadoPorUserId,
             ]);
 
-            $stats = ['ok_completo' => 0, 'sin_cuenta_sistema' => 0, 'generico_con_responsable' => 0, 'generico_sin_responsable' => 0, 'cuenta_baja_pendiente' => 0, 'cuenta_sin_rh' => 0, 'cuenta_servicio' => 0, 'anomalia' => 0];
+            $stats = ['ok_completo' => 0, 'sin_cuenta_sistema' => 0, 'generico_con_responsable' => 0, 'generico_sin_responsable' => 0, 'generica_sin_justificacion' => 0, 'cuenta_baja_pendiente' => 0, 'cuenta_sin_rh' => 0, 'cuenta_servicio' => 0, 'anomalia' => 0];
 
             // Empleados activos (cargar cuentas y CA-01 vigente para clasificación)
             $empleadosActivos = EmpleadoRh::activos()->with([
@@ -94,18 +94,23 @@ class CruceService
                 $stats['cuenta_sin_rh'] = ($stats['cuenta_sin_rh'] ?? 0) + 1;
             }
 
-            // Genéricas activas sin CA-01 vigente: solo las que no tienen empleado (las con empleado ya se contaron arriba)
-            $genericasSinCa01 = CuentaGenerica::whereIn('system_id', $sistemas->pluck('id'))
+            // Genéricas activas sin empleado: validación estricta por CA-01 vigente (ISO 27001 / operación controlada)
+            $genericasSinEmpleado = CuentaGenerica::whereIn('system_id', $sistemas->pluck('id'))
                 ->where('tipo', 'generica')
                 ->where('estado', 'activa')
                 ->whereNull('empleado_rh_id')
-                ->whereDoesntHave('formatosCA01', fn ($q) => $q->where('sigua_ca01.estado', 'vigente'))
-                ->with(['sistema', 'sede', 'campaign'])
+                ->with(['sistema', 'sede', 'campaign', 'ca01Vigente'])
                 ->get();
-            foreach ($genericasSinCa01 as $cuenta) {
-                $res = $this->resultadoGenericoSinResponsable($cuenta, $sistemas);
-                $this->crearResultado($cruce, $res);
-                $stats['generico_sin_responsable'] = ($stats['generico_sin_responsable'] ?? 0) + 1;
+            foreach ($genericasSinEmpleado as $cuenta) {
+                if ($cuenta->ca01Vigente->isNotEmpty()) {
+                    $res = $this->resultadoGenericoConResponsable($cuenta, $sistemas);
+                    $this->crearResultado($cruce, $res);
+                    $stats['generico_con_responsable'] = ($stats['generico_con_responsable'] ?? 0) + 1;
+                } else {
+                    $res = $this->resultadoGenericaSinJustificacion($cuenta, $sistemas);
+                    $this->crearResultado($cruce, $res);
+                    $stats['generica_sin_justificacion'] = ($stats['generica_sin_justificacion'] ?? 0) + 1;
+                }
             }
 
             $total = $cruce->resultados()->count();
@@ -459,6 +464,60 @@ class CruceService
         ];
     }
 
+    /**
+     * Genérica sin empleado pero con CA-01 vigente: sin anomalía (operación controlada ISO 27001).
+     */
+    protected function resultadoGenericoConResponsable(CuentaGenerica $cuenta, Collection $sistemas): array
+    {
+        $entrada = [
+            'sistema_id' => $cuenta->system_id,
+            'slug' => $cuenta->sistema?->slug ?? $cuenta->system_id,
+            'tiene_cuenta' => true,
+            'identificador' => $cuenta->usuario_cuenta,
+            'tipo' => 'generica',
+            'estado' => $cuenta->estado,
+            'datos_extra_relevantes' => $cuenta->datos_extra,
+        ];
+        return [
+            'empleado_rh_id' => $cuenta->empleado_rh_id,
+            'num_empleado' => $cuenta->empleadoRh?->num_empleado,
+            'nombre_empleado' => $cuenta->nombre_cuenta,
+            'sede' => $cuenta->sede?->name ?? $cuenta->sede?->code ?? null,
+            'campana' => $cuenta->campaign?->name ?? null,
+            'resultados_por_sistema' => [$entrada],
+            'categoria' => 'generico_con_responsable',
+            'requiere_accion' => false,
+            'accion_sugerida' => null,
+        ];
+    }
+
+    /**
+     * Genérica sin empleado y sin CA-01 vigente (o vencido): anomalía que exige formato CA-01 y responsable.
+     */
+    protected function resultadoGenericaSinJustificacion(CuentaGenerica $cuenta, Collection $sistemas): array
+    {
+        $entrada = [
+            'sistema_id' => $cuenta->system_id,
+            'slug' => $cuenta->sistema?->slug ?? $cuenta->system_id,
+            'tiene_cuenta' => true,
+            'identificador' => $cuenta->usuario_cuenta,
+            'tipo' => 'generica',
+            'estado' => $cuenta->estado,
+            'datos_extra_relevantes' => $cuenta->datos_extra,
+        ];
+        return [
+            'empleado_rh_id' => $cuenta->empleado_rh_id,
+            'num_empleado' => $cuenta->empleadoRh?->num_empleado,
+            'nombre_empleado' => $cuenta->nombre_cuenta,
+            'sede' => $cuenta->sede?->name ?? $cuenta->sede?->code ?? null,
+            'campana' => $cuenta->campaign?->name ?? null,
+            'resultados_por_sistema' => [$entrada],
+            'categoria' => 'generica_sin_justificacion',
+            'requiere_accion' => true,
+            'accion_sugerida' => 'Generar/Renovar formato CA-01 para esta cuenta genérica e identificar al supervisor responsable.',
+        ];
+    }
+
     protected function resultadoGenericoSinResponsable(CuentaGenerica $cuenta, Collection $sistemas): array
     {
         $entrada = [
@@ -479,7 +538,7 @@ class CruceService
             'resultados_por_sistema' => [$entrada],
             'categoria' => 'generico_sin_responsable',
             'requiere_accion' => true,
-            'accion_sugerida' => 'Registrar CA-01 vigente para la cuenta genérica.',
+            'accion_sugerida' => 'Registrar CA-01 vigente para la cuenta genérica o asignar cuenta nominal.',
         ];
     }
 

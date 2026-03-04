@@ -42,6 +42,9 @@ export interface UserMin {
 
 export type TipoCuenta = 'nominal' | 'generica' | 'servicio' | 'prueba' | 'desconocida';
 
+/** Estado del CA-01 asociado a una cuenta (para badges en listado). */
+export type Ca01EstadoCuenta = 'vigente' | 'vencido' | 'faltante';
+
 export interface CuentaGenerica {
   id: number;
   system_id: number;
@@ -60,6 +63,13 @@ export interface CuentaGenerica {
   tipo?: TipoCuenta;
   datos_extra?: Record<string, unknown> | null;
   nombre_completo?: string;
+  /** CA-01 vigente (relación); array cuando viene del API. */
+  ca01_vigente?: FormatoCA01[] | null;
+  ca01Vigente?: FormatoCA01[] | null;
+  /** Todos los formatos CA-01 de la cuenta (para determinar vencido). */
+  formatos_ca01?: Pick<FormatoCA01, 'id' | 'estado' | 'fecha_vencimiento'>[] | null;
+  formatosCA01?: Pick<FormatoCA01, 'id' | 'estado' | 'fecha_vencimiento'>[] | null;
+  tiene_ca01_vigente?: boolean;
   created_at: string;
   updated_at?: string;
   deleted_at?: string | null;
@@ -163,6 +173,7 @@ export interface Importacion {
   registros_procesados: number;
   registros_nuevos: number;
   registros_actualizados: number;
+  registros_sin_cambio?: number;
   errores: number;
   importado_por: number;
   created_at: string;
@@ -208,6 +219,7 @@ export type CategoriaCruce =
   | 'cuenta_sin_rh'
   | 'generico_con_responsable'
   | 'generico_sin_responsable'
+  | 'generica_sin_justificacion'
   | 'cuenta_baja_pendiente'
   | 'cuenta_servicio'
   | 'anomalia';
@@ -337,6 +349,8 @@ export interface SiguaFilters {
   campaign_id?: number | string | null;
   search?: string | null;
   tipo?: TipoCuenta | string | null;
+  /** true = solo cuentas con tipo "generica" (isla/campaña) */
+  es_generica?: boolean | null;
   turno?: 'matutino' | 'vespertino' | 'nocturno' | 'mixto' | null;
   fecha?: string | null;
   per_page?: number;

@@ -599,9 +599,17 @@ export async function getDetalleCruce(id: number): Promise<SiguaApiResult<Cruce>
   }
 }
 
-export async function compararCruce(cruceId: number): Promise<SiguaApiResult<{ cruce: Cruce; resultados: CruceResultado[] }>> {
+/** Respuesta del endpoint comparar cruce: anomalías nuevas, resueltas y sin cambio respecto al cruce anterior. */
+export interface CompararCruceData {
+  anomalias_nuevas: CruceResultado[];
+  resueltas: CruceResultado[];
+  sin_cambio: CruceResultado[];
+  cruce_anterior_id: number | null;
+}
+
+export async function compararCruce(cruceId: number): Promise<SiguaApiResult<CompararCruceData>> {
   try {
-    const response = await axios.get<{ data: { cruce: Cruce; resultados: CruceResultado[] }; message?: string }>(`${PREFIX}/cruces/${cruceId}/comparar`);
+    const response = await axios.get<{ data: CompararCruceData; message?: string }>(`${PREFIX}/cruces/${cruceId}/comparar`);
     return toResult(response);
   } catch (err) {
     return toError(err);
@@ -670,32 +678,35 @@ export async function getResumenGeneral(filters?: SiguaFilters | null): Promise<
   }
 }
 
+/** Descarga CSV/Excel como Blob. Usar downloadBlob(data, filename) con la respuesta. */
 export async function exportarCuentas(filters?: SiguaFilters | null): Promise<SiguaApiResult<Blob>> {
   try {
     const params = filters ? { sede_id: filters.sede_id, sistema_id: filters.sistema_id, estado: filters.estado } : {};
     const response = await axios.get<Blob>(`${PREFIX}/reportes/exportar-cuentas`, { params, responseType: "blob" });
-    const blob = response.data instanceof Blob ? response.data : new Blob([JSON.stringify(response.data)]);
+    const blob = response.data instanceof Blob ? response.data : new Blob([response.data as unknown as BlobPart]);
     return { data: blob, error: null };
   } catch (err) {
     return toError(err);
   }
 }
 
+/** Descarga CSV/Excel como Blob. Usar downloadBlob(data, filename) con la respuesta. */
 export async function exportarBitacora(filters?: SiguaFilters | null): Promise<SiguaApiResult<Blob>> {
   try {
     const params = filters ? { fecha: filters.fecha, fecha_desde: filters.fecha_desde, fecha_hasta: filters.fecha_hasta, sede_id: filters.sede_id, sistema_id: filters.sistema_id } : {};
     const response = await axios.get<Blob>(`${PREFIX}/reportes/exportar-bitacora`, { params, responseType: "blob" });
-    const blob = response.data instanceof Blob ? response.data : new Blob([JSON.stringify(response.data)]);
+    const blob = response.data instanceof Blob ? response.data : new Blob([response.data as unknown as BlobPart]);
     return { data: blob, error: null };
   } catch (err) {
     return toError(err);
   }
 }
 
+/** Descarga CSV del cruce como Blob. Usar downloadBlob(data, filename) con la respuesta. */
 export async function exportarCruce(cruceId: number): Promise<SiguaApiResult<Blob>> {
   try {
     const response = await axios.get<Blob>(`${PREFIX}/reportes/exportar-cruce/${cruceId}`, { responseType: "blob" });
-    const blob = response.data instanceof Blob ? response.data : new Blob([JSON.stringify(response.data)]);
+    const blob = response.data instanceof Blob ? response.data : new Blob([response.data as unknown as BlobPart]);
     return { data: blob, error: null };
   } catch (err) {
     return toError(err);

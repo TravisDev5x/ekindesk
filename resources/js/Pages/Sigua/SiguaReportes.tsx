@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { notify } from "@/lib/notify";
+import { downloadBlob } from "@/lib/downloadHelper";
 import type { SiguaFilters, Sistema, CuentaGenerica, RegistroBitacora, Cruce } from "@/types/sigua";
 import {
   Download,
@@ -89,53 +90,53 @@ export default function SiguaReportes() {
 
   const handleExportCuentas = useCallback(async () => {
     setExporting("cuentas");
-    const { data, error } = await exportarCuentas(filters);
-    setExporting(null);
-    if (error || !data) {
-      notify.error(error ?? "Error al exportar");
-      return;
+    try {
+      const { data, error } = await exportarCuentas(filters);
+      if (error || !data) {
+        notify.error(error ?? "Error al exportar");
+        return;
+      }
+      downloadBlob(data, `sigua_cuentas_${new Date().toISOString().slice(0, 10)}.csv`);
+      notify.success("Exportado.");
+    } catch {
+      notify.error("Error al descargar el archivo.");
+    } finally {
+      setExporting(null);
     }
-    const url = URL.createObjectURL(data as Blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `sigua_cuentas_${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-    notify.success("Exportado.");
   }, [filters]);
 
   const handleExportBitacora = useCallback(async () => {
     setExporting("bitacora");
-    const { data, error } = await exportarBitacora(filters);
-    setExporting(null);
-    if (error || !data) {
-      notify.error(error ?? "Error al exportar");
-      return;
+    try {
+      const { data, error } = await exportarBitacora(filters);
+      if (error || !data) {
+        notify.error(error ?? "Error al exportar");
+        return;
+      }
+      downloadBlob(data, `sigua_bitacora_${new Date().toISOString().slice(0, 10)}.csv`);
+      notify.success("Exportado.");
+    } catch {
+      notify.error("Error al descargar el archivo.");
+    } finally {
+      setExporting(null);
     }
-    const url = URL.createObjectURL(data as Blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `sigua_bitacora_${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-    notify.success("Exportado.");
   }, [filters]);
 
   const handleExportCruce = useCallback(async (cruceId: number) => {
     setExporting(`cruce-${cruceId}`);
-    const { data, error } = await exportarCruce(cruceId);
-    setExporting(null);
-    if (error || !data) {
-      notify.error(error ?? "Error al exportar");
-      return;
+    try {
+      const { data, error } = await exportarCruce(cruceId);
+      if (error || !data) {
+        notify.error(error ?? "Error al exportar");
+        return;
+      }
+      downloadBlob(data, `sigua_cruce_${cruceId}_${new Date().toISOString().slice(0, 10)}.csv`);
+      notify.success("Exportado.");
+    } catch {
+      notify.error("Error al descargar el archivo.");
+    } finally {
+      setExporting(null);
     }
-    const url = URL.createObjectURL(data as Blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `sigua_cruce_${cruceId}_${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-    notify.success("Exportado.");
   }, []);
 
   if (!canReportes) {

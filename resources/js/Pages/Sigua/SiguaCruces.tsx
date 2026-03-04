@@ -24,8 +24,14 @@ import {
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { notify } from "@/lib/notify";
+import { downloadBlob } from "@/lib/downloadHelper";
 import { cn } from "@/lib/utils";
 import type { Cruce, CruceResultado, CategoriaCruce } from "@/types/sigua";
+
+/** Resultado de cruce con origen en la comparación (anomalías nuevas, resueltas, sin cambio). */
+type CruceResultadoConOrigen = CruceResultado & {
+  _comparar_origen?: "anomalias_nuevas" | "resueltas" | "sin_cambio";
+};
 import {
   PieChart,
   Pie,
@@ -57,6 +63,7 @@ const CATEGORIA_LABELS: Record<string, string> = {
   cuenta_sin_rh: "Cuenta sin RH",
   generico_con_responsable: "Genérico con responsable",
   generico_sin_responsable: "Genérico sin responsable",
+  generica_sin_justificacion: "Genérica sin CA-01",
   cuenta_baja_pendiente: "Baja pendiente",
   cuenta_servicio: "Cuenta servicio",
   anomalia: "Anomalía",
@@ -68,12 +75,19 @@ const CATEGORIA_COLORS: Record<string, string> = {
   cuenta_sin_rh: "bg-rose-500/15 text-rose-700 dark:text-rose-400 border-rose-500/30",
   generico_con_responsable: "bg-sky-500/15 text-sky-700 dark:text-sky-400 border-sky-500/30",
   generico_sin_responsable: "bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/30",
+  generica_sin_justificacion: "bg-red-500/15 text-red-700 dark:text-red-400 border-red-500/30",
   cuenta_baja_pendiente: "bg-slate-500/15 text-slate-600 dark:text-slate-400 border-slate-500/30",
   cuenta_servicio: "bg-violet-500/15 text-violet-700 dark:text-violet-400 border-violet-500/30",
   anomalia: "bg-red-500/15 text-red-700 dark:text-red-400 border-red-500/30",
 };
 
 const CHART_COLORS = ["#22c55e", "#eab308", "#ef4444", "#8b5cf6", "#06b6d4", "#f97316"];
+
+const COMPARAR_ORIGEN_LABELS: Record<string, string> = {
+  anomalias_nuevas: "Nueva",
+  resueltas: "Resuelta",
+  sin_cambio: "Sin cambio",
+};
 
 function buildPieData(cruce: Cruce | null): { name: string; value: number; color: string }[] {
   if (!cruce) return [];
@@ -123,7 +137,7 @@ export default function SiguaCruces() {
 
   const { historial, meta, loading, error, refetchHistorial, ejecutar, getDetalle, executing } = useCruces({ per_page: 20 });
   const [detalle, setDetalle] = useState<Cruce | null>(null);
-  const [resultados, setResultados] = useState<CruceResultado[]>([]);
+  const [resultados, setResultados] = useState<CruceResultadoConOrigen[]>([]);
   const [resultadosLoading, setResultadosLoading] = useState(false);
 
   useEffect(() => {
@@ -142,8 +156,14 @@ export default function SiguaCruces() {
     setResultadosLoading(true);
     compararCruce(selectedId).then((res) => {
       setResultadosLoading(false);
-      if (res.data?.resultados) setResultados(res.data.resultados);
-      else setResultados([]);
+      if (res.data) {
+        const anomalias = (res.data.anomalias_nuevas ?? []).map((r) => ({ ...r, _comparar_origen: "anomalias_nuevas" as const }));
+        const resueltas = (res.data.resueltas ?? []).map((r) => ({ ...r, _comparar_origen: "resueltas" as const }));
+        const sinCambio = (res.data.sin_cambio ?? []).map((r) => ({ ...r, _comparar_origen: "sin_cambio" as const }));
+        setResultados([...anomalias, ...resueltas, ...sinCambio]);
+      } else {
+        setResultados([]);
+      }
     });
   }, [selectedId, historial, getDetalle]);
 
@@ -158,19 +178,19 @@ export default function SiguaCruces() {
 
   const handleExport = useCallback(async (id: number) => {
     setExportingId(id);
-    const { data, error: err } = await exportarCruce(id);
-    setExportingId(null);
-    if (err || !data) {
-      notify.error(err ?? "Error al exportar");
-      return;
+    try {
+      const { data, error: err } = await exportarCruce(id);
+      if (err || !data) {
+        notify.error(err ?? "Error al exportar");
+        return;
+      }
+      downloadBlob(data, `sigua_cruce_${id}_${new Date().toISOString().slice(0, 19).replace(/:/g, "-")}.csv`);
+      notify.success("Exportado.");
+    } catch {
+      notify.error("Error al descargar el archivo.");
+    } finally {
+      setExportingId(null);
     }
-    const url = URL.createObjectURL(data as Blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `sigua_cruce_${id}_${new Date().toISOString().slice(0, 19).replace(/:/g, "-")}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-    notify.success("Exportado.");
   }, []);
 
   const sistemasFromResultados = useMemo(() => {
@@ -187,7 +207,9 @@ export default function SiguaCruces() {
 
   const resultadosFiltered = useMemo(() => {
     if (categoriaFilter === "all") return resultados;
-    return resultados.filter((r) => r.categoria === categoriaFilter || String(r.categoria).toLowerCase().includes(categoriaFilter.toLowerCase()));
+    return resultados.filter(
+      (r) => r.categoria === categoriaFilter || String(r.categoria).toLowerCase().includes(categoriaFilter.toLowerCase())
+    );
   }, [resultados, categoriaFilter]);
 
   const categoriasInData = useMemo(() => {
@@ -379,6 +401,7 @@ export default function SiguaCruces() {
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-muted/30">
+                      <TableHead>Comparación</TableHead>
                       <TableHead>Empleado</TableHead>
                       <TableHead>Sede</TableHead>
                       <TableHead>Campaña</TableHead>
@@ -392,6 +415,15 @@ export default function SiguaCruces() {
                   <TableBody>
                     {resultadosFiltered.slice(0, 200).map((r) => (
                       <TableRow key={r.id}>
+                        <TableCell className="text-xs">
+                          {(r as CruceResultadoConOrigen)._comparar_origen ? (
+                            <Badge variant="outline" className="text-[10px]">
+                              {COMPARAR_ORIGEN_LABELS[(r as CruceResultadoConOrigen)._comparar_origen] ?? (r as CruceResultadoConOrigen)._comparar_origen}
+                            </Badge>
+                          ) : (
+                            "—"
+                          )}
+                        </TableCell>
                         <TableCell className="text-sm">
                           <span className="font-mono text-xs">{r.num_empleado ?? "—"}</span>
                           <span className="block truncate max-w-[140px]" title={r.nombre_empleado ?? ""}>{r.nombre_empleado ?? "—"}</span>
