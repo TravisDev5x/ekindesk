@@ -40,7 +40,7 @@ export interface UserMin {
 
 // --- Cuenta genérica ---
 
-export type TipoCuenta = 'nominal' | 'generica' | 'servicio' | 'prueba' | 'desconocida';
+export type TipoCuenta = 'nominal' | 'generica' | 'servicio' | 'prueba' | 'desconocida' | 'externo';
 
 /** Estado del CA-01 asociado a una cuenta (para badges en listado). */
 export type Ca01EstadoCuenta = 'vigente' | 'vencido' | 'faltante';
@@ -61,6 +61,8 @@ export interface CuentaGenerica {
   ou_ad: string | null;
   empleado_rh_id?: number | null;
   tipo?: TipoCuenta;
+  /** Organización del usuario externo (solo cuando tipo === 'externo'). */
+  empresa_cliente?: string | null;
   datos_extra?: Record<string, unknown> | null;
   nombre_completo?: string;
   /** CA-01 vigente (relación); array cuando viene del API. */
@@ -222,7 +224,10 @@ export type CategoriaCruce =
   | 'generica_sin_justificacion'
   | 'cuenta_baja_pendiente'
   | 'cuenta_servicio'
-  | 'anomalia';
+  | 'anomalia'
+  | 'externo_sin_justificacion'
+  | 'externo_con_justificacion'
+  | 'por_clasificar';
 
 export interface CruceResultado {
   id: number;
@@ -331,6 +336,8 @@ export interface SiguaDashboardData {
   bitacoras_hoy?: number;
   incidentes_abiertos?: number;
   distribucion_por_sede?: Array<{ sede_id: number; sede: string | null; total: number }>;
+  /** Usuarios fantasma (baja en RH con cuentas activas) del último cruce. ISO 27001. */
+  alertas_criticas_bajas_activas?: number;
   alertas?: Array<{
     tipo: string;
     mensaje: string;
@@ -356,6 +363,51 @@ export interface SiguaFilters {
   per_page?: number;
   cuenta_generica_id?: number | null;
   gerente_user_id?: number | string | null;
+}
+
+// --- Explorador Maestro (inventario global) ---
+
+export type EstadoAuditoriaInventario =
+  | "match"
+  | "fantasma"
+  | "por_clasificar"
+  | "externo_ok"
+  | "externo";
+
+export type Ca01StatusInventario = "vigente" | "vencido" | "faltante";
+
+export interface InventarioRow {
+  id: number;
+  sistema: { id: number; name: string; slug: string } | null;
+  cuenta_usuario: string;
+  nombre_en_sistema: string;
+  nombre_rh: string | null;
+  tipo_cuenta: string;
+  estado_auditoria: EstadoAuditoriaInventario;
+  ca01_status: Ca01StatusInventario;
+  estado: string;
+}
+
+export interface InventarioFilters {
+  search?: string | null;
+  sistema_id?: number | null;
+  estado_auditoria?: EstadoAuditoriaInventario | null;
+  per_page?: number;
+  page?: number;
+}
+
+// --- Auditoría (audit_logs polimórfica) ---
+
+export interface AuditLog {
+  id: number;
+  action: "created" | "updated" | "deleted" | "restored";
+  user_id: number | null;
+  user?: { id: number; name: string; email?: string | null } | null;
+  old_values: Record<string, unknown> | null;
+  new_values: Record<string, unknown> | null;
+  created_at: string;
+  ip_address?: string | null;
+  user_agent?: string | null;
 }
 
 // --- Respuestas API genéricas ---

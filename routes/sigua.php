@@ -14,6 +14,8 @@ use App\Http\Controllers\Sigua\SiguaDashboardController;
 use App\Http\Controllers\Sigua\SistemaController;
 use App\Http\Controllers\Sigua\CA01Controller;
 use App\Http\Controllers\Sigua\IncidenteController;
+use App\Http\Controllers\Sigua\AuditoriaController;
+use App\Http\Controllers\Sigua\InventarioController;
 
 /*
 |--------------------------------------------------------------------------
@@ -30,6 +32,11 @@ Route::prefix('sigua')->middleware(['auth:sanctum', 'locale'])->group(function (
     Route::get('dashboard', [SiguaDashboardController::class, 'index'])
         ->middleware('perm:sigua.dashboard');
 
+    // Auditoría (historial de cambios por entidad)
+    Route::get('auditoria/{modelo}/{id}', [AuditoriaController::class, 'historial'])
+        ->whereNumber('id')
+        ->middleware('perm:sigua.cuentas.view|sigua.ca01.view|sigua.incidentes.view');
+
     // Catálogos SIGUA (legacy; ver también apiResource sistemas)
     Route::get('sistemas', [SiguaCatalogController::class, 'sistemas'])
         ->middleware('perm:sigua.dashboard|sigua.cuentas.view');
@@ -43,6 +50,12 @@ Route::prefix('sigua')->middleware(['auth:sanctum', 'locale'])->group(function (
         ->middleware('perm:sigua.dashboard|sigua.cuentas.view');
     Route::get('empleados-rh/{id}', [EmpleadoRhController::class, 'show'])
         ->middleware('perm:sigua.dashboard|sigua.cuentas.view');
+
+    // Explorador Maestro (inventario global)
+    Route::get('inventario', [InventarioController::class, 'index'])
+        ->middleware('perm:sigua.cuentas.view');
+    Route::get('inventario/exportar', [InventarioController::class, 'exportar'])
+        ->middleware('perm:sigua.cuentas.view');
 
     // Cuentas genéricas (apiResource: index, store, show, update, destroy)
     Route::middleware('perm:sigua.cuentas.view|sigua.cuentas.manage')->group(function () {

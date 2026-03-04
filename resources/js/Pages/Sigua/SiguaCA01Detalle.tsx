@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { getCA01 } from "@/services/siguaApi";
 import { SiguaBreadcrumbs } from "@/components/SiguaBreadcrumbs";
+import { HistorialAuditoria } from "@/components/Sigua/HistorialAuditoria";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -31,6 +32,7 @@ export default function SiguaCA01Detalle() {
   const [data, setData] = useState<FormatoCA01 | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [tabActiva, setTabActiva] = useState<"datos" | "auditoria">("datos");
 
   useEffect(() => {
     if (!id || !canView) return;
@@ -94,6 +96,26 @@ export default function SiguaCA01Detalle() {
         </Button>
       </div>
 
+      <div className="flex gap-1 border-b border-border">
+        <Button
+          variant="ghost"
+          size="sm"
+          className={cn("rounded-b-none", tabActiva === "datos" && "border border-b-0 border-border bg-background")}
+          onClick={() => setTabActiva("datos")}
+        >
+          Datos
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          className={cn("rounded-b-none", tabActiva === "auditoria" && "border border-b-0 border-border bg-background")}
+          onClick={() => setTabActiva("auditoria")}
+        >
+          Trazabilidad de Auditoría
+        </Button>
+      </div>
+
+      {tabActiva === "datos" && (
       <Card className="border-border/60 p-6 space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h1 className="text-xl font-bold">CA-01 #{data.id}</h1>
@@ -145,6 +167,16 @@ export default function SiguaCA01Detalle() {
           </div>
         )}
       </Card>
+      )}
+
+      {tabActiva === "auditoria" && (
+        <HistorialAuditoria
+          modelo="ca01"
+          id={data.id}
+          title="Trazabilidad de Auditoría"
+          description="Quién creó, modificó o renovó este formato CA-01 (ISO 27001)."
+        />
+      )}
     </div>
   );
 }

@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Ticket;
 use App\Models\TicketAlert;
-use App\Models\TicketAuditLog;
+use App\Models\AuditLog;
 use App\Models\TicketHistory;
 use App\Models\TicketAreaAccess;
 use App\Models\TicketState;
@@ -329,7 +329,9 @@ class TicketController extends Controller
             return response()->json(['message' => 'Solo administradores pueden acceder al centro de auditoría'], 403);
         }
 
-        $query = TicketAuditLog::query()->with('user:id,name,email');
+        $query = AuditLog::query()
+            ->where('auditable_type', Ticket::class)
+            ->with('user:id,name,email');
 
         $from = $request->input('from');
         $to = $request->input('to');
@@ -344,7 +346,7 @@ class TicketController extends Controller
         if ($ticketIds !== null && $ticketIds !== '') {
             $ids = array_filter(array_map('intval', explode(',', (string) $ticketIds)));
             if (!empty($ids)) {
-                $query->whereIn('ticket_id', $ids);
+                $query->whereIn('auditable_id', $ids);
             }
         }
 
@@ -405,10 +407,7 @@ class TicketController extends Controller
         }
         Gate::authorize('view', $ticket);
 
-        $logs = TicketAuditLog::where('ticket_id', $ticket->id)
-            ->with('user:id,name,email')
-            ->orderByDesc('created_at')
-            ->get();
+        $logs = $ticket->auditLogs()->with('user:id,name,email')->get();
 
         return response()->json(['data' => $logs]);
     }

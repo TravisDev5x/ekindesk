@@ -29,8 +29,17 @@ import {
 } from "@/components/ui/select";
 import { Loader2, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { CuentaGenerica, Sistema } from "@/types/sigua";
+import type { CuentaGenerica, Sistema, TipoCuenta } from "@/types/sigua";
 import type { CreateCuentaPayload } from "@/services/siguaApi";
+
+const TIPO_OPCIONES: { value: TipoCuenta; label: string }[] = [
+  { value: "desconocida", label: "Por clasificar" },
+  { value: "nominal", label: "Nominal" },
+  { value: "generica", label: "Genérica" },
+  { value: "servicio", label: "Servicio" },
+  { value: "externo", label: "Externo" },
+  { value: "prueba", label: "Prueba" },
+];
 
 const formSchema = z.object({
   sistema_id: z.number({ required_error: "Selecciona un sistema" }),
@@ -42,6 +51,8 @@ const formSchema = z.object({
   perfil: z.string().max(100).optional().nullable(),
   ou_ad: z.string().max(255).optional().nullable(),
   estado: z.enum(["activa", "suspendida", "baja"], { required_error: "Selecciona estado" }),
+  tipo: z.enum(["nominal", "generica", "servicio", "prueba", "desconocida", "externo"]).optional().nullable(),
+  empresa_cliente: z.string().max(255).optional().nullable(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -85,6 +96,8 @@ export function SiguaCuentaForm({
       perfil: cuenta?.perfil ?? "",
       ou_ad: cuenta?.ou_ad ?? "",
       estado: (cuenta?.estado as "activa" | "suspendida" | "baja") ?? "activa",
+      tipo: (cuenta?.tipo as FormValues["tipo"]) ?? "desconocida",
+      empresa_cliente: cuenta?.empresa_cliente ?? "",
     },
   });
 
@@ -98,6 +111,8 @@ export function SiguaCuentaForm({
       nombre_cuenta: values.nombre_cuenta.trim(),
       sede_id: values.sede_id,
       campaign_id: values.campaign_id ?? null,
+      tipo: values.tipo ?? undefined,
+      empresa_cliente: values.empresa_cliente?.trim() || null,
       isla: values.isla?.trim() || null,
       perfil: values.perfil?.trim() || null,
       ou_ad: values.ou_ad?.trim() || null,
@@ -111,7 +126,7 @@ export function SiguaCuentaForm({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[560px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{isEdit ? "Editar cuenta genérica" : "Nueva cuenta genérica"}</DialogTitle>
+          <DialogTitle>{isEdit ? "Editar cuenta" : "Registrar en inventario"}</DialogTitle>
           <DialogDescription>
             {isEdit ? "Modifica los datos de la cuenta." : "Completa los datos para registrar la cuenta."}
           </DialogDescription>
@@ -217,8 +232,8 @@ export function SiguaCuentaForm({
                 <FormItem>
                   <FormLabel>Campaña (opcional)</FormLabel>
                   <Select
-                    onValueChange={(v) => field.onChange(v === "" ? null : Number(v))}
-                    value={field.value != null ? String(field.value) : ""}
+                    onValueChange={(v) => field.onChange(v === "none" ? null : Number(v))}
+                    value={field.value != null ? String(field.value) : "none"}
                   >
                     <FormControl>
                       <SelectTrigger>
@@ -226,7 +241,7 @@ export function SiguaCuentaForm({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">Ninguna</SelectItem>
+                      <SelectItem value="none">Ninguna</SelectItem>
                       {campaigns.map((c) => (
                         <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
                       ))}
@@ -282,6 +297,45 @@ export function SiguaCuentaForm({
 
             <FormField
               control={form.control}
+              name="tipo"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Tipo de cuenta</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value ?? "desconocida"}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Por clasificar" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {TIPO_OPCIONES.map((o) => (
+                        <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {form.watch("tipo") === "externo" && (
+              <FormField
+                control={form.control}
+                name="empresa_cliente"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Empresa / Cliente (organización externa)</FormLabel>
+                    <FormControl>
+                      <Input {...field} value={field.value ?? ""} placeholder="Ej: Acme Corp" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
+            <FormField
+              control={form.control}
               name="estado"
               render={({ field }) => (
                 <FormItem>
@@ -309,7 +363,7 @@ export function SiguaCuentaForm({
               </Button>
               <Button type="submit" disabled={isSubmitting}>
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isEdit ? "Actualizar" : "Crear"}
+                {isEdit ? "Actualizar" : "Registrar"}
               </Button>
             </div>
           </form>

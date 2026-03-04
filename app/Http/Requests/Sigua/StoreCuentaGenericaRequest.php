@@ -29,6 +29,8 @@ class StoreCuentaGenericaRequest extends FormRequest
             'perfil' => ['nullable', 'string', 'max:100'],
             'ou_ad' => ['nullable', 'string', 'max:255'],
             'estado' => ['required', 'in:activa,suspendida,baja'],
+            'tipo' => ['nullable', 'in:nominal,generica,servicio,prueba,desconocida,externo'],
+            'empresa_cliente' => ['nullable', 'string', 'max:255'],
         ];
     }
 

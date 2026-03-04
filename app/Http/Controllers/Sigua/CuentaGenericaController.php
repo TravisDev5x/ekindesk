@@ -152,7 +152,7 @@ class CuentaGenericaController extends Controller
         }
 
         $data = $request->validate([
-            'tipo' => 'required|in:nominal,generica,servicio,prueba,desconocida',
+            'tipo' => 'required|in:nominal,generica,servicio,prueba,desconocida,externo',
         ]);
         $cuenta->update(['tipo' => $data['tipo']]);
         $cuenta->load(['sistema', 'sede', 'campaign', 'empleadoRh', 'ca01Vigente']);

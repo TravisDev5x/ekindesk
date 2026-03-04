@@ -37,7 +37,9 @@ class CruceResultado extends Model
         'campana',
         'resultados_por_sistema',
         'categoria',
+        'prioridad',
         'requiere_accion',
+        'requiere_notificacion_inmediata',
         'accion_sugerida',
         'accion_tomada',
         'accion_por',
@@ -46,6 +48,7 @@ class CruceResultado extends Model
     protected $casts = [
         'resultados_por_sistema' => 'array',
         'requiere_accion' => 'boolean',
+        'requiere_notificacion_inmediata' => 'boolean',
     ];
 
     public function cruce(): BelongsTo

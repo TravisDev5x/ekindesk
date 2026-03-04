@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { getCuenta, getBitacora, getIncidentes } from "@/services/siguaApi";
 import { SiguaBreadcrumbs } from "@/components/SiguaBreadcrumbs";
+import { HistorialAuditoria } from "@/components/Sigua/HistorialAuditoria";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -45,6 +46,7 @@ export default function SiguaCuentaDetalle() {
   const [incidentesList, setIncidentesList] = useState<Incidente[]>([]);
   const [loadingBitacora, setLoadingBitacora] = useState(false);
   const [loadingIncidentes, setLoadingIncidentes] = useState(false);
+  const [tabActiva, setTabActiva] = useState<"datos" | "auditoria">("datos");
 
   useEffect(() => {
     if (!id || !canView) return;
@@ -136,6 +138,27 @@ export default function SiguaCuentaDetalle() {
         </div>
       </div>
 
+      <div className="flex gap-1 border-b border-border">
+        <Button
+          variant="ghost"
+          size="sm"
+          className={cn("rounded-b-none", tabActiva === "datos" && "border border-b-0 border-border bg-background")}
+          onClick={() => setTabActiva("datos")}
+        >
+          Datos
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          className={cn("rounded-b-none", tabActiva === "auditoria" && "border border-b-0 border-border bg-background")}
+          onClick={() => setTabActiva("auditoria")}
+        >
+          Trazabilidad de Auditoría
+        </Button>
+      </div>
+
+      {tabActiva === "datos" && (
+        <>
       <div className="grid gap-6 md:grid-cols-2">
         <Card>
           <CardHeader>
@@ -333,6 +356,17 @@ export default function SiguaCuentaDetalle() {
           )}
         </CardContent>
       </Card>
+        </>
+      )}
+
+      {tabActiva === "auditoria" && (
+        <HistorialAuditoria
+          modelo="cuenta"
+          id={id!}
+          title="Trazabilidad de Auditoría"
+          description="Quién creó, modificó o eliminó este registro (ISO 27001)."
+        />
+      )}
     </div>
   );
 }

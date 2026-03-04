@@ -22,6 +22,9 @@ import type {
   Alerta,
   Configuracion,
   TipoCuenta,
+  AuditLog,
+  InventarioRow,
+  InventarioFilters,
 } from "@/types/sigua";
 
 const PREFIX = "/api/sigua";
@@ -64,6 +67,9 @@ export interface CreateCuentaPayload {
   perfil?: string | null;
   ou_ad?: string | null;
   estado: "activa" | "suspendida" | "baja";
+  tipo?: import("@/types/sigua").TipoCuenta;
+  /** Organización del usuario externo (cuando tipo === 'externo'). */
+  empresa_cliente?: string | null;
 }
 
 export interface UpdateCuentaPayload extends CreateCuentaPayload {}
@@ -514,6 +520,63 @@ export async function escalarIncidente(id: number): Promise<SiguaApiResult<Incid
   }
 }
 
+// --- Explorador Maestro (inventario global) ---
+
+export interface InventarioMeta {
+  current_page: number;
+  last_page: number;
+  per_page: number;
+  total: number;
+}
+
+export async function getInventarioGlobal(
+  filters?: InventarioFilters | null
+): Promise<SiguaApiResult<InventarioRow[]> & { meta?: InventarioMeta }> {
+  try {
+    const params: Record<string, unknown> = { ...(filters || {}), page: filters?.page ?? 1 };
+    if (filters?.per_page != null) params.per_page = filters.per_page;
+    if (filters?.search != null && filters.search !== "") params.search = filters.search;
+    if (filters?.sistema_id != null) params.sistema_id = filters.sistema_id;
+    if (filters?.estado_auditoria != null && filters.estado_auditoria !== "") params.estado_auditoria = filters.estado_auditoria;
+    const response = await axios.get<{
+      data: InventarioRow[];
+      meta?: InventarioMeta;
+      message?: string;
+    }>(`${PREFIX}/inventario`, { params });
+    const body = response.data;
+    return {
+      data: Array.isArray(body?.data) ? body.data : [],
+      error: null,
+      meta: body?.meta,
+    };
+  } catch (err) {
+    return toError(err);
+  }
+}
+
+/**
+ * Descarga CSV del inventario con los filtros aplicados.
+ * Devuelve la URL del blob para descargar (o error).
+ */
+export async function exportInventarioVista(
+  filters?: Pick<InventarioFilters, "search" | "sistema_id" | "estado_auditoria"> | null
+): Promise<SiguaApiResult<Blob>> {
+  try {
+    const params: Record<string, string | number> = {};
+    if (filters?.search != null && filters.search !== "") params.search = String(filters.search);
+    if (filters?.sistema_id != null) params.sistema_id = Number(filters.sistema_id);
+    if (filters?.estado_auditoria != null && filters.estado_auditoria !== "") params.estado_auditoria = String(filters.estado_auditoria);
+    const response = await axios.get<Blob>(`${PREFIX}/inventario/exportar`, {
+      params,
+      responseType: "blob",
+    });
+    const blob = response.data;
+    return { data: blob instanceof Blob ? blob : null, error: null };
+  } catch (err) {
+    return toError(err);
+  }
+}
+
 // --- Importar ---
 
 export async function importarArchivo(
@@ -661,6 +724,26 @@ export async function updateConfiguracion(clave: string, valor: string | number 
   try {
     const response = await axios.put<SiguaApiResponse<Configuracion>>(`${PREFIX}/configuracion`, { clave, valor });
     return toResult(response);
+  } catch (err) {
+    return toError(err);
+  }
+}
+
+// --- Auditoría ---
+
+export async function getHistorialAuditoria(
+  modelo: string,
+  id: number | string
+): Promise<SiguaApiResult<AuditLog[]>> {
+  try {
+    const response = await axios.get<SiguaApiResponse<AuditLog[]>>(
+      `${PREFIX}/auditoria/${encodeURIComponent(modelo)}/${id}`
+    );
+    const body = response.data;
+    return {
+      data: Array.isArray(body?.data) ? body.data : [],
+      error: null,
+    };
   } catch (err) {
     return toError(err);
   }

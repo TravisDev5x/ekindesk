@@ -69,6 +69,7 @@ const SiguaIncidentes = lazy(() => import("@/Pages/Sigua/SiguaIncidentes"));
 const SiguaImportar = lazy(() => import("@/Pages/Sigua/SiguaImportar"));
 const SiguaCruces = lazy(() => import("@/Pages/Sigua/SiguaCruces"));
 const SiguaReportes = lazy(() => import("@/Pages/Sigua/SiguaReportes"));
+const SiguaExplorador = lazy(() => import("@/Pages/Sigua/SiguaExplorador"));
 const SiguaEmpleados = lazy(() => import("@/Pages/Sigua/SiguaEmpleados"));
 const SiguaEmpleadoDetalle = lazy(() => import("@/Pages/Sigua/SiguaEmpleadoDetalle"));
 const SiguaSistemas = lazy(() => import("@/Pages/Sigua/SiguaSistemas"));
@@ -209,6 +210,7 @@ export default function Main() {
                                         <Route path="/timedesk/schedule-assignments" element={<ScheduleAssignmentManager />} />
                                     </Route>
                                     <Route path="/sigua" element={<SiguaDashboard />} />
+                                    <Route path="/sigua/explorador" element={<SiguaExplorador />} />
                                     <Route path="/sigua/cuentas" element={<SiguaCuentas />} />
                                     <Route path="/sigua/cuentas/:id" element={<SiguaCuentaDetalle />} />
                                     <Route path="/sigua/empleados-rh" element={<SiguaEmpleados />} />

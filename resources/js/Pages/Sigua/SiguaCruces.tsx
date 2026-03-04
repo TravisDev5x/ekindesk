@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useCruces } from "@/hooks/sigua";
 import { exportarCruce, compararCruce } from "@/services/siguaApi";
@@ -67,6 +67,9 @@ const CATEGORIA_LABELS: Record<string, string> = {
   cuenta_baja_pendiente: "Baja pendiente",
   cuenta_servicio: "Cuenta servicio",
   anomalia: "Anomalía",
+  externo_sin_justificacion: "Externo sin CA-01",
+  externo_con_justificacion: "Externo (operación controlada)",
+  por_clasificar: "Por clasificar",
 };
 
 const CATEGORIA_COLORS: Record<string, string> = {
@@ -79,6 +82,9 @@ const CATEGORIA_COLORS: Record<string, string> = {
   cuenta_baja_pendiente: "bg-slate-500/15 text-slate-600 dark:text-slate-400 border-slate-500/30",
   cuenta_servicio: "bg-violet-500/15 text-violet-700 dark:text-violet-400 border-violet-500/30",
   anomalia: "bg-red-500/15 text-red-700 dark:text-red-400 border-red-500/30",
+  externo_sin_justificacion: "bg-indigo-600/15 text-indigo-700 dark:text-indigo-400 border-indigo-500/30",
+  externo_con_justificacion: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20",
+  por_clasificar: "bg-zinc-500/15 text-zinc-700 dark:text-zinc-400 border-zinc-500/30",
 };
 
 const CHART_COLORS = ["#22c55e", "#eab308", "#ef4444", "#8b5cf6", "#06b6d4", "#f97316"];
@@ -131,9 +137,15 @@ export default function SiguaCruces() {
   const canExecute = can("sigua.cruces.ejecutar");
   const canExport = can("sigua.reportes");
 
+  const [searchParams] = useSearchParams();
+  const categoriaFromUrl = searchParams.get("categoria") ?? "all";
   const [selectedId, setSelectedId] = useState<number | null>(null);
-  const [categoriaFilter, setCategoriaFilter] = useState<string>("all");
+  const [categoriaFilter, setCategoriaFilter] = useState<string>(categoriaFromUrl);
   const [exportingId, setExportingId] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (categoriaFromUrl !== "all") setCategoriaFilter(categoriaFromUrl);
+  }, [categoriaFromUrl]);
 
   const { historial, meta, loading, error, refetchHistorial, ejecutar, getDetalle, executing } = useCruces({ per_page: 20 });
   const [detalle, setDetalle] = useState<Cruce | null>(null);

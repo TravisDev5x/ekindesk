@@ -3,6 +3,7 @@
 namespace App\Models\Sigua;
 
 use App\Models\User;
+use App\Traits\Auditable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -27,6 +28,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class Incidente extends Model
 {
+    use Auditable;
+
     protected $table = 'sigua_incidents';
 
     protected $fillable = [

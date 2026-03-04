@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Sigua;
 
 use App\Http\Controllers\Controller;
 use App\Models\Sigua\Bitacora;
+use App\Models\Sigua\Cruce;
 use App\Models\Sigua\CuentaGenerica;
 use App\Models\Sigua\FormatoCA01;
 use App\Models\Sigua\Incidente;
@@ -92,6 +93,11 @@ class SiguaDashboardController extends Controller
                 ->get()
                 ->map(fn ($r) => ['sede_id' => $r->sede_id, 'sede' => $r->sede?->name ?? null, 'total' => (int) $r->total]);
 
+            $ultimoCruce = Cruce::orderByDesc('fecha_ejecucion')->first();
+            $alertasCriticasBajasActivas = $ultimoCruce
+                ? $ultimoCruce->resultados()->where('categoria', 'cuenta_baja_pendiente')->count()
+                : 0;
+
             $data = [
                 'indicadores_por_sistema' => $indicadoresPorSistema,
                 'total_cuentas_por_sistema' => $totalCuentasPorSistema,
@@ -101,6 +107,7 @@ class SiguaDashboardController extends Controller
                 'incidentes_abiertos' => $incidentesAbiertos,
                 'distribucion_por_sede' => $distribucionPorSede,
                 'alertas_bajas' => Cache::get('sigua_alertas_bajas'),
+                'alertas_criticas_bajas_activas' => $alertasCriticasBajasActivas,
             ];
 
             return response()->json(['data' => $data, 'message' => 'OK']);

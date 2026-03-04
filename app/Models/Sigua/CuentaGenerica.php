@@ -4,6 +4,7 @@ namespace App\Models\Sigua;
 
 use App\Models\Campaign;
 use App\Models\Sede;
+use App\Traits\Auditable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -26,11 +27,13 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string|null $ou_ad
  * @property int|null $empleado_rh_id
  * @property string $tipo
+ * @property string|null $empresa_cliente
  * @property array|null $datos_extra
  * @property int|null $importacion_id
  */
 class CuentaGenerica extends Model
 {
+    use Auditable;
     use SoftDeletes;
 
     protected $table = 'sigua_accounts';
@@ -47,6 +50,7 @@ class CuentaGenerica extends Model
         'ou_ad',
         'empleado_rh_id',
         'tipo',
+        'empresa_cliente',
         'datos_extra',
         'importacion_id',
     ];
@@ -189,8 +193,13 @@ class CuentaGenerica extends Model
         return $query->where('tipo', 'servicio');
     }
 
+    public function scopeExterno(Builder $query): Builder
+    {
+        return $query->where('tipo', 'externo');
+    }
+
     /**
-     * Sin empleado RH y tipo distinto de generica/servicio.
+     * Sin empleado RH y tipo distinto de generica/servicio/externo.
      *
      * @param  Builder<CuentaGenerica>  $query
      * @return Builder<CuentaGenerica>
@@ -198,7 +207,7 @@ class CuentaGenerica extends Model
     public function scopeHuerfanas(Builder $query): Builder
     {
         return $query->whereNull('empleado_rh_id')
-            ->whereNotIn('tipo', ['generica', 'servicio']);
+            ->whereNotIn('tipo', ['generica', 'servicio', 'externo']);
     }
 
     public function scopeConCA01Vigente(Builder $query): Builder

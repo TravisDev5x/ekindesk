@@ -44,6 +44,7 @@ import {
   CheckCircle2,
   Maximize2,
   Info,
+  Ghost,
 } from "lucide-react";
 import type { SiguaDashboardData, SiguaFilters, IndicadorSistema } from "@/types/sigua";
 
@@ -215,6 +216,7 @@ export default function SiguaDashboard() {
   const incidentesAbiertos = Number(data?.incidentes_abiertos ?? data?.kpis?.incidentes_abiertos ?? 0);
   const alertas = data?.alertas ?? [];
   const alertasCount = alertas.length;
+  const alertasCriticasBajasActivas = Number(data?.alertas_criticas_bajas_activas ?? 0);
   const indicadoresPorSistema = (data?.indicadores_por_sistema ?? []) as IndicadorSistema[];
 
   // Datos para gráficas
@@ -271,9 +273,14 @@ export default function SiguaDashboard() {
           </div>
           <div className="flex gap-2">
             {canCuentas && (
-              <Button variant="secondary" size="sm" asChild className="h-9">
-                <Link to="/sigua/cuentas">Cuentas</Link>
-              </Button>
+              <>
+                <Button variant="secondary" size="sm" asChild className="h-9">
+                  <Link to="/sigua/explorador">Explorador Maestro</Link>
+                </Button>
+                <Button variant="secondary" size="sm" asChild className="h-9">
+                  <Link to="/sigua/cuentas">Cuentas</Link>
+                </Button>
+              </>
             )}
             {canCA01 && (
               <Button variant="secondary" size="sm" asChild className="h-9">
@@ -404,6 +411,23 @@ export default function SiguaDashboard() {
         <div className="space-y-6">
           {/* KPIs: dinámicos por sistema cuando hay indicadores_por_sistema, sino clásicos */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            {canCruces && (
+              <Link
+                to="/sigua/cruces?categoria=cuenta_baja_pendiente"
+                className={cn(
+                  "block rounded-xl transition-all",
+                  alertasCriticasBajasActivas > 0 && "ring-2 ring-red-500 ring-offset-2 ring-offset-background animate-pulse"
+                )}
+              >
+                <KpiCard
+                  label="Alertas Críticas (Bajas Activas)"
+                  value={alertasCriticasBajasActivas}
+                  icon={Ghost}
+                  helper={alertasCriticasBajasActivas > 0 ? "Usuarios fantasma — Revocar accesos" : "Sin bajas con cuentas activas"}
+                  variant="destructive"
+                />
+              </Link>
+            )}
             {indicadoresPorSistema.length > 0 ? (
               <>
                 {indicadoresPorSistema.map((ind) => (

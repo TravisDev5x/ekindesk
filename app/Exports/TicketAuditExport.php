@@ -2,7 +2,8 @@
 
 namespace App\Exports;
 
-use App\Models\TicketAuditLog;
+use App\Models\AuditLog;
+use App\Models\Ticket;
 use Carbon\Carbon;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -29,7 +30,9 @@ class TicketAuditExport
 
     public function query()
     {
-        $query = TicketAuditLog::query()->with('user:id,name,email');
+        $query = AuditLog::query()
+            ->where('auditable_type', Ticket::class)
+            ->with('user:id,name,email');
 
         if ($this->startDate) {
             $query->where('created_at', '>=', Carbon::parse($this->startDate)->startOfDay());
@@ -38,7 +41,7 @@ class TicketAuditExport
             $query->where('created_at', '<=', Carbon::parse($this->endDate)->endOfDay());
         }
         if ($this->ticketIds !== null && $this->ticketIds !== []) {
-            $query->whereIn('ticket_id', $this->ticketIds);
+            $query->whereIn('auditable_id', $this->ticketIds);
         }
 
         return $query->orderByDesc('created_at');
@@ -104,7 +107,7 @@ class TicketAuditExport
 
         foreach ($logs as $log) {
             $sheet->setCellValue('A' . $row, $log->id);
-            $sheet->setCellValue('B' . $row, $log->ticket_id);
+            $sheet->setCellValue('B' . $row, $log->auditable_id);
             $sheet->setCellValue('C' . $row, $log->created_at ? $log->created_at->format('Y-m-d H:i:s') : '');
             $sheet->setCellValue('D' . $row, $log->user?->name ?? 'Sistema');
             $sheet->setCellValue('E' . $row, $this->actionLabel($log->action));

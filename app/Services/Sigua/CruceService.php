@@ -3,13 +3,17 @@
 namespace App\Services\Sigua;
 
 use App\Exceptions\Sigua\SiguaException;
+use App\Models\AuditLog;
 use App\Models\Sigua\Cruce;
 use App\Models\Sigua\CruceResultado;
 use App\Models\Sigua\CuentaGenerica;
 use App\Models\Sigua\EmpleadoRh;
 use App\Models\Sigua\Sistema;
+use App\Models\User;
+use App\Notifications\Sigua\GhostUserAlert;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Servicio de cruces dinámicos contra N sistemas (SIGUA v2).
@@ -58,7 +62,7 @@ class CruceService
                 'ejecutado_por' => $ejecutadoPorUserId,
             ]);
 
-            $stats = ['ok_completo' => 0, 'sin_cuenta_sistema' => 0, 'generico_con_responsable' => 0, 'generico_sin_responsable' => 0, 'generica_sin_justificacion' => 0, 'cuenta_baja_pendiente' => 0, 'cuenta_sin_rh' => 0, 'cuenta_servicio' => 0, 'anomalia' => 0];
+            $stats = ['ok_completo' => 0, 'sin_cuenta_sistema' => 0, 'generico_con_responsable' => 0, 'generico_sin_responsable' => 0, 'generica_sin_justificacion' => 0, 'cuenta_baja_pendiente' => 0, 'cuenta_sin_rh' => 0, 'cuenta_servicio' => 0, 'anomalia' => 0, 'externo_sin_justificacion' => 0, 'externo_con_justificacion' => 0, 'por_clasificar' => 0];
 
             // Empleados activos (cargar cuentas y CA-01 vigente para clasificación)
             $empleadosActivos = EmpleadoRh::activos()->with([
@@ -81,17 +85,35 @@ class CruceService
                 $stats['cuenta_baja_pendiente'] = ($stats['cuenta_baja_pendiente'] ?? 0) + 1;
             }
 
-            // Cuentas huérfanas (activas, sin empleado_rh_id, tipo no generica/servicio/prueba)
-            $huerfanas = CuentaGenerica::whereIn('system_id', $sistemas->pluck('id'))
+            // Regla 2: Externos (tipo externo, no se cruza con RH; solo validar CA-01 vigente)
+            $externas = CuentaGenerica::whereIn('system_id', $sistemas->pluck('id'))
+                ->where('tipo', 'externo')
+                ->where('estado', 'activa')
+                ->with(['sistema', 'sede', 'campaign', 'ca01Vigente'])
+                ->get();
+            foreach ($externas as $cuenta) {
+                if ($cuenta->ca01Vigente->isNotEmpty()) {
+                    $res = $this->resultadoExternoConJustificacion($cuenta, $sistemas);
+                    $this->crearResultado($cruce, $res);
+                    $stats['externo_con_justificacion'] = ($stats['externo_con_justificacion'] ?? 0) + 1;
+                } else {
+                    $res = $this->resultadoExternoSinJustificacion($cuenta, $sistemas);
+                    $this->crearResultado($cruce, $res);
+                    $stats['externo_sin_justificacion'] = ($stats['externo_sin_justificacion'] ?? 0) + 1;
+                }
+            }
+
+            // Regla 3: Por clasificar (activa, sin RH, no generica/servicio/externo -> desconocida u otro)
+            $porClasificar = CuentaGenerica::whereIn('system_id', $sistemas->pluck('id'))
                 ->where('estado', 'activa')
                 ->whereNull('empleado_rh_id')
-                ->whereNotIn('tipo', ['generica', 'servicio', 'prueba'])
+                ->whereNotIn('tipo', ['generica', 'servicio', 'prueba', 'externo'])
                 ->with(['sistema', 'sede', 'campaign'])
                 ->get();
-            foreach ($huerfanas as $cuenta) {
-                $res = $this->resultadoCuentaSinRh($cuenta, $sistemas);
+            foreach ($porClasificar as $cuenta) {
+                $res = $this->resultadoPorClasificar($cuenta, $sistemas);
                 $this->crearResultado($cruce, $res);
-                $stats['cuenta_sin_rh'] = ($stats['cuenta_sin_rh'] ?? 0) + 1;
+                $stats['por_clasificar'] = ($stats['por_clasificar'] ?? 0) + 1;
             }
 
             // Genéricas activas sin empleado: validación estricta por CA-01 vigente (ISO 27001 / operación controlada)
@@ -122,8 +144,71 @@ class CruceService
                 'resultado_json' => ['stats' => $stats],
             ]);
 
-            return $cruce->fresh(['resultados']);
+            $cruce = $cruce->fresh(['resultados']);
+
+            $this->notificarUsuariosFantasmaSiAplica($cruce);
+
+            return $cruce;
         });
+    }
+
+    /**
+     * Si el cruce tiene resultados cuenta_baja_pendiente (usuarios fantasma), notifica a
+     * Administrador de Accesos / Seguridad Informática y registra en audit_logs.
+     * No interrumpe el flujo si falla el envío (try-catch).
+     */
+    public function notificarUsuariosFantasmaSiAplica(Cruce $cruce): void
+    {
+        $fantasmas = $cruce->resultados()
+            ->where('categoria', 'cuenta_baja_pendiente')
+            ->get();
+
+        if ($fantasmas->isEmpty()) {
+            return;
+        }
+
+        $destinatarios = User::whereHas('roles', fn ($q) => $q->whereIn('name', ['Administrador de Accesos', 'Seguridad Informática']))
+            ->get();
+
+        if ($destinatarios->isEmpty()) {
+            $destinatarios = User::permission('sigua.cruces')->get();
+        }
+        if ($destinatarios->isEmpty()) {
+            $destinatarios = User::permission('sigua.dashboard')->limit(10)->get();
+        }
+
+        $enviados = 0;
+        foreach ($destinatarios as $user) {
+            try {
+                $user->notify(new GhostUserAlert($cruce, $fantasmas));
+                $enviados++;
+            } catch (\Throwable $e) {
+                Log::error('GhostUserAlert failed', [
+                    'user_id' => $user->id,
+                    'cruce_id' => $cruce->id,
+                    'exception' => $e->getMessage(),
+                ]);
+            }
+        }
+
+        try {
+            AuditLog::create([
+                'user_id' => null,
+                'auditable_type' => Cruce::class,
+                'auditable_id' => $cruce->id,
+                'action' => 'ghost_alert_sent',
+                'old_values' => null,
+                'new_values' => [
+                    'cantidad_fantasmas' => $fantasmas->count(),
+                    'destinatarios_enviados' => $enviados,
+                    'destinatarios_total' => $destinatarios->count(),
+                ],
+                'ip_address' => request()?->ip(),
+                'user_agent' => request()?->userAgent(),
+            ]);
+        } catch (\Throwable $e) {
+            Log::warning('AuditLog ghost_alert_sent failed', ['cruce_id' => $cruce->id, 'exception' => $e->getMessage()]);
+        }
     }
 
     /**
@@ -435,8 +520,10 @@ class CruceService
             'campana' => $campanaNombre,
             'resultados_por_sistema' => $resultadosPorSistema,
             'categoria' => 'cuenta_baja_pendiente',
+            'prioridad' => 'CRITICA',
             'requiere_accion' => true,
-            'accion_sugerida' => 'Dar de baja o reasignar cuenta(s) activa(s) del empleado dado de baja.',
+            'requiere_notificacion_inmediata' => true,
+            'accion_sugerida' => 'Revocación inmediata por baja de RH.',
         ];
     }
 
@@ -461,6 +548,90 @@ class CruceService
             'categoria' => 'cuenta_sin_rh',
             'requiere_accion' => true,
             'accion_sugerida' => 'Verificar con RH y vincular empleado o marcar como genérica/servicio.',
+        ];
+    }
+
+    /**
+     * Regla 2: Externo con CA-01 vigente (operación controlada).
+     */
+    protected function resultadoExternoConJustificacion(CuentaGenerica $cuenta, Collection $sistemas): array
+    {
+        $entrada = [
+            'sistema_id' => $cuenta->system_id,
+            'slug' => $cuenta->sistema?->slug ?? $cuenta->system_id,
+            'tiene_cuenta' => true,
+            'identificador' => $cuenta->usuario_cuenta,
+            'tipo' => 'externo',
+            'estado' => $cuenta->estado,
+            'datos_extra_relevantes' => $cuenta->datos_extra,
+        ];
+        return [
+            'empleado_rh_id' => null,
+            'num_empleado' => null,
+            'nombre_empleado' => $cuenta->nombre_cuenta,
+            'sede' => $cuenta->sede?->name ?? $cuenta->sede?->code ?? null,
+            'campana' => $cuenta->campaign?->name ?? $cuenta->empresa_cliente ?? null,
+            'resultados_por_sistema' => [$entrada],
+            'categoria' => 'externo_con_justificacion',
+            'prioridad' => null,
+            'requiere_accion' => false,
+            'accion_sugerida' => null,
+        ];
+    }
+
+    /**
+     * Regla 2: Externo sin CA-01 vigente (prioridad MEDIA).
+     */
+    protected function resultadoExternoSinJustificacion(CuentaGenerica $cuenta, Collection $sistemas): array
+    {
+        $entrada = [
+            'sistema_id' => $cuenta->system_id,
+            'slug' => $cuenta->sistema?->slug ?? $cuenta->system_id,
+            'tiene_cuenta' => true,
+            'identificador' => $cuenta->usuario_cuenta,
+            'tipo' => 'externo',
+            'estado' => $cuenta->estado,
+            'datos_extra_relevantes' => $cuenta->datos_extra,
+        ];
+        return [
+            'empleado_rh_id' => null,
+            'num_empleado' => null,
+            'nombre_empleado' => $cuenta->nombre_cuenta,
+            'sede' => $cuenta->sede?->name ?? $cuenta->sede?->code ?? null,
+            'campana' => $cuenta->campaign?->name ?? $cuenta->empresa_cliente ?? null,
+            'resultados_por_sistema' => [$entrada],
+            'categoria' => 'externo_sin_justificacion',
+            'prioridad' => 'MEDIA',
+            'requiere_accion' => true,
+            'accion_sugerida' => 'Vincular CA-01 y responsable interno.',
+        ];
+    }
+
+    /**
+     * Regla 3: Cuenta activa sin cruce con RH, no genérica ni externa (por clasificar).
+     */
+    protected function resultadoPorClasificar(CuentaGenerica $cuenta, Collection $sistemas): array
+    {
+        $entrada = [
+            'sistema_id' => $cuenta->system_id,
+            'slug' => $cuenta->sistema?->slug ?? $cuenta->system_id,
+            'tiene_cuenta' => true,
+            'identificador' => $cuenta->usuario_cuenta,
+            'tipo' => $cuenta->tipo,
+            'estado' => $cuenta->estado,
+            'datos_extra_relevantes' => $cuenta->datos_extra,
+        ];
+        return [
+            'empleado_rh_id' => null,
+            'num_empleado' => null,
+            'nombre_empleado' => $cuenta->nombre_cuenta,
+            'sede' => $cuenta->sede?->name ?? $cuenta->sede?->code ?? null,
+            'campana' => $cuenta->campaign?->name ?? null,
+            'resultados_por_sistema' => [$entrada],
+            'categoria' => 'por_clasificar',
+            'prioridad' => 'ALTA',
+            'requiere_accion' => true,
+            'accion_sugerida' => 'Solicitar identificación y formato CA-01 al administrador del sistema origen.',
         ];
     }
 
@@ -553,7 +724,9 @@ class CruceService
             'campana' => $res['campana'] ?? null,
             'resultados_por_sistema' => $res['resultados_por_sistema'] ?? [],
             'categoria' => $res['categoria'],
+            'prioridad' => $res['prioridad'] ?? null,
             'requiere_accion' => $res['requiere_accion'] ?? false,
+            'requiere_notificacion_inmediata' => $res['requiere_notificacion_inmediata'] ?? false,
             'accion_sugerida' => $res['accion_sugerida'] ?? null,
         ]);
     }

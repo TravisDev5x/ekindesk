@@ -65,7 +65,8 @@ const TIPO_LABELS: Record<TipoCuenta, string> = {
   generica: "Genérica",
   servicio: "Servicio",
   prueba: "Prueba",
-  desconocida: "Desconocida",
+  desconocida: "Por clasificar",
+  externo: "Externo",
 };
 
 const TIPO_VARIANTS: Record<TipoCuenta, string> = {
@@ -74,6 +75,7 @@ const TIPO_VARIANTS: Record<TipoCuenta, string> = {
   servicio: "bg-violet-500/15 text-violet-700 dark:text-violet-400 border-violet-500/30",
   prueba: "bg-slate-500/15 text-slate-600 dark:text-slate-400 border-slate-500/30",
   desconocida: "bg-muted text-muted-foreground",
+  externo: "bg-indigo-600/15 text-indigo-700 dark:text-indigo-400 border-indigo-500/30",
 };
 
 /** Deriva estado CA-01 para una cuenta a partir de relaciones cargadas. */
@@ -457,7 +459,7 @@ export default function SiguaCuentas() {
           <div className="flex gap-2">
             {canManage && (
               <Button onClick={() => { setEditingCuenta(null); setFormOpen(true); }}>
-                <Plus className="h-4 w-4 mr-2" /> Nueva cuenta
+                <Plus className="h-4 w-4 mr-2" /> Registrar en inventario
               </Button>
             )}
             {canImport && (
