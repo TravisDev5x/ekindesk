@@ -321,6 +321,22 @@ export interface IndicadorSistema {
   incidentes_abiertos?: number;
 }
 
+/** Una campaña/isla con riesgo (anomalías) y responsable (supervisor/gerente). */
+export interface CampanaEnRiesgo {
+  campana: string;
+  isla: string;
+  anomalias: number;
+  responsable: string | null;
+}
+
+/** Punto del histórico de anomalías para gráfica de tendencia. */
+export interface HistoricoAnomaliasItem {
+  mes: number;
+  ano: number;
+  etiqueta: string;
+  anomalias: number;
+}
+
 export interface SiguaDashboardData {
   kpis?: {
     total_cuentas?: number;
@@ -332,7 +348,9 @@ export interface SiguaDashboardData {
   indicadores_por_sistema?: IndicadorSistema[];
   total_cuentas_por_sistema?: Array<{ sistema_id: number; sistema: string | null; total: number }>;
   ca01_vigentes?: number;
+  ca01_por_vencer?: number;
   ca01_vencidos?: number;
+  ca01_sin_formato_cuentas?: number;
   bitacoras_hoy?: number;
   incidentes_abiertos?: number;
   distribucion_por_sede?: Array<{ sede_id: number; sede: string | null; total: number }>;
@@ -341,8 +359,23 @@ export interface SiguaDashboardData {
   alertas?: Array<{
     tipo: string;
     mensaje: string;
+    severidad?: string;
     datos?: unknown;
   }>;
+  /** Total de registros en el último cruce. */
+  total_auditadas?: number;
+  /** Anomalías (requieren acción) del último cruce. */
+  anomalias_total?: number;
+  cuentas_limpias?: number;
+  total_cuentas_activas?: number;
+  /** % cuentas con CA-01 o RH vinculado (cumplimiento ISO 27001). */
+  porcentaje_cumplimiento?: number;
+  /** Para Pie: nominal, generica, servicio. */
+  distribucion_por_tipo?: { nominal: number; generica: number; servicio: number };
+  /** Top 5 campañas/islas con más anomalías (mapa de calor). */
+  campanas_en_riesgo?: CampanaEnRiesgo[];
+  /** Últimos 6 meses para gráfica de línea (tendencia seguridad). */
+  historico_anomalias?: HistoricoAnomaliasItem[];
 }
 
 // --- Filtros ---

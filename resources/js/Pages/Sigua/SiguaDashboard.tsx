@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { loadCatalogs } from "@/lib/catalogCache";
@@ -29,6 +29,8 @@ import {
   Cell,
   AreaChart,
   Area,
+  LineChart,
+  Line,
   Legend,
 } from "recharts";
 import {
@@ -43,10 +45,30 @@ import {
   X,
   CheckCircle2,
   Maximize2,
+  Maximize,
   Info,
   Ghost,
 } from "lucide-react";
-import type { SiguaDashboardData, SiguaFilters, IndicadorSistema } from "@/types/sigua";
+import type { SiguaDashboardData, SiguaFilters, IndicadorSistema, CampanaEnRiesgo } from "@/types/sigua";
+
+// --- Custom Tooltip (theme-aware, buen contraste) ---
+function CustomTooltip({ active, payload, label }) {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-slate-800 text-slate-100 p-3 rounded-md shadow-xl border border-slate-700 z-50">
+        {label != null && label !== "" && (
+          <p className="font-semibold border-b border-slate-600 pb-1 mb-2 text-slate-300">{label}</p>
+        )}
+        {payload.map((entry, index) => (
+          <p key={index} className="text-sm">
+            <span className="font-bold" style={{ color: entry.color || "#60a5fa" }}>{entry.name}:</span> {entry.value}
+          </p>
+        ))}
+      </div>
+    );
+  }
+  return null;
+}
 
 // --- SKELETON ---
 function SiguaDashboardSkeleton() {
@@ -182,13 +204,25 @@ export default function SiguaDashboard() {
   const { filters, setFilter, setFilters, resetFilters, hasActiveFilters } = useSiguaFilters(null, { syncUrl: true });
   const { data, loading, error, refetch } = useSiguaDashboard(filters);
 
-  const [catalogs, setCatalogs] = useState<{ sedes: Array<{ id: number; name: string }> }>({ sedes: [] });
+  const [catalogs, setCatalogs] = useState<{
+    sedes: Array<{ id: number; name: string }>;
+    campaigns: Array<{ id: number; name: string }>;
+  }>({ sedes: [], campaigns: [] });
   const [expandedKpiId, setExpandedKpiId] = useState<string | null>(null);
+
+  const refChartCuentasPorSistema = useRef(null);
+  const refChartDistribucionTipo = useRef(null);
+  const refChartEstatusCA01 = useRef(null);
+  const refChartTendenciaSeguridad = useRef(null);
+  const refChartEstadoCA01 = useRef(null);
+  const refChartBitacoras30 = useRef(null);
 
   useEffect(() => {
     let mounted = true;
     loadCatalogs(false, ["core"])
-      .then((res: { sedes?: Array<{ id: number; name: string }> }) => mounted && setCatalogs({ sedes: res?.sedes ?? [] }))
+      .then((res: { sedes?: Array<{ id: number; name: string }>; campaigns?: Array<{ id: number; name: string }> }) =>
+        mounted && setCatalogs({ sedes: res?.sedes ?? [], campaigns: res?.campaigns ?? [] })
+      )
       .catch(() => {});
     return () => { mounted = false; };
   }, []);
@@ -211,13 +245,20 @@ export default function SiguaDashboard() {
   }, [data?.total_cuentas_por_sistema]);
 
   const ca01Vigentes = Number(data?.ca01_vigentes ?? data?.kpis?.ca01_vigentes ?? 0);
+  const ca01PorVencer = Number(data?.ca01_por_vencer ?? 0);
   const ca01Vencidos = Number(data?.ca01_vencidos ?? data?.kpis?.ca01_vencidos ?? 0);
+  const ca01SinFormato = Number(data?.ca01_sin_formato_cuentas ?? 0);
   const bitacorasHoy = Number(data?.bitacoras_hoy ?? data?.kpis?.bitacoras_hoy ?? 0);
   const incidentesAbiertos = Number(data?.incidentes_abiertos ?? data?.kpis?.incidentes_abiertos ?? 0);
   const alertas = data?.alertas ?? [];
   const alertasCount = alertas.length;
   const alertasCriticasBajasActivas = Number(data?.alertas_criticas_bajas_activas ?? 0);
   const indicadoresPorSistema = (data?.indicadores_por_sistema ?? []) as IndicadorSistema[];
+  const totalAuditadas = Number(data?.total_auditadas ?? 0);
+  const porcentajeCumplimiento = Number(data?.porcentaje_cumplimiento ?? 0);
+  const campanasEnRiesgo = (data?.campanas_en_riesgo ?? []) as CampanaEnRiesgo[];
+  const historicoAnomalias = data?.historico_anomalias ?? [];
+  const distribucionPorTipo = data?.distribucion_por_tipo ?? { nominal: 0, generica: 0, servicio: 0 };
 
   // Datos para gráficas
   const barData = useMemo(() => (data?.total_cuentas_por_sistema ?? []).map((r) => ({
@@ -225,6 +266,37 @@ export default function SiguaDashboard() {
     total: Number(r?.total) || 0,
     fullName: r?.sistema ?? "",
   })), [data?.total_cuentas_por_sistema]);
+
+  const pieDataTipoCuenta = useMemo(() => {
+    const arr = [
+      { name: "Genéricas", value: distribucionPorTipo.generica ?? 0, color: "#f59e0b" },
+      { name: "Nominales", value: distribucionPorTipo.nominal ?? 0, color: "#10b981" },
+      { name: "Servicio", value: distribucionPorTipo.servicio ?? 0, color: "#6366f1" },
+    ];
+    return arr.filter((d) => d.value > 0);
+  }, [distribucionPorTipo]);
+
+  const vigentesNoPorVencer = Math.max(0, ca01Vigentes - ca01PorVencer);
+  const pieDataCA01 = useMemo(() => {
+    const arr = [
+      { name: "Vigente", value: vigentesNoPorVencer, color: "#10b981" },
+      { name: "Por vencer", value: ca01PorVencer, color: "#f59e0b" },
+      { name: "Vencido", value: ca01Vencidos, color: "#ef4444" },
+      { name: "Sin formato", value: ca01SinFormato, color: "#94a3b8" },
+    ];
+    return arr.filter((d) => d.value > 0);
+  }, [vigentesNoPorVencer, ca01PorVencer, ca01Vencidos, ca01SinFormato]);
+
+  const barDataCA01 = useMemo(
+    () =>
+      [
+        { estatus: "Vigente", total: vigentesNoPorVencer, fill: "#10b981" },
+        { estatus: "Por vencer", total: ca01PorVencer, fill: "#f59e0b" },
+        { estatus: "Vencido", total: ca01Vencidos, fill: "#ef4444" },
+        { estatus: "Sin formato", total: ca01SinFormato, fill: "#94a3b8" },
+      ].filter((d) => d.total > 0),
+    [vigentesNoPorVencer, ca01PorVencer, ca01Vencidos, ca01SinFormato]
+  );
 
   const pieData = useMemo(() => {
     const arr = [
@@ -333,7 +405,7 @@ export default function SiguaDashboard() {
         </CardHeader>
         <Separator className="mx-5 opacity-50" />
         <CardContent className="p-5">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             <div className="space-y-1.5">
               <Label className="text-[10px] uppercase font-bold text-muted-foreground ml-1">Sede</Label>
               <Select
@@ -347,6 +419,23 @@ export default function SiguaDashboard() {
                   <SelectItem value="all">Todas las sedes</SelectItem>
                   {catalogs.sedes.map((s) => (
                     <SelectItem key={s.id} value={String(s.id)}>{s.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-[10px] uppercase font-bold text-muted-foreground ml-1">Campaña</Label>
+              <Select
+                value={filters.campaign_id != null && filters.campaign_id !== "" ? String(filters.campaign_id) : "all"}
+                onValueChange={(v) => setFilter("campaign_id", v === "all" ? null : v)}
+              >
+                <SelectTrigger className="h-9 text-xs">
+                  <SelectValue placeholder="Todas" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas las campañas</SelectItem>
+                  {catalogs.campaigns.map((c) => (
+                    <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -409,8 +498,24 @@ export default function SiguaDashboard() {
         <SiguaDashboardSkeleton />
       ) : (
         <div className="space-y-6">
-          {/* KPIs: dinámicos por sistema cuando hay indicadores_por_sistema, sino clásicos */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          {/* Fila 1 — KPIs principales: Total auditadas, % Cumplimiento, Alertas críticas */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <Link to="/sigua/cruces" className="block rounded-xl transition-all hover:opacity-90">
+              <KpiCard
+                label="Total cuentas auditadas"
+                value={totalAuditadas || totalCuentas}
+                icon={Users}
+                helper="Último cruce ejecutado"
+                variant="default"
+              />
+            </Link>
+            <KpiCard
+              label="% Cumplimiento"
+              value={data?.porcentaje_cumplimiento != null ? `${porcentajeCumplimiento}%` : "—"}
+              icon={CheckCircle2}
+              helper="CA-01 vigente o RH vinculado"
+              variant={porcentajeCumplimiento >= 90 ? "success" : porcentajeCumplimiento >= 70 ? "warning" : "destructive"}
+            />
             {canCruces && (
               <Link
                 to="/sigua/cruces?categoria=cuenta_baja_pendiente"
@@ -420,14 +525,17 @@ export default function SiguaDashboard() {
                 )}
               >
                 <KpiCard
-                  label="Alertas Críticas (Bajas Activas)"
+                  label="Alertas críticas (fuga accesos)"
                   value={alertasCriticasBajasActivas}
                   icon={Ghost}
-                  helper={alertasCriticasBajasActivas > 0 ? "Usuarios fantasma — Revocar accesos" : "Sin bajas con cuentas activas"}
+                  helper={alertasCriticasBajasActivas > 0 ? "Ex-empleados con cuentas activas — Revocar" : "Sin bajas con cuentas activas"}
                   variant="destructive"
                 />
               </Link>
             )}
+          </div>
+          {/* KPIs adicionales: por sistema / clásicos */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {indicadoresPorSistema.length > 0 ? (
               <>
                 {indicadoresPorSistema.map((ind) => (
@@ -558,35 +666,39 @@ export default function SiguaDashboard() {
           </div>
 
           {/* Gráfica 1: Cuentas por sistema (BarChart) */}
-          <Card className="shadow-sm border-border/60">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-bold flex items-center gap-2">
-                <LayoutDashboard className="h-4 w-4 text-primary" />
-                Cuentas por sistema
-              </CardTitle>
-              <CardDescription className="text-xs">Distribución por sistema</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ChartErrorBoundary>
-                {barData.length > 0 ? (
-                  <div className="h-72 w-full">
+          <div
+            ref={refChartCuentasPorSistema}
+            className="rounded-lg [&:fullscreen]:flex [&:fullscreen]:flex-col [&:fullscreen]:p-8 [&:fullscreen]:bg-white [&:fullscreen]:dark:bg-slate-900 [&:fullscreen>*]:flex-1 [&:fullscreen>*]:flex [&:fullscreen>*]:flex-col [&:fullscreen>*]:min-h-0 [&:fullscreen_[data-chart-container]]:flex-1 [&:fullscreen_[data-chart-container]]:min-h-0"
+          >
+            <Card className="shadow-sm border-border/60 h-full flex flex-col min-h-0">
+              <CardHeader className="pb-2 flex flex-row items-start justify-between gap-2">
+                <div>
+                  <CardTitle className="text-sm font-bold flex items-center gap-2">
+                    <LayoutDashboard className="h-4 w-4 text-primary" />
+                    Cuentas por sistema
+                  </CardTitle>
+                  <CardDescription className="text-xs">Distribución por sistema</CardDescription>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
+                  onClick={() => refChartCuentasPorSistema.current?.requestFullscreen?.()}
+                  title="Pantalla completa"
+                >
+                  <Maximize className="h-4 w-4" />
+                </Button>
+              </CardHeader>
+              <CardContent className="flex-1 min-h-0 flex flex-col">
+                <ChartErrorBoundary>
+                  {barData.length > 0 ? (
+                    <div className="w-full h-[300px] min-h-[300px]" data-chart-container>
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={barData} margin={{ top: 8, right: 8, left: 8, bottom: 24 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                         <XAxis dataKey="name" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
                         <YAxis tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
-                        <Tooltip
-                          content={({ active, payload }) => {
-                            if (!active || !payload?.[0]) return null;
-                            const p = payload[0].payload;
-                            return (
-                              <div className="rounded-md border bg-card px-3 py-2 shadow-md text-sm">
-                                <p className="font-medium">{p.fullName || p.name}</p>
-                                <p className="text-muted-foreground tabular-nums">{p.total} cuentas</p>
-                              </div>
-                            );
-                          }}
-                        />
+                        <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(148, 163, 184, 0.1)" }} />
                         <Bar dataKey="total" fill={primaryBarColor} radius={[4, 4, 0, 0]} name="Cuentas" />
                       </BarChart>
                     </ResponsiveContainer>
@@ -600,18 +712,225 @@ export default function SiguaDashboard() {
               </ChartErrorBoundary>
             </CardContent>
           </Card>
+          </div>
 
-          {/* Gráfica 2: Estado CA-01 (PieChart) */}
+          {/* Fila 2 — Gráficas principales: Distribución por tipo + Estatus CA-01 */}
           <div className="grid gap-6 md:grid-cols-2">
+            <div
+              ref={refChartDistribucionTipo}
+              className="rounded-lg [&:fullscreen]:flex [&:fullscreen]:flex-col [&:fullscreen]:p-8 [&:fullscreen]:bg-white [&:fullscreen]:dark:bg-slate-900 [&:fullscreen>*]:flex-1 [&:fullscreen>*]:flex [&:fullscreen>*]:flex-col [&:fullscreen>*]:min-h-0 [&:fullscreen_[data-chart-container]]:flex-1 [&:fullscreen_[data-chart-container]]:min-h-0"
+            >
+            <Card className="shadow-sm border-border/60 h-full flex flex-col min-h-0">
+              <CardHeader className="pb-2 flex flex-row items-start justify-between gap-2">
+                <div>
+                  <CardTitle className="text-sm font-bold">Distribución por tipo de cuenta</CardTitle>
+                  <CardDescription className="text-xs">Genéricas, nominales, servicio (ISO 27001)</CardDescription>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
+                  onClick={() => refChartDistribucionTipo.current?.requestFullscreen?.()}
+                  title="Pantalla completa"
+                >
+                  <Maximize className="h-4 w-4" />
+                </Button>
+              </CardHeader>
+              <CardContent className="flex-1 min-h-0 flex flex-col">
+                <ChartErrorBoundary>
+                  {pieDataTipoCuenta.length > 0 ? (
+                    <div className="w-full h-[280px] min-h-[280px]" data-chart-container>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={pieDataTipoCuenta}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={50}
+                            outerRadius={80}
+                            paddingAngle={2}
+                            dataKey="value"
+                            nameKey="name"
+                            label={({ name, value }) => `${name}: ${value}`}
+                          >
+                            {pieDataTipoCuenta.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(148, 163, 184, 0.1)" }} />
+                          <Legend />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                      <Users className="w-10 h-10 opacity-30 mb-2" />
+                      <p className="text-sm">Sin datos de tipos</p>
+                    </div>
+                  )}
+                </ChartErrorBoundary>
+              </CardContent>
+            </Card>
+            </div>
+            <div
+              ref={refChartEstatusCA01}
+              className="rounded-lg [&:fullscreen]:flex [&:fullscreen]:flex-col [&:fullscreen]:p-8 [&:fullscreen]:bg-white [&:fullscreen]:dark:bg-slate-900 [&:fullscreen>*]:flex-1 [&:fullscreen>*]:flex [&:fullscreen>*]:flex-col [&:fullscreen>*]:min-h-0 [&:fullscreen_[data-chart-container]]:flex-1 [&:fullscreen_[data-chart-container]]:min-h-0"
+            >
+            <Card className="shadow-sm border-border/60 h-full flex flex-col min-h-0">
+              <CardHeader className="pb-2 flex flex-row items-start justify-between gap-2">
+                <div>
+                  <CardTitle className="text-sm font-bold">Estatus CA-01</CardTitle>
+                  <CardDescription className="text-xs">Vigente (verde) · Por vencer (amarillo) · Vencido/Sin formato (rojo)</CardDescription>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
+                  onClick={() => refChartEstatusCA01.current?.requestFullscreen?.()}
+                  title="Pantalla completa"
+                >
+                  <Maximize className="h-4 w-4" />
+                </Button>
+              </CardHeader>
+              <CardContent className="flex-1 min-h-0 flex flex-col">
+                <ChartErrorBoundary>
+                  {barDataCA01.length > 0 ? (
+                    <div className="w-full h-[280px] min-h-[280px]" data-chart-container>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={barDataCA01} margin={{ top: 8, right: 8, left: 8, bottom: 24 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                          <XAxis dataKey="estatus" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
+                          <YAxis tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
+                          <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(148, 163, 184, 0.1)" }} />
+                          <Bar dataKey="total" radius={[4, 4, 0, 0]} name="Formatos/Cuentas">
+                            {barDataCA01.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.fill} />
+                            ))}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                      <FileCheck className="w-10 h-10 opacity-30 mb-2" />
+                      <p className="text-sm">Sin datos CA-01</p>
+                    </div>
+                  )}
+                </ChartErrorBoundary>
+              </CardContent>
+            </Card>
+            </div>
+          </div>
+
+          {/* Fila 3 — Campañas en riesgo + Tendencia de anomalías */}
+          <div className="grid gap-6 lg:grid-cols-2">
             <Card className="shadow-sm border-border/60">
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-bold">Estado CA-01</CardTitle>
-                <CardDescription className="text-xs">Vigente / vencido / cancelado</CardDescription>
+                <CardTitle className="text-sm font-bold flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4 text-amber-500" />
+                  Campañas / Islas en riesgo
+                </CardTitle>
+                <CardDescription className="text-xs">Top 5 con más anomalías — Responsable (Supervisor/Gerente CA-01)</CardDescription>
               </CardHeader>
               <CardContent>
+                {campanasEnRiesgo.length > 0 ? (
+                  <div className="space-y-2">
+                    {campanasEnRiesgo.map((row, i) => (
+                      <Link
+                        key={i}
+                        to="/sigua/cruces"
+                        className="flex items-center justify-between gap-4 p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors"
+                      >
+                        <div className="min-w-0">
+                          <p className="font-medium text-sm truncate">{row.campana || row.isla}</p>
+                          <p className="text-xs text-muted-foreground truncate">{row.responsable ? `Responsable: ${row.responsable}` : "Sin responsable asignado"}</p>
+                        </div>
+                        <Badge variant="outline" className={row.anomalias > 0 ? "border-red-500/50 text-red-700 dark:text-red-400 shrink-0" : ""}>
+                          {row.anomalias} fuera de norma
+                        </Badge>
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+                    <CheckCircle2 className="w-10 h-10 opacity-30 mb-2 text-emerald-500" />
+                    <p className="text-sm">Ninguna campaña con anomalías activas</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+            <div
+              ref={refChartTendenciaSeguridad}
+              className="rounded-lg [&:fullscreen]:flex [&:fullscreen]:flex-col [&:fullscreen]:p-8 [&:fullscreen]:bg-white [&:fullscreen]:dark:bg-slate-900 [&:fullscreen>*]:flex-1 [&:fullscreen>*]:flex [&:fullscreen>*]:flex-col [&:fullscreen>*]:min-h-0 [&:fullscreen_[data-chart-container]]:flex-1 [&:fullscreen_[data-chart-container]]:min-h-0"
+            >
+            <Card className="shadow-sm border-border/60 h-full flex flex-col min-h-0">
+              <CardHeader className="pb-2 flex flex-row items-start justify-between gap-2">
+                <div>
+                  <CardTitle className="text-sm font-bold">Tendencia de seguridad (últimos 6 meses)</CardTitle>
+                  <CardDescription className="text-xs">Anomalías que requieren acción por mes</CardDescription>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
+                  onClick={() => refChartTendenciaSeguridad.current?.requestFullscreen?.()}
+                  title="Pantalla completa"
+                >
+                  <Maximize className="h-4 w-4" />
+                </Button>
+              </CardHeader>
+              <CardContent className="flex-1 min-h-0 flex flex-col">
+                <ChartErrorBoundary>
+                  {historicoAnomalias.length > 0 ? (
+                    <div className="w-full h-[280px] min-h-[280px]" data-chart-container>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={historicoAnomalias} margin={{ top: 8, right: 8, left: 8, bottom: 24 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                          <XAxis dataKey="etiqueta" tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
+                          <YAxis tick={{ fontSize: 10 }} stroke="hsl(var(--muted-foreground))" />
+                          <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(148, 163, 184, 0.1)" }} />
+                          <Line type="monotone" dataKey="anomalias" stroke="#ef4444" strokeWidth={2} dot={{ r: 4 }} name="Anomalías" />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                      <Info className="w-10 h-10 opacity-30 mb-2" />
+                      <p className="text-sm">Sin histórico de cruces</p>
+                    </div>
+                  )}
+                </ChartErrorBoundary>
+              </CardContent>
+            </Card>
+            </div>
+          </div>
+
+          {/* Gráfica: Estado CA-01 (Pie legacy) */}
+          <div className="grid gap-6 md:grid-cols-2">
+            <div
+              ref={refChartEstadoCA01}
+              className="rounded-lg [&:fullscreen]:flex [&:fullscreen]:flex-col [&:fullscreen]:p-8 [&:fullscreen]:bg-white [&:fullscreen]:dark:bg-slate-900 [&:fullscreen>*]:flex-1 [&:fullscreen>*]:flex [&:fullscreen>*]:flex-col [&:fullscreen>*]:min-h-0 [&:fullscreen_[data-chart-container]]:flex-1 [&:fullscreen_[data-chart-container]]:min-h-0"
+            >
+            <Card className="shadow-sm border-border/60 h-full flex flex-col min-h-0">
+              <CardHeader className="pb-2 flex flex-row items-start justify-between gap-2">
+                <div>
+                  <CardTitle className="text-sm font-bold">Estado CA-01 (resumen)</CardTitle>
+                  <CardDescription className="text-xs">Vigente / vencido</CardDescription>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
+                  onClick={() => refChartEstadoCA01.current?.requestFullscreen?.()}
+                  title="Pantalla completa"
+                >
+                  <Maximize className="h-4 w-4" />
+                </Button>
+              </CardHeader>
+              <CardContent className="flex-1 min-h-0 flex flex-col">
                 <ChartErrorBoundary>
                   {pieData.length > 0 ? (
-                    <div className="h-64 w-full">
+                    <div className="w-full h-[280px] min-h-[280px]" data-chart-container>
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                           <Pie
@@ -629,7 +948,7 @@ export default function SiguaDashboard() {
                               <Cell key={`cell-${index}`} fill={entry.color} />
                             ))}
                           </Pie>
-                          <Tooltip formatter={(value: number) => [value, ""]} />
+                          <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(148, 163, 184, 0.1)" }} />
                           <Legend />
                         </PieChart>
                       </ResponsiveContainer>
@@ -643,23 +962,39 @@ export default function SiguaDashboard() {
                 </ChartErrorBoundary>
               </CardContent>
             </Card>
+            </div>
 
-            {/* Gráfica 3: Bitácoras últimos 30 días (AreaChart) */}
-            <Card className="shadow-sm border-border/60">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-bold">Bitácoras últimos 30 días</CardTitle>
-                <CardDescription className="text-xs">Registros por día</CardDescription>
+            {/* Gráfica: Bitácoras últimos 30 días (AreaChart) */}
+            <div
+              ref={refChartBitacoras30}
+              className="rounded-lg [&:fullscreen]:flex [&:fullscreen]:flex-col [&:fullscreen]:p-8 [&:fullscreen]:bg-white [&:fullscreen]:dark:bg-slate-900 [&:fullscreen>*]:flex-1 [&:fullscreen>*]:flex [&:fullscreen>*]:flex-col [&:fullscreen>*]:min-h-0 [&:fullscreen_[data-chart-container]]:flex-1 [&:fullscreen_[data-chart-container]]:min-h-0"
+            >
+            <Card className="shadow-sm border-border/60 h-full flex flex-col min-h-0">
+              <CardHeader className="pb-2 flex flex-row items-start justify-between gap-2">
+                <div>
+                  <CardTitle className="text-sm font-bold">Bitácoras últimos 30 días</CardTitle>
+                  <CardDescription className="text-xs">Registros por día</CardDescription>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
+                  onClick={() => refChartBitacoras30.current?.requestFullscreen?.()}
+                  title="Pantalla completa"
+                >
+                  <Maximize className="h-4 w-4" />
+                </Button>
               </CardHeader>
-              <CardContent>
+              <CardContent className="flex-1 min-h-0 flex flex-col">
                 <ChartErrorBoundary>
                   {bitacoras30Dias.length > 0 ? (
-                    <div className="h-64 w-full">
+                    <div className="w-full h-[280px] min-h-[280px]" data-chart-container>
                       <ResponsiveContainer width="100%" height="100%">
                         <AreaChart data={bitacoras30Dias}>
                           <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                           <XAxis dataKey="fecha" tick={{ fontSize: 10 }} />
                           <YAxis tick={{ fontSize: 10 }} />
-                          <Tooltip />
+                          <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(148, 163, 184, 0.1)" }} />
                           <Area type="monotone" dataKey="total" stroke={primaryBarColor} fill={primaryBarColor} fillOpacity={0.3} name="Registros" />
                         </AreaChart>
                       </ResponsiveContainer>
@@ -674,6 +1009,7 @@ export default function SiguaDashboard() {
                 </ChartErrorBoundary>
               </CardContent>
             </Card>
+            </div>
           </div>
 
           {/* Panel de alertas (lista) */}

@@ -27,6 +27,10 @@ class DatabaseSeeder extends Seeder
             RecruitmentSourceSeeder::class,  // Catálogo medios de contratación (RH)
             SiguaPermissionsSeeder::class,    // Permisos SIGUA y asignación al rol admin
             SiguaConfiguracionSeeder::class,  // Configuración base de SIGUA
+            EmpresaSedeSeeder::class,         // 2 sedes (Toluca, CDMX) y 5 campañas
+            SiguaAuditSeeder::class,         // 50 empleados RH, cuentas ideal/zombie/huérfanas/genéricas y CA-01
+            SiguaCrucesHistoricosSeeder::class, // Cruces últimos 3 meses (tendencia 20 → 12 → 5 anomalías)
+            // SiganAssetsSeeder::class,      // Activos TI/mobiliario y mantenimiento (requiere migración sigan_assets)
             FakerFullSeeder::class,           // Admin con todos los permisos + 50+ usuarios, tickets e incidencias (Faker)
         ]);
     }

@@ -11,6 +11,7 @@ import { TimeDeskGuard } from "@/components/TimeDeskGuard";
 
 // Vistas privadas (lazy)
 const Dashboard = lazy(() => import("@/Pages/Dashboard"));
+const HomeDashboard = lazy(() => import("@/Pages/Home/Dashboard"));
 const Users = lazy(() => import("@/Pages/Users"));
 const Roles = lazy(() => import("@/Pages/Roles"));
 const Campaigns = lazy(() => import("@/Pages/Campaigns"));
@@ -155,9 +156,11 @@ export default function Main() {
 
                             {/* ZONA PRIVADA */}
                             <Route element={<ProtectedRoute />}>
+                                {/* Wallboard RESOLBEB: sin sidebar/navbar, para segundo monitor */}
+                                <Route path="/tickets/wallboard" element={<ResolbebDashboard isStandalone />} />
                                 <Route element={<AppLayout />}>
                                     <Route path="/force-change-password" element={<ForceChangePassword />} />
-                                    <Route path="/" element={<Dashboard />} />
+                                    <Route path="/" element={<HomeDashboard />} />
                                     <Route path="/users" element={<Users />} />
                                     <Route path="/campaigns" element={<Campaigns />} />
                                     <Route path="/areas" element={<Areas />} />

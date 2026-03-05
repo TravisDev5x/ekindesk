@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { notify } from "@/lib/notify";
-import { ArrowLeft, Plus, Loader2, CheckCircle2, MapPin, User } from "lucide-react";
+import { ArrowLeft, Plus, Loader2, CheckCircle2, MapPin, User, Gauge } from "lucide-react";
 
 export default function TicketCreate() {
     const { user, can } = useAuth();
@@ -102,47 +102,76 @@ export default function TicketCreate() {
         }
     };
 
+    const computedPriority = (() => {
+        const matrix = catalogs.priority_matrix || [];
+        const row = matrix.find((m) => Number(m.impact_level_id) === Number(form.impact_level_id) && Number(m.urgency_level_id) === Number(form.urgency_level_id));
+        const pid = row?.priority_id;
+        const p = (catalogs.priorities || []).find((x) => Number(x.id) === Number(pid));
+        return p ? p.name : (form.impact_level_id && form.urgency_level_id ? "—" : "Selecciona Impacto y Urgencia");
+    })();
+
     if (loadingCatalogs) {
         return (
             <div className="w-full max-w-2xl mx-auto p-4 md:p-6 space-y-6">
-                <Skeleton className="h-10 w-48" />
-                <Skeleton className="h-[400px] w-full rounded-xl" />
+                <Skeleton className="h-9 w-32 rounded-md" />
+                <Skeleton className="h-4 w-48 rounded" />
+                <div className="rounded-xl border border-border/50 bg-card p-6 space-y-6">
+                    <Skeleton className="h-10 w-full rounded-md" />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-10 rounded-md" />)}
+                    </div>
+                    <Skeleton className="h-24 w-full rounded-md" />
+                </div>
             </div>
         );
     }
 
     return (
-        <div className="w-full max-w-2xl mx-auto p-4 md:p-6 space-y-6">
-            <div className="flex items-center gap-3">
-                <Button variant="ghost" size="sm" asChild className="-ml-2">
-                    <Link to={backTo}><ArrowLeft className="h-4 w-4 mr-1" /> Volver</Link>
+        <div className="w-full p-4 md:p-6 min-h-0">
+            <div className="mb-6">
+                <Button variant="ghost" size="sm" asChild>
+                    <Link to={backTo} className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground">
+                        <ArrowLeft className="h-4 w-4" aria-hidden /> Volver
+                    </Link>
                 </Button>
             </div>
 
-            <Card>
-                <CardHeader className="bg-primary/10 border-b">
-                    <CardTitle className="text-xl flex items-center gap-2">
-                        <Plus className="h-5 w-5" /> Nuevo ticket
-                    </CardTitle>
-                    <CardDescription>Completa los datos para registrar tu solicitud.</CardDescription>
+            <Card className="max-w-3xl mx-auto w-full shadow-sm">
+                <CardHeader className="p-0 border-none">
+                    <div className="rounded-t-xl overflow-hidden bg-muted/50 border-b border-border/60 p-6 -mt-px">
+                        <CardTitle className="flex items-center gap-2 text-xl font-semibold">
+                            <Plus className="h-5 w-5 text-primary" aria-hidden /> Nuevo ticket
+                        </CardTitle>
+                        <CardDescription className="mt-1.5">
+                            Completa los datos para registrar tu solicitud (Resolvev1). Los campos con <span className="text-destructive">*</span> son obligatorios.
+                        </CardDescription>
+                    </div>
                 </CardHeader>
-                <form onSubmit={handleSubmit}>
-                    <CardContent className="p-6 space-y-6">
-                        <div className="space-y-2">
-                            <Label>Asunto <span className="text-destructive">*</span></Label>
-                            <Input
-                                required
-                                placeholder="Ej: Fallo en impresora de recepción"
-                                value={form.subject}
-                                onChange={(e) => setForm({ ...form, subject: e.target.value })}
-                            />
-                        </div>
 
+                <form onSubmit={handleSubmit}>
+                    <CardContent className="p-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {/* Asunto: ancho completo */}
+                            <div className="md:col-span-full space-y-2">
+                                <Label htmlFor="subject">Asunto <span className="text-destructive">*</span></Label>
+                                <Input
+                                    id="subject"
+                                    required
+                                    placeholder="Ej: Fallo en impresora de recepción"
+                                    value={form.subject}
+                                    onChange={(e) => setForm({ ...form, subject: e.target.value })}
+                                    className="w-full"
+                                    aria-required
+                                />
+                            </div>
+
+                            {/* Tipo de ticket / Impacto */}
                             <div className="space-y-2">
-                                <Label>Tipo de ticket</Label>
+                                <Label htmlFor="ticket-type">Tipo de ticket</Label>
                                 <Select value={form.ticket_type_id} onValueChange={(v) => setForm({ ...form, ticket_type_id: v })}>
-                                    <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
+                                    <SelectTrigger id="ticket-type" className="w-full">
+                                        <SelectValue placeholder="Seleccionar" />
+                                    </SelectTrigger>
                                     <SelectContent>
                                         {(catalogs.ticket_types || []).map((t) => (
                                             <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>
@@ -151,9 +180,11 @@ export default function TicketCreate() {
                                 </Select>
                             </div>
                             <div className="space-y-2">
-                                <Label>Impacto <span className="text-destructive">*</span></Label>
+                                <Label htmlFor="impact">Impacto <span className="text-destructive">*</span></Label>
                                 <Select value={form.impact_level_id} onValueChange={(v) => setForm({ ...form, impact_level_id: v })}>
-                                    <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
+                                    <SelectTrigger id="impact" className="w-full">
+                                        <SelectValue placeholder="Seleccionar" />
+                                    </SelectTrigger>
                                     <SelectContent>
                                         {(catalogs.impact_levels || []).map((i) => (
                                             <SelectItem key={i.id} value={String(i.id)}>{i.name}</SelectItem>
@@ -161,10 +192,14 @@ export default function TicketCreate() {
                                     </SelectContent>
                                 </Select>
                             </div>
+
+                            {/* Urgencia / Prioridad (calculada) */}
                             <div className="space-y-2">
-                                <Label>Urgencia <span className="text-destructive">*</span></Label>
+                                <Label htmlFor="urgency">Urgencia <span className="text-destructive">*</span></Label>
                                 <Select value={form.urgency_level_id} onValueChange={(v) => setForm({ ...form, urgency_level_id: v })}>
-                                    <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
+                                    <SelectTrigger id="urgency" className="w-full">
+                                        <SelectValue placeholder="Seleccionar" />
+                                    </SelectTrigger>
                                     <SelectContent>
                                         {(catalogs.urgency_levels || []).map((u) => (
                                             <SelectItem key={u.id} value={String(u.id)}>{u.name}</SelectItem>
@@ -173,28 +208,32 @@ export default function TicketCreate() {
                                 </Select>
                             </div>
                             <div className="space-y-2">
-                                <Label>Prioridad (calculada)</Label>
+                                <Label htmlFor="priority-calc" className="flex items-center gap-1.5">
+                                    <Gauge className="h-3.5 w-3.5 text-muted-foreground" aria-hidden /> Prioridad (calculada)
+                                </Label>
                                 <Input
+                                    id="priority-calc"
                                     readOnly
-                                    className="bg-muted"
-                                    value={(() => {
-                                        const matrix = catalogs.priority_matrix || [];
-                                        const row = matrix.find((m) => Number(m.impact_level_id) === Number(form.impact_level_id) && Number(m.urgency_level_id) === Number(form.urgency_level_id));
-                                        const pid = row?.priority_id;
-                                        const p = (catalogs.priorities || []).find((x) => Number(x.id) === Number(pid));
-                                        return p ? p.name : (form.impact_level_id && form.urgency_level_id ? "—" : "Selecciona Impacto y Urgencia");
-                                    })()}
+                                    className="w-full bg-muted text-muted-foreground cursor-default"
+                                    value={computedPriority}
+                                    tabIndex={-1}
+                                    aria-readonly
                                 />
                             </div>
                         </div>
 
-                        <Separator />
+                        <Separator className="my-6" />
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-muted/20 p-4 rounded-lg border border-border/50">
+                        {/* Sede / Áreas: lógica de negocio intacta */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 rounded-lg bg-muted/20 p-4 border border-border/50">
                             <div className="space-y-2">
-                                <Label className="flex items-center gap-1"><MapPin className="w-3 h-3" /> Sede</Label>
+                                <Label htmlFor="sede" className="flex items-center gap-1.5">
+                                    <MapPin className="h-3.5 w-3.5 text-muted-foreground" aria-hidden /> Sede
+                                </Label>
                                 <Select value={form.sede_id} onValueChange={(v) => setForm({ ...form, sede_id: v })}>
-                                    <SelectTrigger className="bg-background"><SelectValue placeholder="Seleccionar sede" /></SelectTrigger>
+                                    <SelectTrigger id="sede" className="w-full bg-background">
+                                        <SelectValue placeholder="Seleccionar sede" />
+                                    </SelectTrigger>
                                     <SelectContent>
                                         {(catalogs.sedes || []).map((s) => (
                                             <SelectItem key={s.id} value={String(s.id)}>{s.name}</SelectItem>
@@ -203,9 +242,13 @@ export default function TicketCreate() {
                                 </Select>
                             </div>
                             <div className="space-y-2">
-                                <Label className="flex items-center gap-1"><User className="w-3 h-3" /> Área responsable <span className="text-destructive">*</span></Label>
+                                <Label htmlFor="area-current" className="flex items-center gap-1.5">
+                                    <User className="h-3.5 w-3.5 text-muted-foreground" aria-hidden /> Área responsable <span className="text-destructive">*</span>
+                                </Label>
                                 <Select value={form.area_current_id} onValueChange={(v) => setForm({ ...form, area_current_id: v })}>
-                                    <SelectTrigger className="bg-background"><SelectValue placeholder="Área que atenderá" /></SelectTrigger>
+                                    <SelectTrigger id="area-current" className="w-full bg-background">
+                                        <SelectValue placeholder="Área que atenderá" />
+                                    </SelectTrigger>
                                     <SelectContent>
                                         {(catalogs.areas || []).map((a) => (
                                             <SelectItem key={a.id} value={String(a.id)}>{a.name}</SelectItem>
@@ -213,10 +256,12 @@ export default function TicketCreate() {
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <div className="space-y-2 md:col-span-2">
-                                <Label>Área de origen (solicitante)</Label>
+                            <div className="md:col-span-full space-y-2">
+                                <Label htmlFor="area-origin">Área de origen (solicitante)</Label>
                                 <Select value={form.area_origin_id} onValueChange={(v) => setForm({ ...form, area_origin_id: v })}>
-                                    <SelectTrigger className="bg-background"><SelectValue placeholder="Tu área" /></SelectTrigger>
+                                    <SelectTrigger id="area-origin" className="w-full bg-background">
+                                        <SelectValue placeholder="Tu área" />
+                                    </SelectTrigger>
                                     <SelectContent>
                                         {(catalogs.areas || []).map((a) => (
                                             <SelectItem key={a.id} value={String(a.id)}>{a.name}</SelectItem>
@@ -226,23 +271,30 @@ export default function TicketCreate() {
                             </div>
                         </div>
 
+                        <Separator className="my-6" />
+
                         <div className="space-y-2">
-                            <Label>Descripción del problema</Label>
+                            <Label htmlFor="description">Descripción del problema</Label>
                             <Textarea
+                                id="description"
                                 placeholder="Describe qué ocurrió, cuándo y si hay mensajes de error..."
-                                className="min-h-[120px] resize-y"
+                                className="min-h-[120px] resize-y w-full"
                                 value={form.description}
                                 onChange={(e) => setForm({ ...form, description: e.target.value })}
                             />
                         </div>
                     </CardContent>
-                    <CardFooter className="border-t p-4 flex justify-end gap-2">
-                        <Button type="button" variant="ghost" asChild>
+
+                    <CardFooter className="flex justify-end gap-2 border-t pt-4 px-6 pb-6">
+                        <Button type="button" variant="outline" asChild>
                             <Link to={backTo}>Cancelar</Link>
                         </Button>
                         <Button type="submit" disabled={saving}>
-                            {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
-                            Crear ticket
+                            {saving ? (
+                                <><Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden /> Creando...</>
+                            ) : (
+                                <><CheckCircle2 className="mr-2 h-4 w-4" aria-hidden /> Crear ticket</>
+                            )}
                         </Button>
                     </CardFooter>
                 </form>

@@ -244,7 +244,15 @@ export async function bulkUpdateEstadoCuentas(ids: number[], estado: "activa" | 
 
 export async function getDashboard(filters?: SiguaFilters | null): Promise<SiguaApiResult<SiguaDashboardData>> {
   try {
-    const params = filters ? { sede_id: filters.sede_id, sistema_id: filters.sistema_id, fecha_desde: filters.fecha_desde, fecha_hasta: filters.fecha_hasta } : {};
+    const params = filters
+      ? {
+          sede_id: filters.sede_id,
+          sistema_id: filters.sistema_id,
+          campaign_id: filters.campaign_id,
+          fecha_desde: filters.fecha_desde,
+          fecha_hasta: filters.fecha_hasta,
+        }
+      : {};
     const response = await axios.get<{ data: SiguaDashboardData; message?: string }>(`${PREFIX}/dashboard`, { params });
     return toResult(response);
   } catch (err) {

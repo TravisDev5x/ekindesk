@@ -53,6 +53,10 @@ Route::post('logout', [AuthController::class, 'logout'])
 Route::get('ping', [AuthController::class, 'ping'])
     ->middleware(['auth:sanctum','locale']);
 
+// Hub principal (página de inicio: SIGUA + RESOLBEB)
+Route::get('dashboard/hub-summary', [\App\Http\Controllers\Api\MainDashboardController::class, 'getHubSummary'])
+    ->middleware(['auth:sanctum', 'locale']);
+
 // PASSWORD RESET
 Route::post('password/forgot', [PasswordResetController::class, 'forgot'])
     ->middleware(['throttle:5,1','locale']);
@@ -168,6 +172,8 @@ Route::middleware(['auth:sanctum', 'locale'])->prefix('my-tickets')->group(funct
 Route::middleware(['auth:sanctum','locale','throttle:tickets','perm:tickets.manage_all|tickets.view_area|tickets.view_own|tickets.create'])->group(function () {
     // Analytics debe declararse antes de los params {ticket} para evitar binding
     Route::get('tickets/analytics', \App\Http\Controllers\Api\TicketAnalyticsController::class)
+        ->middleware('report.audit');
+    Route::get('tickets/dashboard-operativo', [\App\Http\Controllers\Api\ResolbebController::class, 'dashboardOperativo'])
         ->middleware('report.audit');
     Route::get('tickets/summary', [\App\Http\Controllers\Api\TicketController::class, 'summary'])
         ->middleware('report.audit');

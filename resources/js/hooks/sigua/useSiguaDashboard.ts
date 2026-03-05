@@ -28,7 +28,7 @@ export function useSiguaDashboard(filters?: SiguaFilters | null): UseSiguaDashbo
       setData(res ?? null);
     }
     setLoading(false);
-  }, [filters?.sede_id, filters?.sistema_id, filters?.fecha_desde, filters?.fecha_hasta]);
+  }, [filters?.sede_id, filters?.sistema_id, filters?.campaign_id, filters?.fecha_desde, filters?.fecha_hasta]);
 
   useEffect(() => {
     refetch();
