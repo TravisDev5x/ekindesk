@@ -14,7 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { notify } from "@/lib/notify";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Loader2, MessageSquare, Lock, History, Paperclip, Trash2, ArrowLeft, ChevronDown, ChevronUp, UserCheck, AlertTriangle, XCircle } from "lucide-react";
+import { Loader2, MessageSquare, Lock, History, ArrowLeft, ChevronDown, ChevronUp, UserCheck, AlertTriangle, XCircle } from "lucide-react";
 
 const RESOLVE_BASE = "/resolbeb";
 
@@ -29,8 +29,6 @@ export default function ResolbebDetalle() {
     const [assigneeId, setAssigneeId] = useState("none");
     const [dueAtLocal, setDueAtLocal] = useState("");
     const [isInternalNote, setIsInternalNote] = useState(true);
-    const [attachmentFiles, setAttachmentFiles] = useState([]);
-    const [uploadingAttachments, setUploadingAttachments] = useState(false);
     const [descExpanded, setDescExpanded] = useState(false);
     const [alertMessage, setAlertMessage] = useState("");
     const [sendingAlert, setSendingAlert] = useState(false);
@@ -131,35 +129,6 @@ export default function ResolbebDetalle() {
         } catch (err) {
             notify.error(err?.response?.data?.message || "No se pudo cancelar el ticket");
         } finally { setCancelling(false); }
-    };
-
-    const uploadAttachments = async () => {
-        if (!attachmentFiles.length) return;
-        setUploadingAttachments(true);
-        try {
-            const payload = new FormData();
-            attachmentFiles.forEach((f) => payload.append("attachments[]", f));
-            const { data } = await axios.post(`/api/tickets/${id}/attachments`, payload, {
-                headers: { "Content-Type": "multipart/form-data" },
-            });
-            setTicket((prev) => ({ ...prev, attachments: [...(prev?.attachments || []), ...(data || [])] }));
-            setAttachmentFiles([]);
-            notify.success("Adjuntos cargados");
-        } catch (err) {
-            notify.error(err?.response?.data?.message || "No se pudieron cargar los adjuntos");
-        } finally {
-            setUploadingAttachments(false);
-        }
-    };
-
-    const removeAttachment = async (att) => {
-        try {
-            await axios.delete(`/api/tickets/${id}/attachments/${att.id}`);
-            setTicket((prev) => ({ ...prev, attachments: (prev?.attachments || []).filter((a) => a.id !== att.id) }));
-            notify.success("Adjunto eliminado");
-        } catch (err) {
-            notify.error("No se pudo eliminar el adjunto");
-        }
     };
 
     const attendedBy = useMemo(() => {
@@ -421,70 +390,6 @@ export default function ResolbebDetalle() {
                     </CardContent>
                 </Card>
             )}
-
-            <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-base">Adjuntos</CardTitle>
-                    <Badge variant="secondary" className="text-[10px]">{(ticket.attachments || []).length}</Badge>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                    {canEdit && (
-                        <div className="flex flex-wrap items-end gap-2">
-                            <Input
-                                type="file"
-                                multiple
-                                className="max-w-xs"
-                                onChange={(e) => setAttachmentFiles(Array.from(e.target.files || []))}
-                            />
-                            <Button
-                                size="sm"
-                                onClick={uploadAttachments}
-                                disabled={uploadingAttachments || attachmentFiles.length === 0}
-                            >
-                                {uploadingAttachments ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Paperclip className="h-4 w-4 mr-2" />}
-                                Subir
-                            </Button>
-                        </div>
-                    )}
-                    {(ticket.attachments || []).length === 0 ? (
-                        <p className="text-sm text-muted-foreground">Sin adjuntos.</p>
-                    ) : (
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead className="text-xs">Archivo</TableHead>
-                                    <TableHead className="text-xs">Tamaño</TableHead>
-                                    {canEdit && <TableHead className="text-right text-xs">Acciones</TableHead>}
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {(ticket.attachments || []).map((a) => (
-                                    <TableRow key={a.id}>
-                                        <TableCell>
-                                            <a
-                                                href={`/api/tickets/${id}/attachments/${a.id}/download`}
-                                                target="_blank"
-                                                rel="noreferrer"
-                                                className="text-primary hover:underline text-sm"
-                                            >
-                                                {a.original_name}
-                                            </a>
-                                        </TableCell>
-                                        <TableCell className="text-xs text-muted-foreground">{Math.round((a.size || 0) / 1024)} KB</TableCell>
-                                        {canEdit && (
-                                            <TableCell className="text-right">
-                                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => removeAttachment(a)}>
-                                                    <Trash2 className="h-4 w-4" />
-                                                </Button>
-                                            </TableCell>
-                                        )}
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    )}
-                </CardContent>
-            </Card>
 
             {canAssign && (
                 <Card>
