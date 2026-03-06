@@ -12,7 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import { clearCatalogCache } from "@/lib/catalogCache";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { TablePagination } from "@/components/ui/table-pagination";
-import { Pencil } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 
 const PER_PAGE_OPTIONS = ["10", "15", "25", "50", "100"];
 
@@ -89,6 +89,18 @@ export default function Ubicaciones() {
     const openEdit = (u) => {
         setEditingUbic(u);
         setEditForm({ name: u.name || "", code: u.code || "", sede_id: String(u.sede_id || ""), is_active: Boolean(u.is_active) });
+    };
+
+    const remove = async (u) => {
+        if (!window.confirm(`¿Eliminar la ubicación "${u.name}"? Esta acción no se puede deshacer.`)) return;
+        try {
+            await axios.delete(`/api/ubicaciones/${u.id}`);
+            setList((prev) => prev.filter((x) => x.id !== u.id));
+            clearCatalogCache();
+            notify.success("Ubicación eliminada");
+        } catch (err) {
+            notify.error(getApiErrorMessage(err, "No se pudo eliminar"));
+        }
     };
 
     const saveEdit = async () => {
@@ -185,7 +197,10 @@ export default function Ubicaciones() {
                                         <Switch checked={u.is_active} onCheckedChange={() => toggle(u)} />
                                     </TableCell>
                                     <TableCell className="text-right">
-                                        <Button variant="ghost" size="sm" className="h-8 gap-1" onClick={() => openEdit(u)}><Pencil className="h-3.5 w-3.5" /> Editar</Button>
+                                        <div className="flex items-center justify-end gap-1">
+                                            <Button variant="ghost" size="sm" className="h-8 gap-1" onClick={() => openEdit(u)}><Pencil className="h-3.5 w-3.5" /> Editar</Button>
+                                            <Button variant="ghost" size="sm" className="h-8 gap-1 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => remove(u)}><Trash2 className="h-3.5 w-3.5" /> Eliminar</Button>
+                                        </div>
                                     </TableCell>
                                 </TableRow>
                             ))}

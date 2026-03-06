@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { clearCatalogCache } from "@/lib/catalogCache";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { TablePagination } from "@/components/ui/table-pagination";
-import { Pencil } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 
 const PER_PAGE_OPTIONS = ["10", "15", "25", "50", "100"];
 
@@ -96,6 +96,22 @@ export default function Sedes() {
             notify.error(getApiErrorMessage(err, "No se pudo actualizar la sede"));
         } finally {
             setSavingEdit(false);
+        }
+    };
+
+    const remove = async (sede) => {
+        if (sede.code === "REMOTO") {
+            notify.error("La sede Remoto no puede eliminarse");
+            return;
+        }
+        if (!window.confirm(`¿Eliminar la sede "${sede.name}"? Esta acción no se puede deshacer.`)) return;
+        try {
+            await axios.delete(`/api/sedes/${sede.id}`);
+            setList((prev) => prev.filter((s) => s.id !== sede.id));
+            clearCatalogCache();
+            notify.success("Sede eliminada");
+        } catch (err) {
+            notify.error(getApiErrorMessage(err, "No se pudo eliminar la sede"));
         }
     };
 
@@ -189,9 +205,21 @@ export default function Sedes() {
                                             <Switch checked={sede.is_active} onCheckedChange={() => toggle(sede)} />
                                         </TableCell>
                                         <TableCell className="text-right">
-                                            <Button variant="ghost" size="sm" className="h-8 gap-1" onClick={() => openEdit(sede)}>
-                                                <Pencil className="h-3.5 w-3.5" /> Editar
-                                            </Button>
+                                            <div className="flex items-center justify-end gap-1">
+                                                <Button variant="ghost" size="sm" className="h-8 gap-1" onClick={() => openEdit(sede)}>
+                                                    <Pencil className="h-3.5 w-3.5" /> Editar
+                                                </Button>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="h-8 gap-1 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                                    onClick={() => remove(sede)}
+                                                    disabled={sede.code === "REMOTO"}
+                                                    title={sede.code === "REMOTO" ? "La sede Remoto no puede eliminarse" : "Eliminar sede"}
+                                                >
+                                                    <Trash2 className="h-3.5 w-3.5" /> Eliminar
+                                                </Button>
+                                            </div>
                                         </TableCell>
                                     </TableRow>
                                 ))

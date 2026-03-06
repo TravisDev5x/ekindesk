@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { notify } from "@/lib/notify";
 import { TablePagination } from "@/components/ui/table-pagination";
-import { Tag, Pencil } from "lucide-react";
+import { Tag, Pencil, Trash2 } from "lucide-react";
 import { clearCatalogCache } from "@/lib/catalogCache";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 
@@ -76,6 +76,16 @@ export default function IncidentTipos() {
             clearCatalogCache(); setEditing(null); notify.success("Tipo actualizado");
         } catch (err) { notify.error(getApiErrorMessage(err, "No se pudo actualizar")); }
         finally { setSavingEdit(false); }
+    };
+
+    const remove = async (t) => {
+        if (!window.confirm(`¿Eliminar el tipo "${t.name}"? Esta acción no se puede deshacer.`)) return;
+        try {
+            await axios.delete(`/api/incident-types/${t.id}`);
+            setList((prev) => prev.filter((x) => x.id !== t.id));
+            clearCatalogCache();
+            notify.success("Tipo eliminado");
+        } catch (err) { notify.error(getApiErrorMessage(err, "No se pudo eliminar")); }
     };
 
     const total = list.length;

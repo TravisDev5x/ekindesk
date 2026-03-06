@@ -333,7 +333,8 @@ export default function AppLayout() {
                         className="sticky top-0 z-30 flex h-16 shrink-0 items-center gap-x-4 bg-background/80 px-4 backdrop-blur-xl transition-all md:px-6"
                         data-sidebar-position={sidebarPosition}
                     >
-                        <div className="md:hidden">
+                        {/* Menú móvil: siempre primero */}
+                        <div className="order-0 md:hidden">
                             <Sheet>
                                 <SheetTrigger asChild>
                                     <Button variant="ghost" size="icon" className="-ml-2 h-9 w-9 text-muted-foreground">
@@ -346,17 +347,27 @@ export default function AppLayout() {
                             </Sheet>
                         </div>
 
-                        {/* Breadcrumbs/Title */}
-                        <div className="flex flex-1 flex-col gap-0.5 min-w-0">
-                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        {/* Breadcrumbs/Title: a la derecha cuando sidebar derecha, a la izquierda (flex-1) cuando sidebar izquierda */}
+                        <div
+                            className={cn(
+                                "flex flex-col gap-0.5 min-w-0",
+                                sidebarPosition === "right" ? "order-3 ms-auto flex-1 justify-end text-right" : "order-1 flex-1"
+                            )}
+                        >
+                            <div className={cn("flex items-center gap-2 text-xs text-muted-foreground", sidebarPosition === "right" && "justify-end")}>
                                 <span className="uppercase tracking-wider font-semibold opacity-70">{t('layout.panel')}</span>
-                                <ChevronRight className="h-3 w-3" />
+                                <ChevronRight className={cn("h-3 w-3", sidebarPosition === "right" && "rotate-180")} />
                             </div>
-                            <h1 className="text-lg font-bold tracking-tight text-foreground truncate">{title}</h1>
+                            <h1 className={cn("text-lg font-bold tracking-tight text-foreground truncate", sidebarPosition === "right" && "text-right")}>{title}</h1>
                         </div>
 
-                        {/* Top Actions: siempre alineados al borde final del header (derecha en LTR) */}
-                        <div className="flex items-center gap-2 ms-auto shrink-0">
+                        {/* Top Actions: a la izquierda cuando sidebar derecha, a la derecha cuando sidebar izquierda */}
+                        <div
+                            className={cn(
+                                "flex items-center gap-2 shrink-0",
+                                sidebarPosition === "right" ? "order-1" : "order-2 ms-auto"
+                            )}
+                        >
                             {/* View Controls */}
                             <div className="hidden md:flex items-center gap-1 rounded-full border border-border/50 bg-muted/20 p-1">
                                 <Tooltip>

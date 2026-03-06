@@ -12,7 +12,7 @@ import { notify } from "@/lib/notify";
 import { clearCatalogCache } from "@/lib/catalogCache";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { TablePagination } from "@/components/ui/table-pagination";
-import { Pencil } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 
 const PER_PAGE_OPTIONS = ["10", "15", "25", "50", "100"];
 
@@ -77,6 +77,16 @@ export default function Prioridades() {
         finally { setSavingEdit(false); }
     };
 
+    const remove = async (item) => {
+        if (!window.confirm(`¿Eliminar la prioridad "${item.name}"? Esta acción no se puede deshacer.`)) return;
+        try {
+            await axios.delete(`/api/priorities/${item.id}`);
+            setList((prev) => prev.filter((p) => p.id !== item.id));
+            clearCatalogCache();
+            notify.success("Prioridad eliminada");
+        } catch (err) { notify.error(getApiErrorMessage(err, "No se pudo eliminar")); }
+    };
+
     const total = list.length;
     const lastPage = Math.max(1, Math.ceil(total / Number(perPage)));
     const currentPage = Math.min(page, lastPage);
@@ -129,7 +139,12 @@ export default function Prioridades() {
                                     <TableCell>{p.level}</TableCell>
                                     <TableCell>{p.name}</TableCell>
                                     <TableCell className="text-right"><Switch checked={p.is_active} onCheckedChange={() => toggle(p)} /></TableCell>
-                                    <TableCell className="text-right"><Button variant="ghost" size="sm" className="h-8 gap-1" onClick={() => openEdit(p)}><Pencil className="h-3.5 w-3.5" /> Editar</Button></TableCell>
+                                    <TableCell className="text-right">
+                                        <div className="flex items-center justify-end gap-1">
+                                            <Button variant="ghost" size="sm" className="h-8 gap-1" onClick={() => openEdit(p)}><Pencil className="h-3.5 w-3.5" /> Editar</Button>
+                                            <Button variant="ghost" size="sm" className="h-8 gap-1 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => remove(p)}><Trash2 className="h-3.5 w-3.5" /> Eliminar</Button>
+                                        </div>
+                                    </TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>

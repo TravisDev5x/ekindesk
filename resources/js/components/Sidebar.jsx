@@ -250,9 +250,9 @@ export function Sidebar({ collapsed, onToggle }) {
             { to: '/', label: t('nav.home'), icon: Home, emphasis: true },
             { to: '/calendario', label: t('nav.calendar'), icon: CalendarDays, emphasis: true },
             { to: '/resolbeb/mis-tickets', label: t('nav.myTickets'), icon: Ticket, emphasis: true },
-            { to: '/resolbeb/tickets/new', label: 'Crear ticket', icon: Layers, emphasis: true },
+            { to: '/resolbeb/tickets/new', label: t('nav.createTicket'), icon: Layers, emphasis: true },
         ]
-        sections.push({ label: 'GENERAL', items: generalItems })
+        sections.push({ sectionId: 'general', label: t('section.general'), items: generalItems })
 
         // BLOQUE 2: MÓDULOS — RESOLBEB, TIMEDESK, SIGUA (SIGUA solo si admin/permiso)
         const moduleItems = []
@@ -261,21 +261,21 @@ export function Sidebar({ collapsed, onToggle }) {
         const resolbebChildren = []
         if (canSeeResolbeb) {
             // — Tickets
-            resolbebChildren.push({ to: '/resolbeb', label: 'Dashboard', icon: LayoutDashboard })
+            resolbebChildren.push({ to: '/resolbeb', label: t('nav.dashboard'), icon: LayoutDashboard })
             if (canSeeMyTickets) resolbebChildren.push({ to: '/resolbeb/mis-tickets', label: t('nav.myTickets'), icon: Ticket })
             if (canSeeTicketsModule) resolbebChildren.push({ to: '/resolbeb/tickets', label: t('nav.tickets'), icon: Ticket })
             if (can('tickets.create') || can('tickets.manage_all'))
-                resolbebChildren.push({ to: '/resolbeb/tickets/new', label: 'Nuevo ticket', icon: Layers })
+                resolbebChildren.push({ to: '/resolbeb/tickets/new', label: t('nav.newTicket'), icon: Layers })
             // Catálogos de tickets (separador para no mezclar con incidencias)
             if (canSeeCatalogs) {
                 resolbebChildren.push({ type: 'separator', label: t('nav.catalogsTickets') })
                 resolbebChildren.push({ to: '/resolbeb/estados', label: t('nav.ticketStates'), icon: Workflow })
                 resolbebChildren.push({ to: '/resolbeb/tipos', label: t('nav.ticketTypes'), icon: Tags })
                 resolbebChildren.push({ to: '/priorities', label: t('nav.priorities'), icon: SignalHigh })
-                resolbebChildren.push({ to: '/impact-levels', label: 'Niveles de impacto', icon: SignalHigh })
-                resolbebChildren.push({ to: '/urgency-levels', label: 'Niveles de urgencia', icon: SignalHigh })
-                resolbebChildren.push({ to: '/priority-matrix', label: 'Matriz de prioridades', icon: Grid3X3 })
-                resolbebChildren.push({ to: '/ticket-macros', label: 'Plantillas de respuesta', icon: FileText })
+                resolbebChildren.push({ to: '/impact-levels', label: t('nav.impactLevels'), icon: SignalHigh })
+                resolbebChildren.push({ to: '/urgency-levels', label: t('nav.urgencyLevels'), icon: SignalHigh })
+                resolbebChildren.push({ to: '/priority-matrix', label: t('nav.priorityMatrix'), icon: Grid3X3 })
+                resolbebChildren.push({ to: '/ticket-macros', label: t('nav.ticketMacros'), icon: FileText })
             }
             // — Incidencias (dentro de Resolbeb) y sus catálogos
             if (canSeeIncidents) {
@@ -298,23 +298,23 @@ export function Sidebar({ collapsed, onToggle }) {
 
         if (canSeeSigua) {
             const siguaChildren = []
-            if (can('sigua.dashboard')) siguaChildren.push({ to: '/sigua', label: 'Dashboard', icon: LayoutDashboard })
-            if (can('sigua.cuentas.view')) siguaChildren.push({ to: '/sigua/cuentas', label: 'Cuentas Genéricas', icon: Users })
+            if (can('sigua.dashboard')) siguaChildren.push({ to: '/sigua', label: t('nav.dashboard'), icon: LayoutDashboard })
+            if (can('sigua.cuentas.view')) siguaChildren.push({ to: '/sigua/cuentas', label: t('nav.siguaAccounts'), icon: Users })
             if (can('sigua.dashboard') || can('sigua.cuentas.view'))
-                siguaChildren.push({ to: '/sigua/empleados-rh', label: 'Empleados RH', icon: UserCircle })
+                siguaChildren.push({ to: '/sigua/empleados-rh', label: t('nav.siguaEmployees'), icon: UserCircle })
             if (can('sigua.cuentas.manage') || can('sigua.importar'))
-                siguaChildren.push({ to: '/sigua/sistemas', label: 'Sistemas', icon: Layers })
-            if (can('sigua.ca01.view')) siguaChildren.push({ to: '/sigua/ca01', label: 'Formatos CA-01', icon: FileCheck })
+                siguaChildren.push({ to: '/sigua/sistemas', label: t('nav.systems'), icon: Layers })
+            if (can('sigua.ca01.view')) siguaChildren.push({ to: '/sigua/ca01', label: t('nav.siguaCA01'), icon: FileCheck })
             if (can('sigua.bitacora.view') || can('sigua.bitacora.registrar') || can('sigua.bitacora.sede'))
-                siguaChildren.push({ to: '/sigua/bitacora', label: 'Bitácora CA-02', icon: BookOpen })
-            if (can('sigua.incidentes.view')) siguaChildren.push({ to: '/sigua/incidentes', label: 'Incidentes', icon: AlertTriangle })
-            if (can('sigua.importar')) siguaChildren.push({ to: '/sigua/importar', label: 'Importar Datos', icon: Upload })
-            if (can('sigua.cruces')) siguaChildren.push({ to: '/sigua/cruces', label: 'Cruces RH/AD', icon: GitMerge })
+                siguaChildren.push({ to: '/sigua/bitacora', label: t('nav.siguaBitacora'), icon: BookOpen })
+            if (can('sigua.incidentes.view')) siguaChildren.push({ to: '/sigua/incidentes', label: t('nav.incidents'), icon: AlertTriangle })
+            if (can('sigua.importar')) siguaChildren.push({ to: '/sigua/importar', label: t('nav.siguaImport'), icon: Upload })
+            if (can('sigua.cruces')) siguaChildren.push({ to: '/sigua/cruces', label: t('nav.siguaCruces'), icon: GitMerge })
             if (can('sigua.dashboard') || can('sigua.cuentas.view'))
-                siguaChildren.push({ to: '/sigua/alertas', label: 'Alertas', icon: Bell })
+                siguaChildren.push({ to: '/sigua/alertas', label: t('nav.siguaAlerts'), icon: Bell })
             if (can('sigua.dashboard') || can('sigua.cuentas.manage') || can('sigua.importar'))
-                siguaChildren.push({ to: '/sigua/configuracion', label: 'Configuración', icon: Settings })
-            if (can('sigua.reportes')) siguaChildren.push({ to: '/sigua/reportes', label: 'Reportes', icon: FileSpreadsheet })
+                siguaChildren.push({ to: '/sigua/configuracion', label: t('nav.settings'), icon: Settings })
+            if (can('sigua.reportes')) siguaChildren.push({ to: '/sigua/reportes', label: t('nav.siguaReports'), icon: FileSpreadsheet })
             if (siguaChildren.length > 0) {
                 moduleItems.push({
                     label: 'SIGUA',
@@ -326,7 +326,7 @@ export function Sidebar({ collapsed, onToggle }) {
         }
 
         if (moduleItems.length > 0) {
-            sections.push({ label: 'MÓDULOS', items: moduleItems })
+            sections.push({ sectionId: 'modules', label: t('section.modules'), items: moduleItems })
         }
 
         // BLOQUE: CATÁLOGOS (colapsable como los demás módulos; sin Roles ni Permisos, van en Sistema)
@@ -342,24 +342,24 @@ export function Sidebar({ collapsed, onToggle }) {
             icon: Layers,
             children: catalogChildren,
         }
-        sections.push({ label: 'CATÁLOGOS', items: [catalogGroup] })
+        sections.push({ sectionId: 'catalogs', label: t('section.catalogs'), items: [catalogGroup] })
 
         // BLOQUE 3: SISTEMA (solo administradores; colapsable; incluye Roles y Permisos)
         if (isAdmin) {
             const systemChildren = [
                 { to: '/users', label: t('nav.users'), icon: Users },
                 { to: '/sessions', label: t('nav.sessions'), icon: Monitor },
-                { to: '/audit-command', label: 'Centro de auditoría', icon: ShieldCheck },
+                { to: '/audit-command', label: t('nav.auditCommand'), icon: ShieldCheck },
                 { to: '/settings', label: t('nav.settings'), icon: Settings },
                 { to: '/roles', label: t('nav.roles'), icon: ShieldCheck },
                 { to: '/permissions', label: t('nav.permissions'), icon: KeyRound },
             ]
             const systemGroup = {
-                label: 'Sistema',
+                label: t('section.system'),
                 icon: Settings,
                 children: systemChildren,
             }
-            sections.push({ label: 'SISTEMA', items: [systemGroup] })
+            sections.push({ sectionId: 'system', label: t('section.system'), items: [systemGroup] })
         }
 
         return sections
@@ -422,7 +422,7 @@ export function Sidebar({ collapsed, onToggle }) {
                                 setToggleBtnTooltipOpen(false)
                             }}
                             className="h-9 w-9 shrink-0 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors duration-200"
-                            aria-label={collapsed ? 'Expandir barra' : 'Colapsar barra'}
+                            aria-label={collapsed ? t('sidebar.expand') : t('sidebar.collapse')}
                         >
                             <Menu
                                 className={cn(
@@ -433,7 +433,7 @@ export function Sidebar({ collapsed, onToggle }) {
                         </Button>
                     </TooltipTrigger>
                     <TooltipContent side={collapsed ? 'bottom' : tooltipSide} sideOffset={8} className="font-medium">
-                        {collapsed ? 'Expandir barra' : 'Colapsar barra'}
+                        {collapsed ? t('sidebar.expand') : t('sidebar.collapse')}
                     </TooltipContent>
                 </Tooltip>
             </div>
@@ -454,14 +454,14 @@ export function Sidebar({ collapsed, onToggle }) {
                                 >
                                     {section.label}
                                 </SectionTitle>
-                                {collapsed && section.label === 'MÓDULOS' && (
+                                {collapsed && section.sectionId === 'modules' && (
                                     <div className="flex justify-center py-1">
                                         <MoreHorizontal size={ICON_SIZE} strokeWidth={ICON_STROKE} className="shrink-0 text-muted-foreground/40" />
                                     </div>
                                 )}
                                 <div className={cn(
                                     'flex flex-col gap-1',
-                                    collapsed && section.label === 'MÓDULOS' && 'items-center'
+                                    collapsed && section.sectionId === 'modules' && 'items-center'
                                 )}>
                                     {section.items.map((item) => {
                                         if (item.children) {

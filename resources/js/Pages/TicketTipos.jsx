@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { clearCatalogCache } from "@/lib/catalogCache";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { TablePagination } from "@/components/ui/table-pagination";
-import { Pencil } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 
 const PER_PAGE_OPTIONS = ["10", "15", "25", "50", "100"];
 
@@ -94,6 +94,16 @@ export default function TicketTipos() {
         finally { setSavingEdit(false); }
     };
 
+    const remove = async (t) => {
+        if (!window.confirm(`¿Eliminar el tipo "${t.name}"? Esta acción no se puede deshacer.`)) return;
+        try {
+            await axios.delete(`/api/ticket-types/${t.id}`);
+            setTypes((prev) => prev.filter((x) => x.id !== t.id));
+            clearCatalogCache();
+            notify.success("Tipo eliminado");
+        } catch (err) { notify.error(getApiErrorMessage(err, "No se pudo eliminar")); }
+    };
+
     const total = types.length;
     const lastPage = Math.max(1, Math.ceil(total / Number(perPage)));
     const currentPage = Math.min(page, lastPage);
@@ -161,7 +171,12 @@ export default function TicketTipos() {
                                         {t.areas?.length ? t.areas.map((a) => a.name).join(", ") : "—"}
                                     </TableCell>
                                     <TableCell className="text-right"><Switch checked={t.is_active} onCheckedChange={() => toggleActive(t)} /></TableCell>
-                                    <TableCell className="text-right"><Button variant="ghost" size="sm" className="h-8 gap-1" onClick={() => openEdit(t)}><Pencil className="h-3.5 w-3.5" /> Editar</Button></TableCell>
+                                    <TableCell className="text-right">
+                                        <div className="flex items-center justify-end gap-1">
+                                            <Button variant="ghost" size="sm" className="h-8 gap-1" onClick={() => openEdit(t)}><Pencil className="h-3.5 w-3.5" /> Editar</Button>
+                                            <Button variant="ghost" size="sm" className="h-8 gap-1 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => remove(t)}><Trash2 className="h-3.5 w-3.5" /> Eliminar</Button>
+                                        </div>
+                                    </TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>

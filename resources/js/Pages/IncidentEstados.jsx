@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { notify } from "@/lib/notify";
 import { TablePagination } from "@/components/ui/table-pagination";
-import { CheckCircle2, Pencil } from "lucide-react";
+import { CheckCircle2, Pencil, Trash2 } from "lucide-react";
 import { clearCatalogCache } from "@/lib/catalogCache";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 
@@ -76,6 +76,16 @@ export default function IncidentEstados() {
             clearCatalogCache(); setEditing(null); notify.success("Estado actualizado");
         } catch (err) { notify.error(getApiErrorMessage(err, "No se pudo actualizar")); }
         finally { setSavingEdit(false); }
+    };
+
+    const remove = async (st) => {
+        if (!window.confirm(`¿Eliminar el estado "${st.name}"? Esta acción no se puede deshacer.`)) return;
+        try {
+            await axios.delete(`/api/incident-statuses/${st.id}`);
+            setList((prev) => prev.filter((s) => s.id !== st.id));
+            clearCatalogCache();
+            notify.success("Estado eliminado");
+        } catch (err) { notify.error(getApiErrorMessage(err, "No se pudo eliminar")); }
     };
 
     const total = list.length;
@@ -166,7 +176,12 @@ export default function IncidentEstados() {
                                     <TableCell>{st.code}</TableCell>
                                     <TableCell>{st.is_final ? "Si" : "No"}</TableCell>
                                     <TableCell className="text-right"><Switch checked={st.is_active} onCheckedChange={() => toggle(st)} /></TableCell>
-                                    <TableCell className="text-right"><Button variant="ghost" size="sm" className="h-8 gap-1" onClick={() => openEdit(st)}><Pencil className="h-3.5 w-3.5" /> Editar</Button></TableCell>
+                                    <TableCell className="text-right">
+                                        <div className="flex items-center justify-end gap-1">
+                                            <Button variant="ghost" size="sm" className="h-8 gap-1" onClick={() => openEdit(st)}><Pencil className="h-3.5 w-3.5" /> Editar</Button>
+                                            <Button variant="ghost" size="sm" className="h-8 gap-1 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => remove(st)}><Trash2 className="h-3.5 w-3.5" /> Eliminar</Button>
+                                        </div>
+                                    </TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>

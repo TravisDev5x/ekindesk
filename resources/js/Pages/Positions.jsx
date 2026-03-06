@@ -26,6 +26,7 @@ import { notify } from "@/lib/notify";
 import { TablePagination } from "@/components/ui/table-pagination";
 import { handleAuthError, getApiErrorMessage } from "@/lib/apiErrors";
 import { clearCatalogCache } from "@/lib/catalogCache";
+import { Pencil, Trash2 } from "lucide-react";
 
 const emptyForm = { name: "", is_active: true };
 const PER_PAGE_OPTIONS = ["10", "15", "25", "50", "100"];
@@ -256,12 +257,17 @@ export default function Positions() {
                                         {new Date(position.created_at).toLocaleDateString()}
                                     </TableCell>
                                     <TableCell className="text-right">
-                                        <div className="flex justify-end gap-2">
-                                            <Button size="sm" variant="outline" onClick={() => openEdit(position)}>
-                                                Editar
+                                        <div className="flex items-center justify-end gap-1">
+                                            <Button variant="ghost" size="sm" className="h-8 gap-1" onClick={() => openEdit(position)}>
+                                                <Pencil className="h-3.5 w-3.5" /> Editar
                                             </Button>
-                                            <Button size="sm" variant="destructive" onClick={() => handleDelete(position)}>
-                                                Eliminar
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className="h-8 gap-1 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                                onClick={() => handleDelete(position)}
+                                            >
+                                                <Trash2 className="h-3.5 w-3.5" /> Eliminar
                                             </Button>
                                         </div>
                                     </TableCell>
