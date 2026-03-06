@@ -27,6 +27,7 @@ import { handleAuthError, getApiErrorMessage } from "@/lib/apiErrors";
 import { clearCatalogCache } from "@/lib/catalogCache";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { TablePagination } from "@/components/ui/table-pagination";
+import { Pencil, Trash2 } from "lucide-react";
 
 const emptyForm = { name: "", content: "", category: "", is_active: true };
 const PER_PAGE_OPTIONS = ["10", "15", "25", "50", "100"];
@@ -67,6 +68,18 @@ export default function TicketMacros() {
     const resetForm = () => {
         setForm(emptyForm);
         setEditing(null);
+    };
+
+    const remove = async (macro) => {
+        if (!window.confirm(`¿Eliminar la plantilla "${macro.name}"? Esta acción no se puede deshacer.`)) return;
+        try {
+            await axios.delete(`/api/ticket-macros/${macro.id}`);
+            setList((prev) => prev.filter((x) => x.id !== macro.id));
+            clearCatalogCache();
+            notify.success("Plantilla eliminada");
+        } catch (err) {
+            notify.error(getApiErrorMessage(err, "No se pudo eliminar"));
+        }
     };
 
     const openCreate = () => {
@@ -273,9 +286,14 @@ export default function TicketMacros() {
                                         </div>
                                     </TableCell>
                                     <TableCell className="text-right">
-                                        <Button size="sm" variant="outline" onClick={() => openEdit(macro)}>
-                                            Editar
-                                        </Button>
+                                        <div className="flex items-center justify-end gap-1">
+                                            <Button variant="ghost" size="sm" className="h-8 gap-1" onClick={() => openEdit(macro)}>
+                                                <Pencil className="h-3.5 w-3.5" /> Editar
+                                            </Button>
+                                            <Button variant="ghost" size="sm" className="h-8 gap-1 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => remove(macro)}>
+                                                <Trash2 className="h-3.5 w-3.5" /> Eliminar
+                                            </Button>
+                                        </div>
                                     </TableCell>
                                 </TableRow>
                             ))

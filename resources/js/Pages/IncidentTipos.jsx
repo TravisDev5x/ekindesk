@@ -172,7 +172,12 @@ export default function IncidentTipos() {
                                     <TableCell>{t.name}</TableCell>
                                     <TableCell>{t.code}</TableCell>
                                     <TableCell className="text-right"><Switch checked={t.is_active} onCheckedChange={() => toggleActive(t)} /></TableCell>
-                                    <TableCell className="text-right"><Button variant="ghost" size="sm" className="h-8 gap-1" onClick={() => openEdit(t)}><Pencil className="h-3.5 w-3.5" /> Editar</Button></TableCell>
+                                    <TableCell className="text-right">
+                                        <div className="flex items-center justify-end gap-1">
+                                            <Button variant="ghost" size="sm" className="h-8 gap-1" onClick={() => openEdit(t)}><Pencil className="h-3.5 w-3.5" /> Editar</Button>
+                                            <Button variant="ghost" size="sm" className="h-8 gap-1 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => remove(t)}><Trash2 className="h-3.5 w-3.5" /> Eliminar</Button>
+                                        </div>
+                                    </TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>

@@ -13,7 +13,7 @@ import { notify } from "@/lib/notify";
 import { clearCatalogCache } from "@/lib/catalogCache";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { TablePagination } from "@/components/ui/table-pagination";
-import { ArrowLeft, Pencil } from "lucide-react";
+import { ArrowLeft, Pencil, Trash2 } from "lucide-react";
 
 const RESOLVE_BASE = "/resolbeb";
 const PER_PAGE_OPTIONS = ["10", "15", "25", "50", "100"];
@@ -142,7 +142,12 @@ export default function ResolbebEstados() {
                                     <TableCell>{st.code}</TableCell>
                                     <TableCell>{st.is_final ? "Sí" : "No"}</TableCell>
                                     <TableCell className="text-right"><Switch checked={st.is_active} onCheckedChange={() => toggle(st)} /></TableCell>
-                                    <TableCell className="text-right"><Button variant="ghost" size="sm" className="h-8 gap-1" onClick={() => openEdit(st)}><Pencil className="h-3.5 w-3.5" /> Editar</Button></TableCell>
+                                    <TableCell className="text-right">
+                                        <div className="flex items-center justify-end gap-1">
+                                            <Button variant="ghost" size="sm" className="h-8 gap-1" onClick={() => openEdit(st)}><Pencil className="h-3.5 w-3.5" /> Editar</Button>
+                                            <Button variant="ghost" size="sm" className="h-8 gap-1 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => remove(st)}><Trash2 className="h-3.5 w-3.5" /> Eliminar</Button>
+                                        </div>
+                                    </TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>

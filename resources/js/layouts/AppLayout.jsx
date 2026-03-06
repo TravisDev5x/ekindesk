@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { Sidebar } from '@/components/Sidebar'
+import { MobileBottomBar } from '@/components/MobileBottomBar'
 
 // --- ICONS ---
 import {
@@ -32,7 +33,7 @@ import {
     ChevronRight, Bell, BellOff, Layers, Shield, Maximize2,
     Minimize2, Square, SquareDashed, MoreHorizontal, Monitor,
     CalendarDays, BookOpen, UserCheck, Upload, GitMerge, FileSpreadsheet, FileCheck, FileText, Clock, Link2, Grid3X3,
-    Activity, LogIn
+    Activity, LogIn, Smartphone
 } from 'lucide-react'
 
 // ----------------------------------------------------------------------
@@ -63,6 +64,11 @@ export default function AppLayout() {
     const [focused, setFocused] = useState(() => {
         if (typeof window === 'undefined') return false
         return localStorage.getItem('layout-focused') === '1'
+    })
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+    const [forceDeviceView, setForceDeviceView] = useState(() => {
+        if (typeof window === 'undefined') return false
+        return localStorage.getItem('layout-force-device-view') === '1'
     })
 
     const [hoverPreviewEnabled, setHoverPreviewEnabled] = useState(() => user?.sidebar_hover_preview ?? true)
@@ -101,6 +107,7 @@ export default function AppLayout() {
         if (typeof window !== 'undefined') {
             localStorage.setItem('sidebar-collapsed', collapsed ? '1' : '0')
             localStorage.setItem('layout-focused', focused ? '1' : '0')
+            localStorage.setItem('layout-force-device-view', forceDeviceView ? '1' : '0')
         }
         if (user) {
             axios.put('/api/profile/sidebar', {
@@ -108,7 +115,7 @@ export default function AppLayout() {
                 sidebar_hover_preview: hoverPreviewEnabled,
             }).catch(() => { })
         }
-    }, [collapsed, hoverPreviewEnabled, user, focused])
+    }, [collapsed, hoverPreviewEnabled, user, focused, forceDeviceView])
 
     // Fetch Notifications (inicial + cada 60s + al abrir el dropdown)
     const loadNotifs = React.useCallback(async () => {
@@ -248,6 +255,11 @@ export default function AppLayout() {
         return () => clearInterval(id)
     }, [pendingAdmin, refreshUser])
 
+    // Cerrar menú móvil al navegar (ej. al tocar un enlace del Sheet)
+    useEffect(() => {
+        setMobileMenuOpen(false)
+    }, [pathname])
+
     return (
         <TooltipProvider>
             <div
@@ -291,7 +303,8 @@ export default function AppLayout() {
                 {/* --- SIDEBAR --- */}
                 <aside
                     className={cn(
-                        "hidden md:flex flex-col z-40 overflow-hidden flex-shrink-0",
+                        "flex-col z-40 overflow-hidden flex-shrink-0",
+                        forceDeviceView ? "hidden" : "hidden md:flex",
                         "will-change-[width]",
                         (collapsed || focused) ? "w-[72px]" : "w-64"
                     )}
@@ -333,16 +346,16 @@ export default function AppLayout() {
                         className="sticky top-0 z-30 flex h-16 shrink-0 items-center gap-x-4 bg-background/80 px-4 backdrop-blur-xl transition-all md:px-6"
                         data-sidebar-position={sidebarPosition}
                     >
-                        {/* Menú móvil: siempre primero */}
-                        <div className="order-0 md:hidden">
-                            <Sheet>
+                        {/* Menú móvil: visible en viewport móvil o cuando está activa la vista dispositivo */}
+                        <div className={cn("order-0", forceDeviceView ? "flex" : "md:hidden")}>
+                            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
                                 <SheetTrigger asChild>
                                     <Button variant="ghost" size="icon" className="-ml-2 h-9 w-9 text-muted-foreground">
                                         <Menu className="h-5 w-5" />
                                     </Button>
                                 </SheetTrigger>
                                 <SheetContent side="left" className="p-0 w-72">
-                                    <Sidebar collapsed={false} onToggle={() => {}} />
+                                    <Sidebar collapsed={false} onToggle={() => setMobileMenuOpen(false)} />
                                 </SheetContent>
                             </Sheet>
                         </div>
@@ -395,6 +408,21 @@ export default function AppLayout() {
                                         </Button>
                                     </TooltipTrigger>
                                     <TooltipContent>Pantalla Completa</TooltipContent>
+                                </Tooltip>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button
+                                            variant={forceDeviceView ? "secondary" : "ghost"}
+                                            size="icon"
+                                            className="h-7 w-7 rounded-full"
+                                            onClick={() => setForceDeviceView((v) => !v)}
+                                        >
+                                            <Smartphone className="h-3.5 w-3.5" />
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        {forceDeviceView ? 'Salir vista tablet/móvil' : 'Vista tablet/móvil'}
+                                    </TooltipContent>
                                 </Tooltip>
                             </div>
 
@@ -488,7 +516,7 @@ export default function AppLayout() {
                     {/* --- OUTLET AREA --- */}
                     <main
                         ref={mainScrollRef}
-                        className="flex-1 overflow-y-auto bg-muted/10 relative"
+                        className={cn("flex-1 overflow-y-auto bg-muted/10 relative", forceDeviceView ? "pb-24" : "pb-24 md:pb-0")}
                         tabIndex={-1}
                     >
                         {/* Fade + blur superior al hacer scroll (no afecta z-index del sidebar/navbar) */}
@@ -510,6 +538,7 @@ export default function AppLayout() {
                         </div>
                     </main>
                 </div>
+                <MobileBottomBar onOpenMenu={setMobileMenuOpen} forceVisible={forceDeviceView} />
             </div>
         </TooltipProvider>
     )
