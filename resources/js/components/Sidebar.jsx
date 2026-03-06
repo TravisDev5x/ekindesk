@@ -199,14 +199,14 @@ const SectionTitle = ({ children, collapsed, showSeparatorWhenCollapsed }) => {
         if (showSeparatorWhenCollapsed) {
             return (
                 <div className="flex justify-center py-2">
-                    <hr className="w-8 border-border/60 rounded-full" />
+                    <hr className="w-8 border-border/60 rounded-full transition-opacity duration-200" />
                 </div>
             )
         }
         return null
     }
     return (
-        <h4 className="px-3 pt-2 pb-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">
+        <h4 className="px-3 pt-2 pb-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70 transition-opacity duration-200">
             {children}
         </h4>
     )
@@ -227,13 +227,11 @@ export function Sidebar({ collapsed, onToggle }) {
     const can = (permission) => Boolean(user?.permissions?.includes(permission))
 
     const canSeeCatalogs = can('catalogs.manage') || can('tickets.view_area') || can('tickets.manage_all')
-    const canSeeAttendance = can('attendances.view_own') || can('attendances.record_own')
     const canSeeIncidents = can('incidents.view_own') || can('incidents.view_area') || can('incidents.manage_all')
     const canSeeTicketsModule = can('tickets.manage_all') || can('tickets.view_area')
     const canSeeMyTickets =
         (can('tickets.create') || can('tickets.view_own')) &&
         (can('tickets.manage_all') || can('tickets.view_area'))
-    const canSeeTimeDesk = can('attendances.manage') || can('attendances.view_all')
     const isAdmin = can('users.manage')
     const canSeeSigua = can('sigua.dashboard')
 
@@ -243,7 +241,6 @@ export function Sidebar({ collapsed, onToggle }) {
         // BLOQUE 1: GENERAL (todos pueden crear ticket y ver sus tickets)
         const generalItems = [
             { to: '/', label: t('nav.home'), icon: Home, emphasis: true },
-            ...(canSeeAttendance ? [{ to: '/attendance', label: t('nav.attendance'), icon: Clock, emphasis: true }] : []),
             { to: '/calendario', label: t('nav.calendar'), icon: CalendarDays, emphasis: true },
             { to: '/resolbeb/mis-tickets', label: t('nav.myTickets'), icon: Ticket, emphasis: true },
             { to: '/resolbeb/tickets/new', label: 'Crear ticket', icon: Layers, emphasis: true },
@@ -292,36 +289,6 @@ export function Sidebar({ collapsed, onToggle }) {
             })
         }
 
-        const timedeskChildren = []
-        if (canSeeTimeDesk) {
-            timedeskChildren.push({ to: '/timedesk', label: t('timedesk.dashboard'), icon: LayoutDashboard })
-            timedeskChildren.push({ to: '/timedesk/employees', label: 'Directorio de Empleados', icon: Users })
-            if (can('attendances.manage'))
-                timedeskChildren.push({ to: '/timedesk/termination-reasons', label: 'Catálogo de Motivos de Baja', icon: Tags })
-            if (can('attendances.manage'))
-                timedeskChildren.push({ to: '/timedesk/employee-statuses', label: 'Catálogo de Estatus', icon: Activity })
-            if (can('attendances.manage'))
-                timedeskChildren.push({ to: '/timedesk/hire-types', label: 'Catálogo de Tipos de Ingreso', icon: LogIn })
-            if (can('attendances.manage'))
-                timedeskChildren.push({
-                    to: '/timedesk/recruitment-sources',
-                    label: t('timedesk.catalogRecruitmentSources'),
-                    icon: Megaphone,
-                })
-            if (canSeeCatalogs)
-                timedeskChildren.push({ to: '/timedesk/schedules', label: t('timedesk.catalogSchedules'), icon: Clock })
-            if (can('attendances.manage'))
-                timedeskChildren.push({ to: '/timedesk/schedule-assignments', label: t('timedesk.assignments'), icon: Link2 })
-        }
-        if (canSeeTimeDesk && timedeskChildren.length > 0) {
-            moduleItems.push({
-                label: t('nav.timedesk'),
-                icon: Clock,
-                emphasis: false,
-                children: timedeskChildren,
-            })
-        }
-
         if (canSeeSigua) {
             const siguaChildren = []
             if (can('sigua.dashboard')) siguaChildren.push({ to: '/sigua', label: 'Dashboard', icon: LayoutDashboard })
@@ -355,38 +322,46 @@ export function Sidebar({ collapsed, onToggle }) {
             sections.push({ label: 'MÓDULOS', items: moduleItems })
         }
 
-        // BLOQUE: CATÁLOGOS (solo los que NO están dentro de un módulo; tipos/severidades/estados de incidencias viven en el módulo Incidencias)
-        const catalogItems = [
+        // BLOQUE: CATÁLOGOS (colapsable como los demás módulos; sin Roles ni Permisos, van en Sistema)
+        const catalogChildren = [
             { to: '/campaigns', label: t('nav.campaigns'), icon: Megaphone },
             { to: '/sedes', label: t('nav.sedes'), icon: MapPin },
             { to: '/areas', label: t('nav.areas'), icon: Network },
             { to: '/positions', label: t('nav.positions'), icon: Briefcase },
             { to: '/ubicaciones', label: t('nav.ubicaciones'), icon: MapPin },
-            { to: '/roles', label: t('nav.roles'), icon: ShieldCheck },
-            { to: '/permissions', label: t('nav.permissions'), icon: KeyRound },
         ]
-        sections.push({ label: 'CATÁLOGOS', items: catalogItems })
+        const catalogGroup = {
+            label: t('nav.catalogs'),
+            icon: Layers,
+            children: catalogChildren,
+        }
+        sections.push({ label: 'CATÁLOGOS', items: [catalogGroup] })
 
-        // BLOQUE 3: SISTEMA (solo administradores)
+        // BLOQUE 3: SISTEMA (solo administradores; colapsable; incluye Roles y Permisos)
         if (isAdmin) {
-            const systemItems = [
+            const systemChildren = [
                 { to: '/users', label: t('nav.users'), icon: Users },
                 { to: '/sessions', label: t('nav.sessions'), icon: Monitor },
                 { to: '/audit-command', label: 'Centro de auditoría', icon: ShieldCheck },
                 { to: '/settings', label: t('nav.settings'), icon: Settings },
+                { to: '/roles', label: t('nav.roles'), icon: ShieldCheck },
+                { to: '/permissions', label: t('nav.permissions'), icon: KeyRound },
             ]
-            sections.push({ label: 'SISTEMA', items: systemItems })
+            const systemGroup = {
+                label: 'Sistema',
+                icon: Settings,
+                children: systemChildren,
+            }
+            sections.push({ label: 'SISTEMA', items: [systemGroup] })
         }
 
         return sections
     }, [
         t,
         canSeeCatalogs,
-        canSeeAttendance,
         canSeeIncidents,
         canSeeTicketsModule,
         canSeeMyTickets,
-        canSeeTimeDesk,
         isAdmin,
         canSeeSigua,
         user?.permissions,
@@ -397,7 +372,7 @@ export function Sidebar({ collapsed, onToggle }) {
             <div
                 className={cn(
                     'flex h-full flex-col bg-card/95 backdrop-blur-sm border-border/50',
-                    'transition-[background-color,border-color,border-width,padding] duration-300 ease-out',
+                    'transition-[background-color,border-color,border-width,padding] duration-350 ease-[cubic-bezier(0.32,0.72,0,1)]',
                     sidebarPosition === 'right' ? 'border-l' : 'border-r'
                 )}
                 data-sidebar="main"
@@ -405,25 +380,31 @@ export function Sidebar({ collapsed, onToggle }) {
                 {/* Header */}
                 <div
                 className={cn(
-                    'flex h-16 shrink-0 items-center border-b border-border/50 transition-[padding] duration-300 ease-out',
+                    'flex h-16 shrink-0 items-center border-b border-border/50 relative',
+                    'transition-[padding] duration-350 ease-[cubic-bezier(0.32,0.72,0,1)]',
                     collapsed ? 'justify-center px-2' : 'justify-between px-3 gap-2'
                 )}
             >
-                {!collapsed && (
-                    <div className="flex items-center gap-2 overflow-hidden min-w-0 flex-1">
-                        <div className="flex shrink-0 items-center justify-center h-8 w-8 rounded-lg bg-primary text-primary-foreground shadow-md">
-                            <ShieldCheck className="h-4 w-4" />
-                        </div>
-                        <div className="flex flex-col min-w-0 animate-in fade-in slide-in-from-left-2 duration-300">
-                            <span className="text-sm font-bold leading-none tracking-tight truncate">
-                                {t('brand.title')}
-                            </span>
-                            <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-widest mt-0.5 opacity-80 truncate">
-                                {t('brand.subtitle')}
-                            </span>
-                        </div>
+                <div
+                    className={cn(
+                        'flex items-center gap-2 overflow-hidden min-w-0 flex-1 transition-opacity duration-200',
+                        collapsed
+                            ? 'opacity-0 w-0 min-w-0 overflow-hidden absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none'
+                            : 'opacity-100 delay-75'
+                    )}
+                >
+                    <div className="flex shrink-0 items-center justify-center h-8 w-8 rounded-lg bg-primary text-primary-foreground shadow-md">
+                        <ShieldCheck className="h-4 w-4" />
                     </div>
-                )}
+                    <div className="flex flex-col min-w-0">
+                        <span className="text-sm font-bold leading-none tracking-tight truncate">
+                            {t('brand.title')}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-widest mt-0.5 opacity-80 truncate">
+                            {t('brand.subtitle')}
+                        </span>
+                    </div>
+                </div>
                 <Tooltip delayDuration={0} open={toggleBtnTooltipOpen} onOpenChange={setToggleBtnTooltipOpen}>
                     <TooltipTrigger asChild>
                         <Button
@@ -438,7 +419,7 @@ export function Sidebar({ collapsed, onToggle }) {
                         >
                             <Menu
                                 className={cn(
-                                    'h-5 w-5 transition-transform duration-300 ease-out',
+                                    'h-5 w-5 transition-transform duration-350 ease-[cubic-bezier(0.32,0.72,0,1)]',
                                     collapsed ? 'rotate-0' : 'rotate-90'
                                 )}
                             />
@@ -453,7 +434,8 @@ export function Sidebar({ collapsed, onToggle }) {
             <ScrollArea className="flex-1 w-full min-h-0">
                 <nav
                         className={cn(
-                            'flex flex-col gap-4 py-4 transition-[padding] duration-300 ease-out',
+                            'flex flex-col gap-4 py-4',
+                            'transition-[padding] duration-350 ease-[cubic-bezier(0.32,0.72,0,1)]',
                             collapsed ? 'px-2' : 'px-3'
                         )}
                     >

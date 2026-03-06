@@ -199,15 +199,6 @@ export default function AppLayout() {
         '/ticket-macros': 'Plantillas de respuesta',
         '/incidents': t('section.incidents'),
         '/profile': t('layout.profile'),
-        '/attendance': t('nav.attendance'),
-        '/schedules': t('nav.schedules'),
-        '/schedules/assignments': t('nav.scheduleAssignments'),
-        '/timedesk': t('timedesk.dashboard'),
-        '/timedesk/employee-statuses': 'Catálogo de Estatus',
-        '/timedesk/hire-types': 'Catálogo de Tipos de Ingreso',
-        '/timedesk/recruitment-sources': t('timedesk.catalogRecruitmentSources'),
-        '/timedesk/schedules': t('timedesk.catalogSchedules'),
-        '/timedesk/schedule-assignments': t('timedesk.assignments'),
         '/sigua': 'SIGUA',
         '/sigua/cuentas': 'SIGUA · Cuentas',
         '/sigua/ca01': 'SIGUA · CA-01',
@@ -285,8 +276,8 @@ export default function AppLayout() {
                 {/* --- SIDEBAR --- */}
                 <aside
                     className={cn(
-                        "hidden md:flex flex-col z-40 overflow-hidden",
-                        "transition-[width] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] will-change-[width]",
+                        "hidden md:flex flex-col z-40 overflow-hidden flex-shrink-0",
+                        "transition-[width] duration-350 ease-[cubic-bezier(0.32,0.72,0,1)]",
                         (collapsed || focused) ? "w-[72px]" : "w-64"
                     )}
                     onMouseEnter={() => {
@@ -306,7 +297,7 @@ export default function AppLayout() {
                 </aside>
 
 {/* --- MAIN CONTENT WRAPPER --- */}
-                    <div className="flex flex-1 flex-col min-w-0 relative">
+                    <div className="flex flex-1 flex-col min-w-0 relative transition-[margin] duration-350 ease-[cubic-bezier(0.32,0.72,0,1)]">
 
                     {/* Security Alert Banner */}
                     {mustChangePassword && (

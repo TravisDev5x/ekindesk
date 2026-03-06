@@ -15,7 +15,7 @@ class CatalogController extends Controller
     private const CATALOG_CACHE_TTL = 600; // 10 minutos
 
     /** Módulos permitidos para carga parcial. */
-    private const ALLOWED_MODULES = ['core', 'tickets', 'incidents', 'timedesk', 'sigua'];
+    private const ALLOWED_MODULES = ['core', 'tickets', 'incidents', 'sigua'];
 
     public function index(Request $request)
     {
@@ -73,7 +73,6 @@ class CatalogController extends Controller
                 'core' => $this->getCoreCatalogs($user),
                 'tickets' => $this->getTicketsCatalogs($user),
                 'incidents' => $this->getIncidentsCatalogs(),
-                'timedesk' => $this->getTimeDeskCatalogs(),
                 'sigua' => $this->getSiguaCatalogs($user),
                 default => [],
             };
@@ -89,12 +88,11 @@ class CatalogController extends Controller
             $this->getCoreCatalogs($user),
             $this->getTicketsCatalogs($user),
             $this->getIncidentsCatalogs(),
-            $this->getTimeDeskCatalogs(),
             $this->getSiguaCatalogs($user)
         );
     }
 
-    /** Core: roles, areas, sedes, ubicaciones, campañas, puestos, schedules, area_users. */
+    /** Core: roles, areas, sedes, ubicaciones, campañas, puestos, area_users. */
     private function getCoreCatalogs($user): array
     {
         $guards = ['web', 'sanctum'];
@@ -114,11 +112,6 @@ class CatalogController extends Controller
                     ->orderBy('name')
                     ->get(['id', 'name', 'area_id', 'position_id']);
             }
-        }
-
-        $schedules = collect();
-        if (Schema::hasTable('schedules')) {
-            $schedules = DB::table('schedules')->where('is_active', true)->orderBy('name')->get(['id', 'name']);
         }
 
         return [
@@ -147,7 +140,6 @@ class CatalogController extends Controller
                 ->whereIn('guard_name', $guards)
                 ->orderBy('name')
                 ->get(['id', 'name']),
-            'schedules' => $schedules,
             'area_users' => $areaUsers,
         ];
     }
@@ -199,30 +191,6 @@ class CatalogController extends Controller
             'incident_severities' => DB::table('incident_severities')->orderBy('level')->orderBy('name')->get(['id', 'name', 'code', 'level', 'is_active']),
             'incident_statuses' => DB::table('incident_statuses')->orderBy('name')->get(['id', 'name', 'code', 'is_active', 'is_final']),
         ];
-    }
-
-    /** TimeDesk: termination_reasons, employee_statuses, hire_types, recruitment_sources. */
-    private function getTimeDeskCatalogs(): array
-    {
-        $out = [
-            'termination_reasons' => collect(),
-            'employee_statuses' => collect(),
-            'hire_types' => collect(),
-            'recruitment_sources' => collect(),
-        ];
-        if (Schema::hasTable('termination_reasons')) {
-            $out['termination_reasons'] = DB::table('termination_reasons')->where('is_active', true)->orderBy('name')->get(['id', 'name', 'description']);
-        }
-        if (Schema::hasTable('employee_statuses')) {
-            $out['employee_statuses'] = DB::table('employee_statuses')->where('is_active', true)->orderBy('name')->get(['id', 'name']);
-        }
-        if (Schema::hasTable('hire_types')) {
-            $out['hire_types'] = DB::table('hire_types')->where('is_active', true)->orderBy('name')->get(['id', 'name']);
-        }
-        if (Schema::hasTable('recruitment_sources')) {
-            $out['recruitment_sources'] = DB::table('recruitment_sources')->where('is_active', true)->orderBy('name')->get(['id', 'name']);
-        }
-        return $out;
     }
 
     /** SIGUA: sistemas (sigua_systems). Solo si el usuario tiene permiso y la tabla existe. */

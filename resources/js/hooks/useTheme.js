@@ -18,6 +18,12 @@ const setRootTheme = (theme, opts = {}) => {
     const root = document.documentElement
     THEME_ORDER.forEach((t) => root.classList.remove(t))
     root.classList.add(theme)
+    // Activar variante dark: de Tailwind en cualquier tema oscuro (dark, dark-deep, aeroglass-dark, liquidglass-rose-dark)
+    if (theme.includes('dark')) {
+        root.classList.add('dark')
+    } else {
+        root.classList.remove('dark')
+    }
     root.style.colorScheme = theme.includes('dark') ? 'dark' : 'light'
     if (opts.blockTransitions) root.dataset.themeSwitching = '1'
 }

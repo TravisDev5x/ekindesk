@@ -19,12 +19,6 @@ class DatabaseSeeder extends Seeder
         $this->call([
             FullDemoSeeder::class,             // Configuración mínima (catálogos, roles, admin)
             PriorityMatrixSeeder::class,       // Matriz Impacto x Urgencia -> Prioridad (requiere priorities)
-            ScheduleSeeder::class,             // Horario "Por defecto" para asistencias
-            AttendancePermissionsSeeder::class, // Permisos de asistencias y asignación a roles
-            TerminationReasonSeeder::class,   // Catálogo de motivos de baja (RH/TimeDesk)
-            EmployeeStatusSeeder::class,     // Catálogo estatus empleado (Entrevista, Capacitación, Activo, Baja)
-            HireTypeSeeder::class,            // Catálogo tipo de ingreso (Nuevo Ingreso, Reingreso)
-            RecruitmentSourceSeeder::class,  // Catálogo medios de contratación (RH)
             SiguaPermissionsSeeder::class,    // Permisos SIGUA y asignación al rol admin
             SiguaConfiguracionSeeder::class,  // Configuración base de SIGUA
             EmpresaSedeSeeder::class,         // 2 sedes (Toluca, CDMX) y 5 campañas

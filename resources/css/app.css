@@ -2,6 +2,8 @@
 @import "tailwindcss";
 @config "../../tailwind.config.js";
 
+@import url("https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&display=swap");
+
 /* ===== shadcn tokens ===== */
 :root {
     --background: 0 0% 100%;
@@ -105,9 +107,9 @@
     --ring: 215 20% 18%;
 }
 
-/* AdminLTE Legacy: inspirado en AdminLTE clásico (mismas variables, paleta compatible) */
+/* AdminLTE 4: identidad visual (Bootstrap 5 style, sin introducir Bootstrap) */
 .adminlte-legacy {
-    --background: 220 14% 96%;
+    --background: 220 25% 97%;
     --foreground: 220 15% 18%;
 
     --card: 0 0% 100%;
@@ -116,31 +118,49 @@
     --popover: 0 0% 100%;
     --popover-foreground: 220 15% 18%;
 
-    --primary: 199 63% 49%;
+    --primary: 217 70% 55%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 220 12% 92%;
+    --secondary: 220 17% 95%;
     --secondary-foreground: 220 15% 18%;
 
-    --muted: 220 12% 90%;
-    --muted-foreground: 220 10% 40%;
+    --muted: 220 17% 94%;
+    --muted-foreground: 210 9% 45%;
 
-    --accent: 199 45% 92%;
-    --accent-foreground: 199 63% 35%;
+    --accent: 217 70% 95%;
+    --accent-foreground: 217 70% 35%;
 
-    --destructive: 0 72% 55%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 2 76% 54%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 220 12% 86%;
-    --input: 220 12% 86%;
-    --ring: 199 63% 49%;
+    --border: 220 14% 90%;
+    --input: 220 14% 90%;
+    --ring: 217 70% 55%;
+
+    --radius: 0.5rem;
+
+    --adminlte-success: 145 67% 37%;
+    --adminlte-warning: 32 95% 44%;
+    --adminlte-info: 187 78% 41%;
 }
 
-/* AdminLTE Legacy: sidebar oscura tipo AdminLTE 3 (solo cuando el tema es adminlte-legacy) */
+/* AdminLTE 4: tipografía, fondo general y headings ligeros */
+.adminlte-legacy body {
+    font-family: "Source Sans 3", system-ui, -apple-system, sans-serif !important;
+    font-size: 15px;
+    background-color: #f4f6f9 !important;
+}
+.adminlte-legacy h4,
+.adminlte-legacy h5,
+.adminlte-legacy h6 {
+    font-weight: 400;
+}
+
+/* AdminLTE 4: sidebar dark navy, bordes sutiles, item activo con primary y borde izquierdo */
 .adminlte-legacy [data-sidebar="main"] {
-    background: #222d32 !important;
-    border-inline-end-color: rgba(255, 255, 255, 0.08);
-    border-right-color: rgba(255, 255, 255, 0.08); /* fallback LTR */
+    background: #1a1f2b !important;
+    border-inline-end: 1px solid rgba(255, 255, 255, 0.06);
+    border-right: 1px solid rgba(255, 255, 255, 0.06);
 }
 .adminlte-legacy [data-sidebar="main"] .text-foreground,
 .adminlte-legacy [data-sidebar="main"] .text-foreground\/90 {
@@ -154,16 +174,16 @@
 }
 .adminlte-legacy [data-sidebar="main"] .border-border\/50,
 .adminlte-legacy [data-sidebar="main"] .border-border\/40 {
-    border-color: rgba(255, 255, 255, 0.08) !important;
+    border-color: rgba(255, 255, 255, 0.06) !important;
 }
 .adminlte-legacy [data-sidebar="main"] .bg-primary {
-    background-color: #357ca2 !important;
+    background-color: #3b7ddd !important;
 }
 .adminlte-legacy [data-sidebar="main"] .bg-primary\/10 {
-    background-color: rgba(53, 124, 162, 0.25) !important;
+    background-color: rgba(59, 125, 221, 0.2) !important;
 }
 .adminlte-legacy [data-sidebar="main"] .text-primary {
-    color: #7ab8e8 !important;
+    color: #6ea8fe !important;
 }
 .adminlte-legacy [data-sidebar="main"] .bg-muted\/5,
 .adminlte-legacy [data-sidebar="main"] .bg-muted\/10 {
@@ -177,11 +197,16 @@
 .adminlte-legacy [data-sidebar="main"] a[aria-current="page"],
 .adminlte-legacy [data-sidebar="main"] a.bg-secondary,
 .adminlte-legacy [data-sidebar="main"] .bg-secondary[data-state="active"] {
-    background-color: #357ca2 !important;
+    background-color: rgba(59, 125, 221, 0.15) !important;
     color: #fff !important;
+    border-inline-start: 3px solid #3b7ddd;
+    border-left: 3px solid #3b7ddd;
+    padding-inline-start: calc(0.75rem - 3px);
+    padding-left: calc(0.75rem - 3px);
 }
-.adminlte-legacy [data-sidebar="main"] a.bg-secondary:hover {
-    background-color: #2d6a8f !important;
+.adminlte-legacy [data-sidebar="main"] a.bg-secondary:hover,
+.adminlte-legacy [data-sidebar="main"] a[aria-current="page"]:hover {
+    background-color: rgba(59, 125, 221, 0.25) !important;
     color: #fff !important;
 }
 .adminlte-legacy [data-sidebar="main"] .data-\[state=open\]\:bg-accent,
@@ -189,20 +214,64 @@
     background-color: rgba(255, 255, 255, 0.06) !important;
 }
 .adminlte-legacy [data-sidebar="main"] .shadow-primary\/20 {
-    box-shadow: 0 4px 12px rgba(53, 124, 162, 0.3);
+    box-shadow: 0 1px 3px rgba(59, 125, 221, 0.2);
 }
 .adminlte-legacy [data-sidebar="main"] .bg-primary\/10.text-primary {
-    color: #7ab8e8 !important;
+    color: #6ea8fe !important;
 }
-/* Sidebar a la derecha: borde en el lado que toca el contenido */
 [data-sidebar-position="right"].adminlte-legacy [data-sidebar="main"] {
-    border-inline-start-color: rgba(255, 255, 255, 0.08);
-    border-left-color: rgba(255, 255, 255, 0.08);
+    border-inline-end: none;
+    border-right: none;
+    border-inline-start: 1px solid rgba(255, 255, 255, 0.06);
+    border-left: 1px solid rgba(255, 255, 255, 0.06);
+}
+[data-sidebar-position="right"].adminlte-legacy [data-sidebar="main"] a[aria-current="page"],
+[data-sidebar-position="right"].adminlte-legacy [data-sidebar="main"] a.bg-secondary,
+[data-sidebar-position="right"].adminlte-legacy [data-sidebar="main"] .bg-secondary[data-state="active"] {
+    border-inline-start: none;
+    border-left: none;
+    border-inline-end: 3px solid #3b7ddd;
+    border-right: 3px solid #3b7ddd;
+    padding-inline-end: calc(0.75rem - 3px);
+    padding-right: calc(0.75rem - 3px);
 }
 
-/* AdminLTE Legacy: área principal más clara (contraste con sidebar oscura) */
+/* AdminLTE 4: área principal #f4f6f9 */
 .adminlte-legacy main.bg-muted\/10 {
-    background-color: #ecf0f5 !important;
+    background-color: #f4f6f9 !important;
+}
+
+/* AdminLTE 4: navbar/topbar sombra sutil */
+.adminlte-legacy header[data-sidebar-position] {
+    background-color: #fff !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* AdminLTE 4: cards border-radius 0.5rem, sombra sutil */
+.adminlte-legacy .rounded-xl,
+.adminlte-legacy [class*="rounded-xl"] {
+    border-radius: 0.5rem !important;
+}
+.adminlte-legacy .bg-card {
+    box-shadow: 0 0 1px rgba(0, 0, 0, 0.125), 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+/* AdminLTE 4: tablas header #f8f9fa, hover fila */
+.adminlte-legacy thead th,
+.adminlte-legacy [data-slot="table-header"] {
+    background-color: #f8f9fa !important;
+    color: #6c757d !important;
+}
+.adminlte-legacy tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.03) !important;
+}
+
+/* AdminLTE 4: inputs focus */
+.adminlte-legacy input:focus,
+.adminlte-legacy textarea:focus,
+.adminlte-legacy select:focus {
+    border-color: #3b7ddd;
+    box-shadow: 0 0 0 0.2rem rgba(59, 125, 221, 0.25);
 }
 
 .dark {

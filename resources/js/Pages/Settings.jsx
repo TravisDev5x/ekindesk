@@ -29,7 +29,7 @@ import {
 const OPTIONS_THEME = [
     { value: "light", label: "Claro", description: "Blanco limpio", color: "bg-slate-100" },
     { value: "light-dim", label: "Claro suave", description: "Fondo gris claro", color: "bg-slate-200" },
-    { value: "adminlte-legacy", label: "AdminLTE Legacy", description: "Inspirado en AdminLTE clásico", color: "bg-[#3c8dbc]" },
+    { value: "adminlte-legacy", label: "AdminLTE 4", description: "Estilo AdminLTE v4 (Bootstrap 5)", color: "bg-[#3b7ddd]" },
     { value: "dark", label: "Oscuro", description: "Oscuro equilibrado", color: "bg-slate-900" },
     { value: "dark-deep", label: "Oscuro profundo", description: "Más contraste", color: "bg-black" },
     { value: "aeroglass", label: "AeroGlass", description: "Transparencia con brillo sutil", color: "bg-blue-100/50" },

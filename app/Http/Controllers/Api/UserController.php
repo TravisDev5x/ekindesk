@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Mail\VerifyEmail;
 use App\Models\User;
 use App\Models\Role;
-use App\Models\EmployeeProfile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -21,14 +20,26 @@ class UserController extends Controller
      */
     public function index(Request $request)
     {
-        $query = User::with(['campaign', 'area', 'position', 'sede', 'ubicacion', 'roles', 'employeeProfile.terminationReason']);
+        $query = User::with(['campaign', 'area', 'position', 'sede', 'ubicacion', 'roles']);
 
         if ($request->input('status') === 'only') {
             $query->onlyTrashed();
+        } else {
+            if ($request->filled('user_status') && in_array($request->input('user_status'), ['active', 'pending_admin', 'pending_email', 'blocked'], true)) {
+                $query->where('status', $request->input('user_status'));
+            }
+            if ($request->filled('blacklist')) {
+                if ($request->input('blacklist') === '1' || $request->input('blacklist') === 'yes') {
+                    $query->where('is_blacklisted', true);
+                }
+                if ($request->input('blacklist') === '0' || $request->input('blacklist') === 'no') {
+                    $query->where('is_blacklisted', false);
+                }
+            }
         }
 
         if ($search = $request->input('search')) {
-            $term = "%{$search}%";
+            $term = '%' . trim($search) . '%';
             $query->where(function ($q) use ($term) {
                 $q->where('name', 'like', $term)
                     ->orWhere('first_name', 'like', $term)
@@ -37,6 +48,37 @@ class UserController extends Controller
                     ->orWhere('employee_number', 'like', $term)
                     ->orWhere('email', 'like', $term);
             });
+        }
+
+        if ($request->filled('campaign')) {
+            $campaignId = \App\Models\Campaign::where('name', $request->input('campaign'))->value('id');
+            if ($campaignId !== null) {
+                $query->where('campaign_id', $campaignId);
+            }
+        }
+        if ($request->filled('area')) {
+            $areaId = \App\Models\Area::where('name', $request->input('area'))->value('id');
+            if ($areaId !== null) {
+                $query->where('area_id', $areaId);
+            }
+        }
+        if ($request->filled('sede')) {
+            $sedeId = \App\Models\Sede::where('name', $request->input('sede'))->value('id');
+            if ($sedeId !== null) {
+                $query->where('sede_id', $sedeId);
+            }
+        }
+        if ($request->filled('ubicacion')) {
+            $ubicacionId = \App\Models\Ubicacion::where('name', $request->input('ubicacion'))->value('id');
+            if ($ubicacionId !== null) {
+                $query->where('ubicacion_id', $ubicacionId);
+            }
+        }
+        if ($request->filled('role_id')) {
+            $roleId = (int) $request->input('role_id');
+            if ($roleId > 0) {
+                $query->whereHas('roles', fn ($q) => $q->where('roles.id', $roleId));
+            }
         }
 
         $sortable = ['id', 'name', 'employee_number', 'email', 'status', 'created_at'];
@@ -72,14 +114,6 @@ class UserController extends Controller
                     'is_blacklisted' => $user->is_blacklisted,
                     'roles' => $user->roles->map(fn ($r) => ['id' => $r->id, 'name' => $r->name]),
                     'deleted_at' => $user->deleted_at,
-                    'employee_profile' => $user->relationLoaded('employeeProfile') && $user->employeeProfile
-                        ? [
-                            'termination_reason_id' => $user->employeeProfile->termination_reason_id,
-                            'termination_reason' => $user->employeeProfile->terminationReason?->name,
-                            'termination_date' => $user->employeeProfile->termination_date?->format('Y-m-d'),
-                            'hire_date' => $user->employeeProfile->hire_date?->format('Y-m-d'),
-                        ]
-                        : null,
                 ];
             });
 
@@ -291,15 +325,10 @@ class UserController extends Controller
     }
 
     /**
-     * Baja técnica (SoftDelete). Solo permitida si RH ya procesó la baja laboral (termination_date en expediente).
+     * Baja técnica (SoftDelete).
      */
     public function destroy(Request $request, User $user)
     {
-        $terminationDate = $user->employeeProfile?->termination_date ?? null;
-        if ($terminationDate === null) {
-            abort(403, 'No puedes dar de baja a un usuario si Recursos Humanos no ha procesado su baja laboral previamente.');
-        }
-
         $reason = $request->input('reason');
         if (is_string($reason) && strlen(trim($reason)) >= 5) {
             $user->update(['deletion_reason' => trim($reason)]);
@@ -310,7 +339,7 @@ class UserController extends Controller
     }
 
     /**
-     * Baja técnica masiva (SoftDelete). Solo permitida si RH ya procesó la baja laboral en cada usuario.
+     * Baja técnica masiva (SoftDelete).
      */
     public function massDestroy(Request $request)
     {
@@ -320,42 +349,11 @@ class UserController extends Controller
             'reason' => 'required|string|min:5',
         ]);
 
-        $users = User::with('employeeProfile')->whereIn('id', $request->ids)->get();
-        foreach ($users as $user) {
-            if ($user->employeeProfile?->termination_date === null) {
-                abort(403, 'No puedes dar de baja a un usuario si Recursos Humanos no ha procesado su baja laboral previamente. Usuario sin baja laboral: ' . ($user->name ?? $user->employee_number));
-            }
-        }
-
         User::whereIn('id', $request->ids)->update(['deletion_reason' => $request->reason]);
         User::whereIn('id', $request->ids)->delete();
 
         return response()->json(['message' => 'Usuarios eliminados correctamente']);
     }
-
-    /**
-     * Crea o actualiza el EmployeeProfile del usuario con motivo y fecha de baja (RH).
-     */
-    protected function syncEmployeeProfileForTermination(User $user, ?int $terminationReasonId, ?string $terminationDate): void
-    {
-        $attrs = [];
-        if ($terminationReasonId !== null) {
-            $attrs['termination_reason_id'] = $terminationReasonId;
-        }
-        if ($terminationDate !== null) {
-            $attrs['termination_date'] = $terminationDate;
-        }
-        if ($attrs === []) {
-            return;
-        }
-        $user->employeeProfile()->updateOrCreate(['user_id' => $user->id], $attrs);
-    }
-
-    /**
-     * @deprecated Exclusividad de Lista Negra: solo RH puede añadir/quitar (vía Procesar Baja en TimeDesk).
-     * La función técnica de enviar a Blacklist ya no está disponible en el módulo global de IT.
-     */
-    // public function toggleBlacklist(Request $request) { ... }
 
     public function restore($id)
     {
@@ -369,5 +367,22 @@ class UserController extends Controller
         $user = User::onlyTrashed()->findOrFail($id);
         $user->forceDelete();
         return response()->json(['message' => 'Usuario eliminado permanentemente']);
+    }
+
+    /**
+     * Alternar lista negra (vetar / quitar veto). Solo usuarios activos (no eliminados).
+     */
+    public function toggleBlacklist(Request $request, User $user)
+    {
+        $request->validate([
+            'blacklist' => 'required|boolean',
+        ]);
+
+        $user->update(['is_blacklisted' => $request->boolean('blacklist')]);
+        $message = $request->boolean('blacklist')
+            ? 'Usuario agregado a lista negra (vetado).'
+            : 'Usuario quitado de lista negra.';
+
+        return response()->json(['message' => $message, 'is_blacklisted' => $user->is_blacklisted]);
     }
 }

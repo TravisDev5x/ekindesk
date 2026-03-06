@@ -26,7 +26,9 @@ import {
     UserPlus, ShieldCheck, Trash2, Mail, Search,
     SlidersHorizontal, RotateCcw, AlertOctagon,
     Phone, Briefcase, Building2, UserCircle,
-    ShieldAlert, AlertTriangle, Filter, X, Loader2, CheckCircle2, Eye
+    ShieldAlert, AlertTriangle, Filter, X, Loader2, CheckCircle2, Eye,
+    ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight,
+    Ban
 } from "lucide-react";
 
 // --- SCHEMAS ---
@@ -115,98 +117,71 @@ function useUsersTableColumns({ selectedIds, setSelectedIds, renderRowActions, d
                     />
                 ),
                 meta: {
-                    headerClassName: "w-[40px] text-center",
-                    className: "w-[40px] text-center",
+                    headerClassName: "w-[36px] text-center py-1.5",
+                    className: "w-[36px] text-center py-1.5",
                 },
             },
             {
                 id: "identidad",
-                header: "Identidad",
+                header: "Usuario",
                 cell: ({ row }) => {
                     const user = row.original;
                     return (
-                        <div className="flex flex-col">
-                            <span className="font-bold text-sm text-foreground">
+                        <div className="flex flex-col min-w-0 gap-0.5">
+                            <span className="font-semibold text-sm text-foreground truncate">
                                 {user.name}
                             </span>
-                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                <span className="font-mono bg-muted px-1 rounded text-[10px]">
-                                    #{user.employee_number}
-                                </span>
-                                <span className="flex items-center gap-1">
-                                    <Mail className="h-3 w-3" /> {user.email}
-                                </span>
-                            </div>
+                            <span className="text-[11px] text-muted-foreground font-mono truncate" title={user.email}>
+                                #{user.employee_number}{user.email ? ` · ${user.email}` : ""}
+                            </span>
                         </div>
                     );
                 },
-                meta: { headerClassName: "font-bold text-xs uppercase tracking-wider" },
+                meta: { headerClassName: "font-semibold text-xs uppercase tracking-wider w-[180px] min-w-[140px]", className: "py-1.5" },
             },
             {
                 id: "ubicacion",
-                header: "Ubicación",
+                header: "Campaña / Sede",
                 cell: ({ row }) => {
                     const user = row.original;
                     return (
-                        <div className="flex flex-col gap-1 text-xs">
-                            <div className="flex items-center gap-1 font-semibold text-foreground/80">
-                                <Briefcase className="h-3 w-3 opacity-70" />{" "}
-                                {user.campaign}
-                            </div>
-                            <div className="flex items-center gap-1 text-muted-foreground">
-                                <Building2 className="h-3 w-3 opacity-70" />{" "}
-                                {user.area}
-                            </div>
-                            <div className="flex items-center gap-1 text-muted-foreground">
-                                <Building2 className="h-3 w-3 opacity-70" />{" "}
-                                {user.sede}
-                            </div>
-                            {user.ubicacion && (
-                                <div className="flex items-center gap-1 text-muted-foreground">
-                                    <Building2 className="h-3 w-3 opacity-70" />{" "}
-                                    {user.ubicacion}
-                                </div>
-                            )}
+                        <div className="text-xs text-muted-foreground space-y-0.5 min-w-0">
+                            <div className="truncate font-medium text-foreground/90">{user.campaign}</div>
+                            <div className="truncate">{user.sede}{user.ubicacion ? ` · ${user.ubicacion}` : ""}</div>
                         </div>
                     );
                 },
                 meta: {
-                    headerClassName: "font-bold text-xs uppercase tracking-wider hidden md:table-cell",
-                    className: "hidden md:table-cell",
+                    headerClassName: "font-semibold text-xs uppercase tracking-wider hidden md:table-cell w-[140px]",
+                    className: "hidden md:table-cell py-1.5",
                 },
             },
             {
                 id: "rolEstado",
-                header: "Rol / Estado",
+                header: "Estado",
                 cell: ({ row }) => {
                     const user = row.original;
-                    const hasBajaSolicitadaRH = user.employee_profile?.termination_date && !user.deleted_at;
                     return (
-                        <div className="flex flex-col items-start gap-1.5">
+                        <div className="flex flex-col items-start gap-1">
                             <StatusBadge
                                 status={user.status}
                                 isBlacklisted={user.is_blacklisted}
                             />
-                            {hasBajaSolicitadaRH && (
-                                <Badge variant="outline" className="bg-orange-500/15 text-orange-600 dark:text-orange-400 border-orange-500/30 text-[10px] font-bold uppercase tracking-wider">
-                                    Baja Solicitada por RH
-                                </Badge>
-                            )}
-                            <span className="text-[10px] font-medium text-muted-foreground uppercase flex items-center gap-1">
-                                <ShieldCheck className="h-3 w-3" /> {user.position}
+                            <span className="text-[10px] text-muted-foreground truncate max-w-[100px]" title={user.position}>
+                                {user.position}
                             </span>
                         </div>
                     );
                 },
-                meta: { headerClassName: "font-bold text-xs uppercase tracking-wider" },
+                meta: { headerClassName: "font-semibold text-xs uppercase tracking-wider w-[100px]", className: "py-1.5" },
             },
             {
                 id: "acciones",
-                header: "Acciones",
+                header: "",
                 cell: ({ row }) => renderRowActions(row.original),
                 meta: {
-                    headerClassName: "text-right font-bold text-xs uppercase tracking-wider px-6",
-                    className: "text-right px-6",
+                    headerClassName: "text-right w-[100px] py-1.5",
+                    className: "text-right py-1.5 px-2",
                 },
             },
         ],
@@ -228,15 +203,17 @@ function UsersTable({
         data,
     });
     return (
-        <DataTable
-            columns={columns}
-            data={data}
-            loading={loading}
-            getRowId={(row) => row.id}
-            selectedIds={selectedIds}
-            emptyMessage="No se encontraron resultados"
-            emptyColSpan={5}
-        />
+        <div className="[&_th]:py-1.5 [&_td]:py-1.5 [&_th]:text-xs [&_td]:text-sm">
+            <DataTable
+                columns={columns}
+                data={data}
+                loading={loading}
+                getRowId={(row) => row.id}
+                selectedIds={selectedIds}
+                emptyMessage="No se encontraron resultados"
+                emptyColSpan={5}
+            />
+        </div>
     );
 }
 
@@ -446,6 +423,7 @@ export default function Users() {
         status: localStorage.getItem('users.filterStatus') || "all",
         sede: localStorage.getItem('users.filterSede') || "all",
         ubicacion: localStorage.getItem('users.filterUbicacion') || "all",
+        blacklist: localStorage.getItem('users.filterBlacklist') || "all",
     });
     const [sort, setSort] = useState({ field: "id", dir: "desc" });
 
@@ -517,7 +495,7 @@ export default function Users() {
                 params: {
                     page,
                     per_page: perPage,
-                    status: showTrashed ? "only" : "",
+                    status: showTrashed ? "only" : undefined,
                     sort: sort.field,
                     direction: sort.dir,
                     search: debouncedSearch || undefined,
@@ -527,6 +505,7 @@ export default function Users() {
                     user_status: filters.status === 'all' ? undefined : filters.status,
                     sede: filters.sede === 'all' ? undefined : filters.sede,
                     ubicacion: filters.ubicacion === 'all' ? undefined : filters.ubicacion,
+                    blacklist: filters.blacklist === 'all' ? undefined : filters.blacklist === 'yes' ? '1' : '0',
                 }
             });
             setUsers(uRes.data || []);
@@ -548,10 +527,11 @@ export default function Users() {
         localStorage.setItem('users.filterStatus', filters.status);
         localStorage.setItem('users.filterSede', filters.sede);
         localStorage.setItem('users.filterUbicacion', filters.ubicacion);
+        localStorage.setItem('users.filterBlacklist', filters.blacklist);
     }, [filters]);
 
     const updateFilter = (key, value) => setFilters(prev => ({ ...prev, [key]: value }));
-    const clearFilters = () => setFilters({ campaign: "all", area: "all", role: "all", status: "all", sede: "all", ubicacion: "all" });
+    const clearFilters = () => setFilters({ campaign: "all", area: "all", role: "all", status: "all", sede: "all", ubicacion: "all", blacklist: "all" });
 
     const activeFilterCount = useMemo(() => {
         let n = 0;
@@ -561,6 +541,7 @@ export default function Users() {
         if (filters.status !== "all") n++;
         if (filters.sede !== "all") n++;
         if (filters.ubicacion !== "all") n++;
+        if (filters.blacklist !== "all") n++;
         return n;
     }, [filters]);
 
@@ -643,11 +624,11 @@ export default function Users() {
             {showTrashed ? (
                 <>
                     <Button size="icon" variant="ghost" className="h-8 w-8 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
-                            onClick={() => axios.post(`/api/users/${user.id}/restore`).then(() => { fetchData(); notify.success("Restaurado"); })}>
+                            onClick={() => axios.post(`/api/users/${user.id}/restore`).then(() => { fetchData(pagination.current); notify.success("Restaurado"); })}>
                         <RotateCcw className="h-4 w-4" />
                     </Button>
                     <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                            onClick={() => { if (confirm("¿Borrar permanentemente?")) axios.delete(`/api/users/${user.id}/force`).then(() => fetchData()); }}>
+                            onClick={() => { if (confirm("¿Borrar permanentemente?")) axios.delete(`/api/users/${user.id}/force`).then(() => fetchData(pagination.current)); }}>
                         <Trash2 className="h-4 w-4" />
                     </Button>
                 </>
@@ -676,23 +657,38 @@ export default function Users() {
                         </TooltipTrigger><TooltipContent>Editar</TooltipContent></Tooltip>
 
                         <Tooltip><TooltipTrigger asChild>
+                            <Button
+                                size="icon"
+                                variant="ghost"
+                                className={user.is_blacklisted ? "h-8 w-8 text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40" : "h-8 w-8 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"}
+                                onClick={async () => {
+                                    try {
+                                        await axios.patch(`/api/users/${user.id}/blacklist`, { blacklist: !user.is_blacklisted });
+                                        notify.success(user.is_blacklisted ? "Usuario quitado de lista negra" : "Usuario vetado (lista negra)");
+                                        fetchData(pagination.current);
+                                    } catch (e) {
+                                        notify.error(e?.response?.data?.message || "Error al actualizar");
+                                    }
+                                }}
+                            >
+                                {user.is_blacklisted ? <ShieldCheck className="h-4 w-4" /> : <Ban className="h-4 w-4" />}
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>{user.is_blacklisted ? "Quitar de lista negra" : "Vetar (lista negra)"}</TooltipContent></Tooltip>
+
+                        <Tooltip><TooltipTrigger asChild>
                             <span className="inline-block">
                                 <Button
                                     size="icon"
                                     variant="ghost"
-                                    className="h-8 w-8 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 disabled:opacity-50"
+                                    className="h-8 w-8 text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40"
                                     onClick={() => initiateAction('DELETE', user.id)}
-                                    disabled={!user.employee_profile?.termination_date}
                                 >
                                     <Trash2 className="h-4 w-4" />
                                 </Button>
                             </span>
                         </TooltipTrigger>
-                        <TooltipContent>
-                            {user.employee_profile?.termination_date
-                                ? "Baja técnica (solo si RH ya procesó la baja laboral)"
-                                : "No puedes dar de baja técnica a un usuario si Recursos Humanos no ha procesado su baja laboral previamente."}
-                        </TooltipContent></Tooltip>
+                        <TooltipContent>Baja técnica (soft delete)</TooltipContent></Tooltip>
                     </div>
                 </TooltipProvider>
             )}
@@ -700,37 +696,34 @@ export default function Users() {
     );
 
     return (
-        <div className="space-y-6 pb-20 animate-in fade-in duration-500">
+        <div className="space-y-4 pb-12 animate-in fade-in duration-500">
             {/* HEADER */}
-            <div className="flex flex-col gap-4 md:flex-row md:items-end justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-black tracking-tighter uppercase text-foreground flex items-center gap-3">
-                        {showTrashed ? <Trash2 className="h-8 w-8 text-destructive" /> : <UserCircle className="h-8 w-8 text-primary" />}
-                        {showTrashed ? "Papelera" : "Gestión de Personal"}
+                    <h1 className="text-xl font-bold text-foreground flex items-center gap-2">
+                        {showTrashed ? <Trash2 className="h-5 w-5 text-destructive" /> : <UserCircle className="h-5 w-5 text-primary" />}
+                        {showTrashed ? "Papelera" : "Usuarios"}
                     </h1>
-                    <p className="text-muted-foreground font-medium text-sm">
+                    <p className="text-muted-foreground text-xs mt-0.5">
                         {showTrashed ? "Registros eliminados." : "Administración de usuarios y accesos."}
                     </p>
                 </div>
-
-                <div className="flex gap-2">
-                    {!showTrashed && (
-                        <Button onClick={() => setCreateOpen(true)} className="shadow-lg shadow-primary/20 font-bold">
-                            <UserPlus className="h-4 w-4 mr-2" /> Nuevo Colaborador
-                        </Button>
-                    )}
-                </div>
+                {!showTrashed && (
+                    <Button onClick={() => setCreateOpen(true)} size="sm" className="font-medium">
+                        <UserPlus className="h-4 w-4 mr-2" /> Nuevo
+                    </Button>
+                )}
             </div>
 
             {/* TOOLBAR */}
-            <Card className="border-border/60 shadow-sm bg-card/50 backdrop-blur-sm overflow-hidden">
-                <div className="p-4 flex flex-col lg:flex-row gap-4 items-center justify-between">
-                    <div className="flex flex-1 w-full gap-2">
-                        <div className="relative flex-1 max-w-sm">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Card className="border-border/60 overflow-hidden">
+                <div className="p-3 flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
+                    <div className="flex flex-1 w-full gap-2 flex-wrap">
+                        <div className="relative flex-1 min-w-[160px] max-w-xs">
+                            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                             <Input
                                 placeholder="Buscar..."
-                                className="pl-9 h-10 bg-background"
+                                className="pl-8 h-8 text-sm bg-background"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
@@ -739,23 +732,24 @@ export default function Users() {
                             variant="outline"
                             size="sm"
                             onClick={() => setShowFilters(!showFilters)}
-                            className={`h-10 gap-2 ${showFilters ? "bg-muted border-primary/30" : ""} ${hasActiveFilters ? "border-primary/50 text-primary" : ""}`}
+                            className={`h-8 gap-1.5 text-sm ${showFilters ? "bg-muted border-primary/30" : ""} ${hasActiveFilters ? "border-primary/50 text-primary" : ""}`}
                         >
-                            <Filter className="h-4 w-4 shrink-0" />
-                            <span className="hidden sm:inline">Filtros</span>
+                            <Filter className="h-3.5 w-3.5 shrink-0" />
+                            Filtros
                             {hasActiveFilters && (
-                                <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-primary/15 px-1.5 text-xs font-bold text-primary">
+                                <span className="flex h-4 min-w-[18px] items-center justify-center rounded-full bg-primary/15 px-1 text-[10px] font-bold text-primary">
                                     {activeFilterCount}
                                 </span>
                             )}
                         </Button>
                         <Button
                             variant={showTrashed ? "destructive" : "outline"}
+                            size="sm"
                             onClick={() => { setShowTrashed(!showTrashed); setShowPendingOnly(false); }}
-                            className="h-10 w-10 p-0 lg:w-auto lg:px-4"
+                            className="h-8 gap-1.5 text-sm"
                         >
-                            {showTrashed ? <RotateCcw className="h-4 w-4 lg:mr-2" /> : <Trash2 className="h-4 w-4 lg:mr-2" />}
-                            <span className="hidden lg:inline">{showTrashed ? "Activos" : "Papelera"}</span>
+                            {showTrashed ? <RotateCcw className="h-3.5 w-3.5" /> : <Trash2 className="h-3.5 w-3.5" />}
+                            {showTrashed ? "Activos" : "Papelera"}
                         </Button>
                     </div>
 
@@ -772,18 +766,12 @@ export default function Users() {
                                                 variant="destructive"
                                                 onClick={() => initiateAction('DELETE')}
                                                 className="h-9"
-                                                disabled={selectedIds.some((id) => {
-                                                    const u = filteredUsers.find((u) => u.id === id);
-                                                    return !u?.employee_profile?.termination_date;
-                                                })}
                                             >
                                                 <Trash2 className="h-3.5 w-3.5 mr-2" /> Eliminar
                                             </Button>
                                         </span>
                                     </TooltipTrigger>
-                                    <TooltipContent>
-                                        Solo se puede dar de baja técnica a usuarios con baja laboral ya procesada por RH.
-                                    </TooltipContent>
+                                    <TooltipContent>Dar de baja técnica a los seleccionados</TooltipContent>
                                 </Tooltip>
                             </TooltipProvider>
                         </div>
@@ -878,6 +866,19 @@ export default function Users() {
                                     </SelectContent>
                                 </Select>
                             </div>
+                            <div className="space-y-1.5">
+                                <label className="block text-xs font-medium text-foreground">Lista negra</label>
+                                <Select value={filters.blacklist} onValueChange={(v) => updateFilter('blacklist', v)}>
+                                    <SelectTrigger className="bg-background h-9 text-sm w-full">
+                                        <SelectValue placeholder="Todos" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">Todos</SelectItem>
+                                        <SelectItem value="yes">Vetados</SelectItem>
+                                        <SelectItem value="no">No vetados</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
                         </div>
                         {hasActiveFilters && (
                             <div className="flex justify-end pt-3">
@@ -890,8 +891,8 @@ export default function Users() {
                 )}
             </Card>
 
-            {/* TABLA (TanStack Table) */}
-            <Card className="overflow-hidden border-border/60 shadow-sm">
+            {/* TABLA COMPACTA */}
+            <Card className="overflow-hidden border-border/60">
                 <UsersTable
                     data={filteredUsers}
                     loading={loading}
@@ -900,48 +901,99 @@ export default function Users() {
                     renderRowActions={renderRowActions}
                 />
 
-                {/* PAGINACIÓN: rango visible, total y botones correctamente deshabilitados */}
-                <div className="border-t border-border/50 bg-muted/20 px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-4">
-                    <div className="flex items-center gap-3 w-full sm:w-auto flex-wrap">
-                        <span className="text-xs text-muted-foreground font-medium whitespace-nowrap">Mostrar</span>
+                {/* PAGINACIÓN MEJORADA: tamaño, rango, primera/prev/números/siguiente/última */}
+                <div className="border-t border-border/50 bg-muted/20 px-3 py-2 flex flex-col sm:flex-row items-center justify-between gap-3">
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-xs text-muted-foreground">Filas</span>
                         <Select value={perPage} onValueChange={(v) => { setPerPage(v); fetchData(1); }}>
-                            <SelectTrigger className="h-8 w-[70px] text-xs bg-background"><SelectValue /></SelectTrigger>
+                            <SelectTrigger className="h-7 w-[62px] text-xs bg-background border-muted-foreground/20"><SelectValue /></SelectTrigger>
                             <SelectContent>
-                                {["10", "20", "50", "100"].map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+                                {["10", "15", "25", "50", "100"].map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}
                             </SelectContent>
                         </Select>
-                        <span className="text-xs text-muted-foreground font-medium whitespace-nowrap">
+                        <span className="text-xs text-muted-foreground">
                             {pagination.total === 0
                                 ? "0 registros"
                                 : (() => {
                                     const from = (pagination.current - 1) * Number(perPage) + 1;
                                     const to = Math.min(pagination.current * Number(perPage), pagination.total);
-                                    return to > from ? `${from}–${to} de ${pagination.total}` : `${from} de ${pagination.total}`;
+                                    return to >= from ? `${from}–${to} de ${pagination.total}` : `0 de ${pagination.total}`;
                                 })()}
                         </span>
                     </div>
 
-                    <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-                        <span className="text-xs text-muted-foreground hidden sm:inline">
-                            Página {pagination.current} de {Math.max(1, pagination.last)}
-                        </span>
+                    <div className="flex items-center gap-0.5">
                         <Button
                             variant="outline"
-                            size="sm"
+                            size="icon"
+                            className="h-7 w-7"
                             disabled={pagination.current <= 1 || loading || pagination.total === 0}
-                            onClick={() => fetchData(pagination.current - 1)}
-                            className="h-8 text-xs"
+                            onClick={() => fetchData(1)}
                         >
-                            Anterior
+                            <ChevronsLeft className="h-3.5 w-3.5" />
                         </Button>
                         <Button
                             variant="outline"
-                            size="sm"
+                            size="icon"
+                            className="h-7 w-7"
+                            disabled={pagination.current <= 1 || loading || pagination.total === 0}
+                            onClick={() => fetchData(pagination.current - 1)}
+                        >
+                            <ChevronLeft className="h-3.5 w-3.5" />
+                        </Button>
+                        {(() => {
+                            const total = Math.max(1, pagination.last);
+                            const cur = pagination.current;
+                            const pages = [];
+                            if (total <= 7) {
+                                for (let i = 1; i <= total; i++) pages.push(i);
+                            } else {
+                                pages.push(1);
+                                if (cur > 3) pages.push("…");
+                                for (let i = Math.max(2, cur - 1); i <= Math.min(total - 1, cur + 1); i++) {
+                                    if (!pages.includes(i)) pages.push(i);
+                                }
+                                if (cur < total - 2) pages.push("…");
+                                if (total > 1) pages.push(total);
+                            }
+                            return (
+                                <div className="flex items-center gap-0.5 mx-1">
+                                    {pages.map((p, i) =>
+                                        p === "…" ? (
+                                            <span key={`ellipsis-${i}`} className="px-1.5 text-xs text-muted-foreground">…</span>
+                                        ) : (
+                                            <Button
+                                                key={p}
+                                                variant={cur === p ? "secondary" : "ghost"}
+                                                size="icon"
+                                                className={`h-7 w-7 min-w-7 text-xs ${cur === p ? "bg-primary/15 text-primary" : ""}`}
+                                                disabled={loading}
+                                                onClick={() => fetchData(p)}
+                                            >
+                                                {p}
+                                            </Button>
+                                        )
+                                    )}
+                                </div>
+                            );
+                        })()}
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-7 w-7"
                             disabled={pagination.current >= pagination.last || loading || pagination.total === 0}
                             onClick={() => fetchData(pagination.current + 1)}
-                            className="h-8 text-xs"
                         >
-                            Siguiente
+                            <ChevronRight className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-7 w-7"
+                            disabled={pagination.current >= pagination.last || loading || pagination.total === 0}
+                            onClick={() => fetchData(pagination.last)}
+                        >
+                            <ChevronsRight className="h-3.5 w-3.5" />
                         </Button>
                     </div>
                 </div>
@@ -955,7 +1007,7 @@ export default function Users() {
                             Confirmar Baja (baja técnica)
                         </DialogTitle>
                         <DialogDescription className="text-muted-foreground text-sm">
-                            Solo se dará de baja técnica a usuarios que tengan ya procesada la baja laboral por RH. Acción irreversible para {actionConfig.ids.length} usuario(s).
+                            Se dará de baja técnica (soft delete) a {actionConfig.ids.length} usuario(s). Podrás restaurarlos desde la Papelera.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-2 py-1">

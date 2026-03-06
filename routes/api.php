@@ -16,17 +16,6 @@ use App\Http\Controllers\Api\PermissionController;
 use App\Http\Controllers\Api\RolePermissionController;
 use App\Http\Controllers\Api\SessionMonitorController;
 use App\Http\Controllers\Api\UbicacionController;
-use App\Http\Controllers\Api\AttendanceController;
-use App\Http\Controllers\Api\ScheduleController;
-use App\Http\Controllers\Api\ScheduleManagerController;
-use App\Http\Controllers\Api\MyScheduleController;
-use App\Http\Controllers\Api\TimeDeskController;
-use App\Http\Controllers\Api\TerminationReasonController;
-use App\Http\Controllers\Api\EmployeeImportExportController;
-use App\Http\Controllers\Api\TimeDeskEmployeeController;
-use App\Http\Controllers\Api\EmployeeStatusController;
-use App\Http\Controllers\Api\HireTypeController;
-use App\Http\Controllers\Api\RecruitmentSourceController;
 
 /*
 |--------------------------------------------------------------------------
@@ -79,14 +68,14 @@ Route::middleware(['auth:sanctum','locale','perm:users.manage'])->group(function
     Route::post('users/mass-delete', [UserController::class, 'massDestroy'])
         ->middleware('throttle:5,1');
 
-    // Exclusividad RH: solo Recursos Humanos puede gestionar Lista Negra (vía TimeDesk Procesar Baja)
-    // Route::post('users/blacklist', [UserController::class, 'toggleBlacklist'])->middleware('throttle:5,1');
-
     Route::post('users/{id}/restore', [UserController::class, 'restore'])
         ->middleware('throttle:10,1');
 
     Route::delete('users/{id}/force', [UserController::class, 'forceDelete'])
         ->middleware('throttle:5,1');
+
+    Route::patch('users/{user}/blacklist', [UserController::class, 'toggleBlacklist'])
+        ->middleware('throttle:10,1');
 
     Route::apiResource('users', UserController::class)
         ->only(['index', 'store', 'update', 'destroy']);
@@ -150,8 +139,6 @@ Route::middleware(['auth:sanctum','locale','perm:catalogs.manage'])->group(funct
         ->only(['index', 'store', 'update', 'destroy']);
     Route::apiResource('incident-statuses', \App\Http\Controllers\Api\IncidentStatusController::class)
         ->only(['index', 'store', 'update', 'destroy']);
-    Route::apiResource('schedules', ScheduleController::class)
-        ->only(['index', 'show', 'store', 'update', 'destroy']);
     Route::get('priority-matrix', [\App\Http\Controllers\Api\PriorityMatrixController::class, 'index']);
     Route::post('priority-matrix/bulk', [\App\Http\Controllers\Api\PriorityMatrixController::class, 'updateBulk']);
 });
@@ -258,61 +245,6 @@ Route::get('catalogs', [CatalogController::class, 'index'])
 // ==========================
 
 Route::middleware(['auth:sanctum','locale'])->group(function () {
-
-    Route::middleware('perm:attendances.record_own')->group(function () {
-        Route::get('attendance/status', [AttendanceController::class, 'status']);
-        Route::post('attendance/punch', [AttendanceController::class, 'registerPunch']);
-    });
-
-    // Mi horario (empleado): jerarquía Usuario > Área > Campaña > Por defecto
-    Route::middleware('perm:attendances.view_own')->group(function () {
-        Route::get('my-schedule', [MyScheduleController::class, 'show']);
-    });
-
-    // TimeDesk: submódulo de horarios y asistencias (attendances.manage o attendances.view_all)
-    Route::middleware('perm:attendances.manage|attendances.view_all')->prefix('timedesk')->group(function () {
-        Route::get('dashboard', [TimeDeskController::class, 'dashboard']);
-        // Catálogo de motivos de baja (RH): listado para selects y vista de catálogo
-        Route::get('termination-reasons', [TerminationReasonController::class, 'index']);
-        Route::get('employee-statuses', [EmployeeStatusController::class, 'index']);
-        Route::get('hire-types', [HireTypeController::class, 'index']);
-        Route::get('recruitment-sources', [RecruitmentSourceController::class, 'index']);
-        // Directorio de empleados (mismo listado que users, para RH sin users.manage)
-        Route::get('employees', [UserController::class, 'index']);
-    });
-
-    // TimeDesk: solo quien gestiona puede crear/editar/eliminar motivos de baja e importar/exportar
-    Route::middleware('perm:attendances.manage')->prefix('timedesk')->group(function () {
-        Route::post('termination-reasons', [TerminationReasonController::class, 'store']);
-        Route::put('termination-reasons/{termination_reason}', [TerminationReasonController::class, 'update']);
-        Route::delete('termination-reasons/{termination_reason}', [TerminationReasonController::class, 'destroy']);
-        Route::post('employee-statuses', [EmployeeStatusController::class, 'store']);
-        Route::put('employee-statuses/{employee_status}', [EmployeeStatusController::class, 'update']);
-        Route::delete('employee-statuses/{employee_status}', [EmployeeStatusController::class, 'destroy']);
-        Route::post('hire-types', [HireTypeController::class, 'store']);
-        Route::put('hire-types/{hire_type}', [HireTypeController::class, 'update']);
-        Route::delete('hire-types/{hire_type}', [HireTypeController::class, 'destroy']);
-        Route::post('recruitment-sources', [RecruitmentSourceController::class, 'store']);
-        Route::put('recruitment-sources/{recruitment_source}', [RecruitmentSourceController::class, 'update']);
-        Route::delete('recruitment-sources/{recruitment_source}', [RecruitmentSourceController::class, 'destroy']);
-        // Import/Export directorio empleados (formato maestro Excel/CSV)
-        Route::post('employees/import', [EmployeeImportExportController::class, 'import']);
-        Route::post('employees/import-errors-report', [EmployeeImportExportController::class, 'downloadImportErrors']);
-        Route::get('employees/export/activos', [EmployeeImportExportController::class, 'exportActivos']);
-        Route::get('employees/export/bajas', [EmployeeImportExportController::class, 'exportBajas']);
-        // Alta de empleado desde RH (expediente + usuario pendiente de aprobación)
-        Route::get('employees/catalogs', [TimeDeskEmployeeController::class, 'catalogs']);
-        Route::post('employees', [TimeDeskEmployeeController::class, 'store']);
-        // Baja laboral (RH): motivo, fecha y opcional lista negra; NO hace SoftDelete
-        Route::post('employees/terminate', [TimeDeskEmployeeController::class, 'terminateEmployees']);
-    });
-
-    // Gestión de asignaciones de horarios (RH/Admin)
-    Route::middleware('perm:attendances.manage')->prefix('schedule-manager')->group(function () {
-        Route::get('catalogs', [ScheduleManagerController::class, 'catalogs']);
-        Route::get('assignments', [ScheduleManagerController::class, 'index']);
-        Route::post('assign', [ScheduleManagerController::class, 'assign']);
-    });
 
     Route::get('profile', [ProfileController::class, 'show']);
     Route::post('profile', [ProfileController::class, 'update']);

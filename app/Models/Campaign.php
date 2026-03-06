@@ -5,7 +5,6 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\MorphToMany;
 
 class Campaign extends Model
 {
@@ -33,15 +32,5 @@ class Campaign extends Model
     public function users(): HasMany
     {
         return $this->hasMany(User::class);
-    }
-
-    /**
-     * Asignaciones de horario a esta campaña (tabla polimórfica schedule_assignments).
-     */
-    public function scheduleAssignments(): MorphToMany
-    {
-        return $this->morphToMany(Schedule::class, 'schedule_assignment', 'schedule_assignments')
-            ->withPivot('valid_from', 'valid_until')
-            ->withTimestamps();
     }
 }

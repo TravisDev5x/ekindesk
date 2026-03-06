@@ -52,7 +52,7 @@ function setCached(data, modules) {
 /**
  * Carga catálogos desde API (con caché en sessionStorage).
  * @param {boolean} [forceFresh=false] - si true, ignora caché y pide con ?nocache=1
- * @param {string[]|string|null} [modules=null] - módulos a cargar: 'core', 'tickets', 'incidents', 'timedesk', 'sigua'. null = todos (compatibilidad)
+ * @param {string[]|string|null} [modules=null] - módulos a cargar: 'core', 'tickets', 'incidents', 'sigua'. null = todos (compatibilidad)
  * @returns {Promise<object>} payload de catálogos
  */
 export async function loadCatalogs(forceFresh = false, modules = null) {

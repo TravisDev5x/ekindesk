@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('sigan_assets', function (Blueprint $table) {
             $table->id();
             $table->string('tipo', 32); // ti | mobiliario
-            $table->string('subtipo', 64')->nullable(); // laptop, pc, silla, ups
+            $table->string('subtipo', 64)->nullable(); // laptop, pc, silla, ups
             $table->string('nombre');
             $table->string('numero_serie')->nullable();
             $table->enum('estado', ['activo', 'scrap', 'baja', 'mantenimiento'])->default('activo');

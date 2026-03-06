@@ -45,9 +45,9 @@ const CHART_COLORS = ["#10b981", "#ef4444", "#3b82f6", "#f59e0b", "#8b5cf6", "#0
 function HubTooltip({ active, payload, label }) {
   if (!active || !payload || payload.length === 0) return null;
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-3 shadow-lg dark:border-slate-700 dark:bg-slate-800">
+    <div className="rounded-lg border border-border bg-card p-3 shadow-lg text-card-foreground">
       {label != null && label !== "" && (
-        <p className="mb-2 border-b border-slate-100 pb-1 text-sm font-medium text-slate-500 dark:border-slate-700 dark:text-slate-400">
+        <p className="mb-2 border-b border-border pb-1 text-sm font-medium text-muted-foreground">
           {label}
         </p>
       )}
@@ -57,7 +57,7 @@ function HubTooltip({ active, payload, label }) {
             {entry.color && (
               <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: entry.color }} />
             )}
-            <span className="text-slate-700 dark:text-slate-200">{entry.name}:</span>
+            <span className="text-muted-foreground">{entry.name}:</span>
             <span className="font-semibold" style={entry.color ? { color: entry.color } : {}}>
               {typeof entry.value === "number" ? entry.value : entry.value}
             </span>
@@ -87,20 +87,20 @@ function HubSkeleton() {
 
 function KpiCard({ title, value, icon: Icon, variant = "default", hint }) {
   const variants = {
-    default: "border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800",
-    danger: "border-red-200 bg-white shadow-sm dark:border-red-900/50 dark:bg-slate-800",
-    warning: "border-amber-200 bg-white shadow-sm dark:border-amber-900/50 dark:bg-slate-800",
+    default: "border-border bg-card shadow-sm",
+    danger: "border-destructive/50 bg-card shadow-sm",
+    warning: "border-amber-500/50 bg-card shadow-sm",
   };
   return (
-    <Card className={cn("transition-all", variants[variant] || variants.default)}>
+    <Card className={cn("transition-all text-card-foreground", variants[variant] || variants.default)}>
       <CardContent className="p-5 flex items-center justify-between">
         <div className="space-y-1">
-          <p className="text-xs uppercase tracking-wider font-semibold text-slate-500 dark:text-slate-400">{title}</p>
-          <div className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100">{value}</div>
-          {hint && <p className="text-[10px] text-slate-500 dark:text-slate-400">{hint}</p>}
+          <p className="text-xs uppercase tracking-wider font-semibold text-muted-foreground">{title}</p>
+          <div className="text-2xl font-bold tracking-tight text-foreground">{value}</div>
+          {hint && <p className="text-[10px] text-muted-foreground">{hint}</p>}
         </div>
         {Icon && (
-          <div className="h-11 w-11 rounded-full flex items-center justify-center bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300">
+          <div className="h-11 w-11 rounded-full flex items-center justify-center bg-muted text-muted-foreground">
             <Icon className="h-5 w-5" />
           </div>
         )}
@@ -172,7 +172,7 @@ export default function HomeDashboard() {
   const userName = user?.name || user?.first_name || "Usuario";
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900/30">
+    <div className="min-h-screen bg-background">
       <div className="space-y-6 p-4 pb-20 md:p-6">
         {/* Cabecera: bienvenida + reloj a la izquierda, Actualizar a la derecha */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -181,16 +181,16 @@ export default function HomeDashboard() {
               name={userName}
               avatarPath={user?.avatar_path}
               size={48}
-              className="h-12 w-12 shrink-0 border-2 border-slate-200 dark:border-slate-600"
+              className="h-12 w-12 shrink-0 border-2 border-border"
             />
             <div>
-              <p className="text-lg font-semibold text-slate-800 dark:text-slate-100">
+              <p className="text-lg font-semibold text-foreground">
                 {clock.saludo}, {userName}
               </p>
-              <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+              <p className="text-sm text-muted-foreground mt-0.5">
                 {clock.dateLabel}
               </p>
-              <p className="text-base font-mono font-medium text-slate-600 dark:text-slate-300 tabular-nums">
+              <p className="text-base font-mono font-medium text-muted-foreground tabular-nums">
                 {clock.timeLabel}
               </p>
             </div>
@@ -201,7 +201,6 @@ export default function HomeDashboard() {
               size="sm"
               onClick={() => fetchHub()}
               disabled={loading}
-              className="border-slate-200 dark:border-slate-600"
             >
               <RefreshCw className={cn("h-4 w-4 mr-2", loading && "animate-spin")} />
               Actualizar
@@ -210,18 +209,18 @@ export default function HomeDashboard() {
         </div>
 
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-slate-800 dark:text-slate-100 flex items-center gap-2">
-            <LayoutDashboard className="h-6 w-6 text-slate-600 dark:text-slate-400" />
+          <h1 className="text-xl font-bold tracking-tight text-foreground flex items-center gap-2">
+            <LayoutDashboard className="h-6 w-6 text-muted-foreground" />
             Panel principal
           </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+          <p className="text-sm text-muted-foreground mt-1">
             Vista consolidada de accesos (SIGUA) y tickets (RESOLBEB).
           </p>
         </div>
 
         {error && (
-          <Card className="border-red-200 bg-red-50/50 dark:border-red-900/50 dark:bg-red-900/10">
-            <CardContent className="p-4 flex items-center gap-2 text-red-700 dark:text-red-300">
+          <Card className="border-destructive/50 bg-destructive/10">
+            <CardContent className="p-4 flex items-center gap-2 text-destructive">
               <AlertCircle className="h-4 w-4 shrink-0" />
               {error}
             </CardContent>
@@ -264,10 +263,10 @@ export default function HomeDashboard() {
 
             {/* Gráficas */}
             <div className="grid gap-4 md:grid-cols-2">
-              <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800">
+              <Card className="border-border bg-card shadow-sm">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <Shield className="h-4 w-4 text-slate-600 dark:text-slate-400" />
+                  <CardTitle className="text-base flex items-center gap-2 text-card-foreground">
+                    <Shield className="h-4 w-4 text-muted-foreground" />
                     Salud formatos de acceso
                   </CardTitle>
                   <CardDescription>CA-01 vigentes vs vencidos</CardDescription>
@@ -294,7 +293,7 @@ export default function HomeDashboard() {
                         </PieChart>
                       </ResponsiveContainer>
                     ) : (
-                      <div className="h-full flex items-center justify-center text-slate-500 dark:text-slate-400 text-sm">
+                      <div className="h-full flex items-center justify-center text-muted-foreground text-sm">
                         Sin datos de CA-01
                       </div>
                     )}
@@ -302,10 +301,10 @@ export default function HomeDashboard() {
                 </CardContent>
               </Card>
 
-              <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800">
+              <Card className="border-border bg-card shadow-sm">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <Ticket className="h-4 w-4 text-slate-600 dark:text-slate-400" />
+                  <CardTitle className="text-base flex items-center gap-2 text-card-foreground">
+                    <Ticket className="h-4 w-4 text-muted-foreground" />
                     Tickets por prioridad
                   </CardTitle>
                   <CardDescription>Abiertos / en proceso</CardDescription>
@@ -315,7 +314,7 @@ export default function HomeDashboard() {
                     {barPrioridad.length > 0 ? (
                       <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={barPrioridad} margin={{ top: 8, right: 8, left: 8, bottom: 8 }}>
-                          <CartesianGrid strokeDasharray="3 3" className="stroke-slate-200 dark:stroke-slate-600" />
+                          <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
                           <XAxis dataKey="prioridad" tick={{ fontSize: 10 }} />
                           <YAxis tick={{ fontSize: 11 }} />
                           <Tooltip content={<HubTooltip />} cursor={{ fill: "rgba(148, 163, 184, 0.1)" }} />
@@ -323,7 +322,7 @@ export default function HomeDashboard() {
                         </BarChart>
                       </ResponsiveContainer>
                     ) : (
-                      <div className="h-full flex items-center justify-center text-slate-500 dark:text-slate-400 text-sm">
+                      <div className="h-full flex items-center justify-center text-muted-foreground text-sm">
                         Sin tickets abiertos
                       </div>
                     )}
@@ -333,10 +332,10 @@ export default function HomeDashboard() {
             </div>
 
             {/* Atención inmediata */}
-            <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800">
+            <Card className="border-border bg-card shadow-sm">
               <CardHeader className="pb-2">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                <CardTitle className="text-base flex items-center gap-2 text-card-foreground">
+                  <AlertTriangle className="h-4 w-4 text-amber-500" />
                   Atención inmediata
                 </CardTitle>
                 <CardDescription>Los 5 riesgos más altos detectados hoy</CardDescription>
@@ -345,23 +344,23 @@ export default function HomeDashboard() {
                 {atencion.length > 0 ? (
                   <Table>
                     <TableHeader>
-                      <TableRow className="border-slate-200 dark:border-slate-700">
-                        <TableHead className="text-slate-600 dark:text-slate-400">Tipo</TableHead>
-                        <TableHead className="text-slate-600 dark:text-slate-400">Título</TableHead>
-                        <TableHead className="text-slate-600 dark:text-slate-400">Detalle</TableHead>
-                        <TableHead className="w-[100px] text-right text-slate-600 dark:text-slate-400">Acción</TableHead>
+                      <TableRow>
+                        <TableHead className="text-muted-foreground">Tipo</TableHead>
+                        <TableHead className="text-muted-foreground">Título</TableHead>
+                        <TableHead className="text-muted-foreground">Detalle</TableHead>
+                        <TableHead className="w-[100px] text-right text-muted-foreground">Acción</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {atencion.map((item, i) => (
-                        <TableRow key={i} className="border-slate-100 dark:border-slate-700">
-                          <TableCell className="text-xs font-medium text-slate-600 dark:text-slate-400">
+                        <TableRow key={i}>
+                          <TableCell className="text-xs font-medium text-muted-foreground">
                             {item.tipo === "acceso" ? "Acceso" : "Ticket"}
                           </TableCell>
-                          <TableCell className="font-medium text-slate-900 dark:text-slate-100">
+                          <TableCell className="font-medium text-foreground">
                             {item.titulo}
                           </TableCell>
-                          <TableCell className="text-sm text-slate-600 dark:text-slate-400">
+                          <TableCell className="text-sm text-muted-foreground">
                             {item.detalle}
                           </TableCell>
                           <TableCell className="text-right">
@@ -377,7 +376,7 @@ export default function HomeDashboard() {
                     </TableBody>
                   </Table>
                 ) : (
-                  <p className="py-8 text-center text-sm text-slate-500 dark:text-slate-400">
+                  <p className="py-8 text-center text-sm text-muted-foreground">
                     No hay elementos que requieran atención inmediata.
                   </p>
                 )}
@@ -387,8 +386,8 @@ export default function HomeDashboard() {
         )}
 
         {!loading && !data && !error && (
-          <Card className="border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800">
-            <CardContent className="p-8 text-center text-slate-500 dark:text-slate-400">
+          <Card className="border-border bg-card shadow-sm">
+            <CardContent className="p-8 text-center text-muted-foreground">
               No se pudieron cargar los datos del panel.
             </CardContent>
           </Card>
