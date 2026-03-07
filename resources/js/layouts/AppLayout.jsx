@@ -20,7 +20,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
+import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet'
 import { Sidebar } from '@/components/Sidebar'
 import { MobileBottomBar } from '@/components/MobileBottomBar'
 
@@ -30,10 +30,10 @@ import {
     Building2, MapPinHouse, MapPinned, SignalHigh, Workflow, Tags,
     KeyRound, Ticket, AlertTriangle, Settings, Menu,
     LogOut, Sun, Moon, ChevronsLeft, ChevronsRight, ChevronDown,
-    ChevronRight, Bell, BellOff, Layers, Shield, Maximize2,
+    ChevronRight, ChevronLeft, Bell, BellOff, Layers, Shield, Maximize2,
     Minimize2, Square, SquareDashed, MoreHorizontal, Monitor,
     CalendarDays, BookOpen, UserCheck, Upload, GitMerge, FileSpreadsheet, FileCheck, FileText, Clock, Link2, Grid3X3,
-    Activity, LogIn, Smartphone
+    Activity, LogIn, Smartphone, X
 } from 'lucide-react'
 
 // ----------------------------------------------------------------------
@@ -343,31 +343,54 @@ export default function AppLayout() {
 
                     {/* --- HEADER --- */}
                     <header
-                        className="sticky top-0 z-30 flex h-16 shrink-0 items-center gap-x-4 bg-background/80 px-4 backdrop-blur-xl transition-all md:px-6"
+                        className="sticky top-0 z-30 flex h-16 shrink-0 items-center gap-x-4 bg-background/80 px-4 safe-area-header backdrop-blur-xl transition-all md:px-6"
                         data-sidebar-position={sidebarPosition}
                     >
                         {/* Menú móvil: visible en viewport móvil o cuando está activa la vista dispositivo */}
                         <div className={cn("order-0", forceDeviceView ? "flex" : "md:hidden")}>
                             <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
                                 <SheetTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="-ml-2 h-9 w-9 text-muted-foreground">
+                                    <Button variant="ghost" size="icon" className="-ml-2 h-11 w-11 text-muted-foreground md:h-9 md:w-9" aria-label="Abrir menú">
                                         <Menu className="h-5 w-5" />
                                     </Button>
                                 </SheetTrigger>
-                                <SheetContent side="left" className="p-0 w-72">
-                                    <Sidebar collapsed={false} onToggle={() => setMobileMenuOpen(false)} />
+                                <SheetContent side="left" className="flex flex-col p-0 w-72 max-w-[85vw]" showCloseButton={false}>
+                                    {/* Header fijo con safe area: evita notch y ofrece cierre 44px */}
+                                    <div
+                                        className="flex shrink-0 items-center justify-between border-b border-border/50 bg-background px-4 py-3"
+                                        style={{ paddingTop: 'max(env(safe-area-inset-top), 0.75rem)' }}
+                                    >
+                                        <span className="text-base font-semibold text-foreground">Menú</span>
+                                        <SheetClose asChild>
+                                            <Button variant="ghost" size="icon" className="h-11 w-11 rounded-full text-muted-foreground hover:text-foreground" aria-label="Cerrar menú">
+                                                <X className="h-5 w-5" />
+                                            </Button>
+                                        </SheetClose>
+                                    </div>
+                                    {/* Contenido: Sidebar con su propio ScrollArea; padding inferior para home indicator */}
+                                    <div
+                                        className="flex-1 min-h-0 flex flex-col pb-[env(safe-area-inset-bottom)]"
+                                    >
+                                        <Sidebar collapsed={false} onToggle={() => setMobileMenuOpen(false)} />
+                                    </div>
                                 </SheetContent>
                             </Sheet>
                         </div>
 
-                        {/* Breadcrumbs/Title: a la derecha cuando sidebar derecha, a la izquierda (flex-1) cuando sidebar izquierda */}
+                        {/* Móvil: botón Volver compacto (oculto en md) */}
+                        <div className="order-1 flex shrink-0 md:hidden">
+                            <Button variant="ghost" size="icon" className="h-9 w-9 -ml-1 text-muted-foreground" onClick={() => navigate(-1)} title="Volver" aria-label="Volver">
+                                <ChevronLeft className="h-5 w-5" />
+                            </Button>
+                        </div>
+                        {/* Breadcrumbs/Title: pasos intermedios ocultos en móvil; a la derecha cuando sidebar derecha */}
                         <div
                             className={cn(
                                 "flex flex-col gap-0.5 min-w-0",
-                                sidebarPosition === "right" ? "order-3 ms-auto flex-1 justify-end text-right" : "order-1 flex-1"
+                                sidebarPosition === "right" ? "order-3 ms-auto flex-1 justify-end text-right md:order-3" : "order-1 flex-1 md:order-1"
                             )}
                         >
-                            <div className={cn("flex items-center gap-2 text-xs text-muted-foreground", sidebarPosition === "right" && "justify-end")}>
+                            <div className={cn("hidden md:flex items-center gap-2 text-xs text-muted-foreground", sidebarPosition === "right" && "justify-end")}>
                                 <span className="uppercase tracking-wider font-semibold opacity-70">{t('layout.panel')}</span>
                                 <ChevronRight className={cn("h-3 w-3", sidebarPosition === "right" && "rotate-180")} />
                             </div>

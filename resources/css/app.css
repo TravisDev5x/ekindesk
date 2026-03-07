@@ -891,6 +891,25 @@ html[data-theme-switching="1"] *::after {
     }
 }
 
+/* Safe area superior para header (notch iOS/Android); en md sin padding extra */
+.safe-area-header {
+    padding-top: max(env(safe-area-inset-top, 0px), 1rem);
+}
+@media (min-width: 768px) {
+    .safe-area-header {
+        padding-top: 0;
+    }
+}
+
+/* Ocultar scrollbar en contenedores (iOS Safari, Android Chrome, Firefox) */
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+
 /* Fade + blur superior del área de contenido al hacer scroll (AppLayout) */
 .layout-scroll-fade {
     background: linear-gradient(

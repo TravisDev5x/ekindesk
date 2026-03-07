@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { TableWrapper } from "@/components/ui/table-wrapper";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -146,6 +147,7 @@ export default function IncidentTipos() {
                     <CardTitle>Listado</CardTitle>
                 </CardHeader>
                 <CardContent className="p-0">
+                    <TableWrapper>
                     <Table>
                         <TableHeader className="bg-muted/40">
                             <TableRow className="border-b border-border/50 hover:bg-transparent">
@@ -171,17 +173,18 @@ export default function IncidentTipos() {
                                 <TableRow key={t.id}>
                                     <TableCell>{t.name}</TableCell>
                                     <TableCell>{t.code}</TableCell>
-                                    <TableCell className="text-right"><Switch checked={t.is_active} onCheckedChange={() => toggleActive(t)} /></TableCell>
-                                    <TableCell className="text-right">
+                                    <TableCell className="text-right align-middle"><span className="inline-flex items-center justify-center min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0"><Switch checked={t.is_active} onCheckedChange={() => toggleActive(t)} /></span></TableCell>
+                                    <TableCell className="text-right align-middle">
                                         <div className="flex items-center justify-end gap-1">
-                                            <Button variant="ghost" size="sm" className="h-8 gap-1" onClick={() => openEdit(t)}><Pencil className="h-3.5 w-3.5" /> Editar</Button>
-                                            <Button variant="ghost" size="sm" className="h-8 gap-1 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => remove(t)}><Trash2 className="h-3.5 w-3.5" /> Eliminar</Button>
+                                            <Button variant="ghost" size="sm" className="h-11 w-11 p-0 md:h-8 md:w-auto md:gap-1 md:px-2" onClick={() => openEdit(t)} title="Editar"><Pencil className="h-4 w-4 md:h-3.5 md:w-3.5" /><span className="hidden md:inline">Editar</span></Button>
+                                            <Button variant="ghost" size="sm" className="h-11 w-11 p-0 text-destructive hover:text-destructive hover:bg-destructive/10 md:h-8 md:w-auto md:gap-1 md:px-2" onClick={() => remove(t)} title="Eliminar"><Trash2 className="h-4 w-4 md:h-3.5 md:w-3.5" /><span className="hidden md:inline">Eliminar</span></Button>
                                         </div>
                                     </TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>
                     </Table>
+                    </TableWrapper>
                     {!loading && list.length > 0 && (
                         <TablePagination
                             total={total}
