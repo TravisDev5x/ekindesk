@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import axios from "@/lib/axios";
 import { useAuth } from "@/context/AuthContext";
-import { useTheme } from "@/hooks/useTheme";
 import { useI18n } from "@/hooks/useI18n";
+import { useTheme } from "@/hooks/useTheme";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -10,13 +10,13 @@ import { Label } from "@/components/ui/label";
 import { Link } from "react-router-dom";
 import { notify } from "@/lib/notify";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Loader2, Eye, EyeOff } from "lucide-react";
+import { Loader2, Eye, EyeOff, Sun, Moon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function Login() {
     const { login } = useAuth();
-    const { isDark, toggleTheme } = useTheme();
     const { t } = useI18n();
+    const { isDark, toggleTheme } = useTheme();
     useEffect(() => {
         axios.get("/sanctum/csrf-cookie", { withCredentials: true }).catch(() => {});
     }, []);
@@ -88,6 +88,18 @@ export default function Login() {
 
     return (
         <div className="flex min-h-[100dvh] flex-col items-center justify-center text-foreground relative px-4 py-6 pb-[max(2rem,calc(2rem+env(safe-area-inset-bottom)))] overflow-y-auto md:min-h-screen md:h-screen md:overflow-hidden md:pb-6">
+            {/* Botón modo oscuro/claro */}
+            <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="absolute top-4 right-4 z-20 h-11 w-11 rounded-full border border-border/50 bg-background/80 backdrop-blur-sm hover:bg-muted/50"
+                onClick={toggleTheme}
+                aria-label={isDark ? t("login.themeLight") : t("login.themeDark")}
+            >
+                <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0 text-orange-500" />
+                <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100 text-blue-500" />
+            </Button>
             {/* Fondo: imagen a pantalla completa */}
             <div
                 className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat"
@@ -103,22 +115,13 @@ export default function Login() {
                 )}
                 aria-hidden
             />
-            <Button
-                type="button"
-                variant="ghost"
-                onClick={toggleTheme}
-                className="absolute top-4 right-4 z-10 h-auto min-h-[44px] min-w-[44px] flex items-center justify-center text-xs font-semibold text-muted-foreground hover:text-foreground border border-border px-3 py-2 rounded-full bg-background/70 dark:bg-background/60 backdrop-blur-md hover:bg-background/80 md:py-1"
-                aria-label={t("login.toggleTheme")}
-            >
-                {isDark ? t("login.themeLight") : t("login.themeDark")}
-            </Button>
             <Card className="relative z-10 w-full max-w-[400px] shadow-2xl border-border/80 bg-card/90 dark:bg-card/85 backdrop-blur-md flex-shrink-0 my-auto md:my-0">
                 <CardHeader className="text-center space-y-1">
                     <CardTitle className="text-xl text-foreground">{t("brand.title")}</CardTitle>
                     <p className="text-sm text-foreground/80 font-medium">{t("brand.subtitle")}</p>
                     <p className="text-xs text-foreground/75 pt-1">{t("login.lead")}</p>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="pb-20 md:pb-6">
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div className="space-y-2">
                             <Label htmlFor="login-identifier">{t("login.identifier")}</Label>
@@ -132,7 +135,7 @@ export default function Login() {
                                 autoComplete="username"
                                 disabled={loading}
                                 aria-invalid={Boolean(error)}
-                                className="focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:border-transparent"
+                                className="focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-transparent md:focus-visible:ring-primary/50"
                             />
                         </div>
 
@@ -148,7 +151,7 @@ export default function Login() {
                                     }
                                     autoComplete="current-password"
                                     disabled={loading}
-                                    className="pr-12 focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:border-transparent"
+                                    className="pr-12 focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-transparent md:focus-visible:ring-primary/50"
                                     aria-invalid={Boolean(error)}
                                 />
                                 <Button
@@ -170,14 +173,14 @@ export default function Login() {
                             <p className="text-right">
                                 <Link
                                     to="/forgot-password"
-                                    className="inline-flex items-center justify-end min-h-[44px] py-3 text-xs text-primary hover:underline font-medium md:min-h-0 md:py-0"
+                                    className="inline-flex items-center justify-end min-h-[44px] min-w-[44px] py-2.5 text-xs text-primary hover:underline font-medium md:min-h-0 md:min-w-0 md:py-0"
                                 >
                                     {t("login.forgotPassword")}
                                 </Link>
                             </p>
                         </div>
 
-                        <label className="flex cursor-pointer items-center gap-2 w-fit" htmlFor="remember">
+                        <label className="flex cursor-pointer items-center gap-2 w-fit min-h-[44px] py-1 md:min-h-0 md:py-0" htmlFor="remember">
                             <Checkbox
                                 id="remember"
                                 checked={remember}
@@ -193,7 +196,7 @@ export default function Login() {
                             </p>
                         )}
 
-                        <Button type="submit" className="w-full gap-2" disabled={loading}>
+                        <Button type="submit" className="w-full gap-2 min-h-[44px] md:min-h-0" disabled={loading}>
                             {loading && (
                                 <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden />
                             )}
@@ -202,7 +205,7 @@ export default function Login() {
 
                         <p className="text-center text-xs text-foreground/80 flex flex-wrap items-center justify-center gap-x-1 gap-y-1">
                             <span>{t("login.noAccount")}</span>
-                            <Link to="/register" className="inline-flex items-center min-h-[44px] py-3 text-primary hover:underline font-medium md:min-h-0 md:py-0">
+                            <Link to="/register" className="inline-flex items-center min-h-[44px] min-w-[44px] py-2.5 text-primary hover:underline font-medium md:min-h-0 md:min-w-0 md:py-0">
                                 {t("login.register")}
                             </Link>
                         </p>
@@ -215,7 +218,7 @@ export default function Login() {
                     to="/manual"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center min-h-[44px] py-3 text-primary hover:underline font-semibold md:min-h-0 md:py-0"
+                    className="inline-flex items-center justify-center min-h-[44px] min-w-[44px] py-2.5 text-primary hover:underline font-semibold md:min-h-0 md:min-w-0 md:py-0"
                 >
                     {t("login.manual")}
                 </Link>

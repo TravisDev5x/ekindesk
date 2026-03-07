@@ -159,14 +159,14 @@ const SummaryCard = ({ title, value, icon: Icon, variant = "default", hint, clas
         default: "bg-card border-border/50 text-foreground",
         blue: "bg-blue-50/50 border-blue-100 text-blue-900 dark:bg-blue-900/10 dark:border-blue-900/50 dark:text-blue-100",
         red: "bg-red-50/50 border-red-100 text-red-900 dark:bg-red-900/10 dark:border-red-900/50 dark:text-red-100",
-        slate: "bg-slate-50/50 border-slate-100 text-slate-900 dark:bg-slate-800/10 dark:border-slate-800/50 dark:text-slate-100",
+        slate: "bg-muted/50 border-border text-foreground",
         violet: "bg-violet-50/50 border-violet-100 text-violet-900 dark:bg-violet-900/10 dark:border-violet-900/50 dark:text-violet-100",
     };
     const iconStyles = {
         default: "bg-muted/20 text-muted-foreground",
         blue: "bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400",
         red: "bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400",
-        slate: "bg-slate-100 text-slate-600 dark:bg-slate-500/20 dark:text-slate-400",
+        slate: "bg-muted text-muted-foreground",
         violet: "bg-violet-100 text-violet-600 dark:bg-violet-500/20 dark:text-violet-400",
     };
     const currentStyle = variants[variant] || variants.default;

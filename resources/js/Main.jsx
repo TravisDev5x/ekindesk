@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from "rea
 import { Toaster } from "sileo";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { SidebarPositionProvider } from "@/context/SidebarPositionContext";
+import { ThemeProvider } from "@/components/theme-provider";
 import { I18nProvider } from "@/i18n/I18nProvider";
 
 // Layout (no lazy: se necesita de inmediato para la shell)
@@ -114,8 +115,9 @@ function NotFound() {
 export default function Main() {
     return (
         <AuthProvider>
-            <SidebarPositionProvider>
-                <I18nProvider>
+            <ThemeProvider defaultTheme="system" storageKey="theme">
+                <SidebarPositionProvider>
+                    <I18nProvider>
                     <Toaster
                         position="top-center"
                         options={{
@@ -214,8 +216,9 @@ export default function Main() {
                         </Routes>
                     </Suspense>
                 </BrowserRouter>
-                </I18nProvider>
-            </SidebarPositionProvider>
+                    </I18nProvider>
+                </SidebarPositionProvider>
+            </ThemeProvider>
         </AuthProvider>
     );
 }

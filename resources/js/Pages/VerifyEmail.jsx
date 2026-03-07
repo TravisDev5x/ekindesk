@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import axios from "@/lib/axios";
-import { useTheme } from "@/hooks/useTheme";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,7 +22,6 @@ const STATUS = {
 export default function VerifyEmail() {
     const [searchParams] = useSearchParams();
     const token = (searchParams.get("token") || "").trim();
-    const { isDark, toggleTheme } = useTheme();
     const [status, setStatus] = useState(STATUS.loading);
     const [message, setMessage] = useState("Validando tu correo...");
 
@@ -70,15 +68,6 @@ export default function VerifyEmail() {
 
     return (
         <div className="flex h-screen flex-col items-center justify-center bg-background text-foreground relative px-4 py-6">
-            <Button
-                type="button"
-                variant="ghost"
-                onClick={toggleTheme}
-                className="absolute top-4 right-4 h-auto text-xs font-semibold text-muted-foreground hover:text-foreground border border-border px-3 py-1 rounded-full bg-background/80 backdrop-blur hover:bg-transparent"
-                aria-label="Cambiar tema"
-            >
-                {isDark ? "Modo claro" : "Modo oscuro"}
-            </Button>
             <Card className="w-[440px]">
                 <CardHeader className="space-y-3">
                     <Badge variant={badgeVariant} className="w-fit">

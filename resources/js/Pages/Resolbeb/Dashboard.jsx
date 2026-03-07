@@ -54,9 +54,9 @@ const CHART_COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#e
 function CustomTooltip({ active, payload, label }) {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-slate-800 text-slate-100 p-3 rounded-md shadow-xl border border-slate-700">
+      <div className="bg-popover text-popover-foreground p-3 rounded-md shadow-xl border border-border">
         {(label != null && label !== "") && (
-          <p className="font-semibold border-b border-slate-600 pb-1 mb-2 text-slate-300">{label}</p>
+          <p className="font-semibold border-b border-border pb-1 mb-2 text-muted-foreground">{label}</p>
         )}
         {payload.map((entry, index) => (
           <p key={index} className="text-sm">
@@ -118,7 +118,7 @@ function ExpandableCard({ title, description, chartHeight = 350, children }) {
       ref={cardRef}
       className={cn(
         "rounded-lg border border-border/50 bg-card overflow-hidden",
-        isFullscreen && "flex flex-col h-screen w-screen p-8 bg-white dark:bg-slate-900"
+        isFullscreen && "flex flex-col h-screen w-screen p-8 bg-background"
       )}
     >
       <div className={cn("flex items-start justify-between gap-2", isFullscreen ? "pb-4" : "px-6 pt-6 pb-2")}>
@@ -289,7 +289,7 @@ export default function ResolbebDashboard({ isStandalone = false }) {
     );
     if (isStandalone) {
       return (
-        <div className="bg-slate-50 dark:bg-slate-900 min-h-screen p-6">
+        <div className="bg-background min-h-screen p-6">
           {noPermContent}
         </div>
       );
@@ -304,7 +304,7 @@ export default function ResolbebDashboard({ isStandalone = false }) {
     <div
       className={cn(
         "space-y-6 pb-20 animate-in fade-in duration-300",
-        isTvMode && "fixed inset-0 z-[9999] bg-slate-50 dark:bg-slate-900 overflow-auto p-8"
+        isTvMode && "fixed inset-0 z-[9999] bg-background overflow-auto p-8"
       )}
     >
       {isTvMode && (
@@ -715,7 +715,7 @@ export default function ResolbebDashboard({ isStandalone = false }) {
 
   if (isStandalone) {
     return (
-      <div className="bg-slate-50 dark:bg-slate-900 min-h-screen p-6">
+      <div className="bg-background min-h-screen p-6">
         {dashboardContent}
       </div>
     );

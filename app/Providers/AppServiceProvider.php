@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Vite;
 use App\Models\Ticket;
 use App\Models\Incident;
 use App\Policies\RequesterTicketPolicy;
@@ -31,6 +32,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        $this->fixViteHotFileForNetworkAccess();
+
         RateLimiter::for('login', function (Request $request) {
             return Limit::perMinute(10)->by($request->ip());
         });
@@ -64,5 +67,51 @@ class AppServiceProvider extends ServiceProvider
             $email = urlencode((string) $user->email);
             return URL::to('/') . "/reset-password?token={$token}&email={$email}";
         });
+    }
+
+    /**
+     * Cuando el archivo "hot" de Vite contiene http://[::]:5173 (por host: true),
+     * el navegador bloquea los scripts por CORS. Reemplazamos esa URL por el host
+     * de la petición (o VITE_DEV_SERVER_HOST) para que funcione desde otro dispositivo en la red.
+     */
+    protected function fixViteHotFileForNetworkAccess(): void
+    {
+        $hotFile = public_path('hot');
+        if (! is_file($hotFile)) {
+            return;
+        }
+
+        $content = trim((string) file_get_contents($hotFile));
+        if ($content === '') {
+            return;
+        }
+
+        $host = env('VITE_DEV_SERVER_HOST');
+        if ($host === null || $host === '') {
+            try {
+                $request = request();
+            } catch (\Throwable) {
+                return;
+            }
+            if ($request === null) {
+                return;
+            }
+            $host = $request->getHost();
+        }
+
+        $port = '5173';
+        $newOrigin = 'http://' . $host . ':' . $port;
+        if (str_starts_with($content, 'https://')) {
+            $newOrigin = 'https://' . $host . ':' . $port;
+        }
+
+        $replaced = preg_replace('#^https?://[^/]+#', $newOrigin, $content);
+        if ($replaced === $content) {
+            return;
+        }
+
+        $resolvedPath = public_path('hot.resolved');
+        file_put_contents($resolvedPath, $replaced);
+        Vite::useHotFile($resolvedPath);
     }
 }

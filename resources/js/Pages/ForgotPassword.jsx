@@ -62,7 +62,7 @@ export default function ForgotPassword() {
                 <CardHeader>
                     <CardTitle className="text-center">Restablecer contraseña</CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="pb-20 md:pb-6">
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div className="space-y-2">
                             <Label htmlFor="forgot-identifier">Correo o número de empleado</Label>
@@ -74,7 +74,7 @@ export default function ForgotPassword() {
                                 placeholder="Ej: correo@empresa.com o 12345"
                                 autoComplete="username"
                                 disabled={loading}
-                                className="focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:border-transparent"
+                                className="focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-transparent md:focus-visible:ring-primary/50"
                             />
                             <p className="text-xs text-muted-foreground">
                                 Si no tienes correo institucional, escribe tu número de empleado. Un administrador restablecerá tu contraseña y se comunicará contigo por WhatsApp empresarial, teléfono o personalmente.
@@ -98,10 +98,10 @@ export default function ForgotPassword() {
                         )}
                         {message && <p className="text-green-600 text-sm">{message}</p>}
                         {error && <p className="text-red-500 text-sm">{error}</p>}
-                        <Button type="submit" className="w-full" disabled={loading}>
+                        <Button type="submit" className="w-full min-h-[44px] md:min-h-0" disabled={loading}>
                             {loading ? "Enviando..." : "Enviar solicitud"}
                         </Button>
-                        <Button type="button" variant="ghost" className="w-full" onClick={() => navigate(-1)} disabled={loading}>
+                        <Button type="button" variant="ghost" className="w-full min-h-[44px] md:min-h-0" onClick={() => navigate(-1)} disabled={loading}>
                             Volver
                         </Button>
                     </form>

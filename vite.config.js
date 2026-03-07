@@ -12,10 +12,20 @@ export default defineConfig({
         react(),
     ],
     server: {
-        cors: true,
+        host: true,
+        strictPort: true,
+        port: 5173,
+        cors: {
+            origin: true,
+            credentials: true,
+        },
+        allowedHosts: true,
         headers: {
             "Cache-Control": "no-store",
         },
+        hmr: process.env.VITE_HMR_HOST
+            ? { host: process.env.VITE_HMR_HOST, port: 5173, protocol: "ws" }
+            : true,
     },
     resolve: {
         alias: {

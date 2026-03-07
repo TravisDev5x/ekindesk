@@ -2,19 +2,25 @@
 <html lang="es">
 <head>
   <!-- build: {{ config('app.env') }}-{{ now()->format('YmdHis') }} -->
+  <!-- Anti-flicker: aplicar tema (clase dark) antes de que React renderice -->
   <script>
     (function () {
       try {
-        const storedTheme = localStorage.getItem('theme');
-        const storedLocale = localStorage.getItem('locale');
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        const theme = storedTheme || (prefersDark ? 'dark' : 'light');
-        const THEMES = ['light','light-dim','dark','dark-deep','aeroglass','aeroglass-dark'];
-        const root = document.documentElement;
+        var stored = localStorage.getItem('theme');
+        var theme = (stored === 'dark' || stored === 'light' || stored === 'system') ? stored : 'system';
+        var resolved = theme === 'system'
+          ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+          : theme;
+        var root = document.documentElement;
         root.dataset.themeInit = '1';
-        THEMES.forEach(t => root.classList.remove(t));
-        root.classList.add(theme);
-        root.style.colorScheme = theme.includes('dark') ? 'dark' : 'light';
+        if (resolved === 'dark') {
+          root.classList.add('dark');
+          root.style.colorScheme = 'dark';
+        } else {
+          root.classList.remove('dark');
+          root.style.colorScheme = 'light';
+        }
+        var storedLocale = localStorage.getItem('locale');
         if (storedLocale) root.lang = storedLocale;
       } catch (e) {}
     })();
@@ -22,6 +28,8 @@
 
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#ffffff">
+  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#000000">
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">

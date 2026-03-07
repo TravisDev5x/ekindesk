@@ -183,7 +183,7 @@ export default function Profile() {
     ========================= */
 
     return (
-        <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in pb-10">
+        <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in pb-content-mobile">
             <h1 className="text-3xl font-black uppercase tracking-tighter">
                 Mi Perfil
             </h1>

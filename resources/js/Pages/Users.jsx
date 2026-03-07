@@ -18,7 +18,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { notify } from "@/lib/notify";
 import { Separator } from "@/components/ui/separator";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { loadCatalogs as fetchCatalogs, clearCatalogCache } from "@/lib/catalogCache";
 
 // --- ICONOS ---
@@ -89,6 +90,36 @@ const StatusBadge = ({ status, isBlacklisted }) => {
         </Badge>
     );
 };
+
+// --- VISTA MÓVIL: CARD POR USUARIO (solo visible en viewport < md) ---
+function UserCard({ user, renderRowActions }) {
+    return (
+        <Card className="border border-border/60 overflow-hidden shadow-sm">
+            <CardContent className="p-4 flex flex-col gap-3">
+                <div className="flex items-start justify-between gap-2 min-w-0">
+                    <div className="min-w-0 flex-1">
+                        <p className="font-semibold text-sm text-foreground truncate">{user.name}</p>
+                        <p className="text-[11px] text-muted-foreground font-mono truncate" title={user.email}>
+                            #{user.employee_number}{user.email ? ` · ${user.email}` : ""}
+                        </p>
+                    </div>
+                    <StatusBadge status={user.status} isBlacklisted={user.is_blacklisted} />
+                </div>
+                {(user.campaign || user.sede) && (
+                    <p className="text-xs text-muted-foreground truncate">
+                        {[user.campaign, user.sede, user.ubicacion].filter(Boolean).join(" · ")}
+                    </p>
+                )}
+                {user.position && (
+                    <p className="text-[11px] text-muted-foreground truncate">{user.position}</p>
+                )}
+                <div className="flex justify-end pt-1 border-t border-border/40">
+                    {renderRowActions(user)}
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
 
 // --- COLUMNAS Y TABLA USUARIOS (TanStack Table) ---
 function useUsersTableColumns({ selectedIds, setSelectedIds, renderRowActions, data }) {
@@ -891,29 +922,65 @@ export default function Users() {
                 )}
             </Card>
 
-            {/* TABLA COMPACTA */}
-            <Card className="overflow-hidden border-border/60">
-                <UsersTable
-                    data={filteredUsers}
-                    loading={loading}
-                    selectedIds={selectedIds}
-                    setSelectedIds={setSelectedIds}
-                    renderRowActions={renderRowActions}
-                />
+            {/* VISTA MÓVIL: CARDS */}
+            <div className="block md:hidden space-y-3">
+                {loading ? (
+                    Array.from({ length: 4 }).map((_, i) => (
+                        <Card key={i} className="border border-border/60 overflow-hidden">
+                            <CardContent className="p-4 space-y-3">
+                                <div className="flex justify-between gap-2">
+                                    <Skeleton className="h-4 w-32" />
+                                    <Skeleton className="h-5 w-16" />
+                                </div>
+                                <Skeleton className="h-3 w-24" />
+                                <Skeleton className="h-8 w-full" />
+                            </CardContent>
+                        </Card>
+                    ))
+                ) : filteredUsers.length === 0 ? (
+                    <Card className="border border-dashed border-border/60">
+                        <CardContent className="py-12 px-4 text-center">
+                            <div className="bg-muted/60 p-3 rounded-full inline-flex mb-4">
+                                <Search className="h-6 w-6 opacity-60" />
+                            </div>
+                            <p className="text-sm font-medium text-muted-foreground">No se encontraron resultados</p>
+                        </CardContent>
+                    </Card>
+                ) : (
+                    filteredUsers.map((u) => (
+                        <UserCard key={u.id} user={u} renderRowActions={renderRowActions} />
+                    ))
+                )}
+            </div>
 
-                <TablePagination
-                    total={pagination.total}
-                    from={pagination.total === 0 ? 0 : (pagination.current - 1) * Number(perPage) + 1}
-                    to={pagination.total === 0 ? 0 : Math.min(pagination.current * Number(perPage), pagination.total)}
-                    currentPage={pagination.current}
-                    lastPage={pagination.last}
-                    perPage={perPage}
-                    perPageOptions={["10", "15", "25", "50", "100"]}
-                    onPerPageChange={(v) => { setPerPage(v); fetchData(1); }}
-                    onPageChange={(p) => fetchData(p)}
-                    loading={loading}
-                />
+            {/* TABLA DESKTOP: scroll horizontal + visible solo en md+ */}
+            <Card className="overflow-hidden border-border/60 hidden md:block">
+                <div className="overflow-x-auto">
+                    <div className="min-w-[700px] [&_th]:py-1.5 [&_td]:py-1.5 [&_th]:text-xs [&_td]:text-sm">
+                        <UsersTable
+                            data={filteredUsers}
+                            loading={loading}
+                            selectedIds={selectedIds}
+                            setSelectedIds={setSelectedIds}
+                            renderRowActions={renderRowActions}
+                        />
+                    </div>
+                </div>
             </Card>
+
+            {/* PAGINACIÓN (común móvil y desktop) */}
+            <TablePagination
+                total={pagination.total}
+                from={pagination.total === 0 ? 0 : (pagination.current - 1) * Number(perPage) + 1}
+                to={pagination.total === 0 ? 0 : Math.min(pagination.current * Number(perPage), pagination.total)}
+                currentPage={pagination.current}
+                lastPage={pagination.last}
+                perPage={perPage}
+                perPageOptions={["10", "15", "25", "50", "100"]}
+                onPerPageChange={(v) => { setPerPage(v); fetchData(1); }}
+                onPageChange={(p) => fetchData(p)}
+                loading={loading}
+            />
 
             <Dialog open={confirmOpen} onOpenChange={(open) => { if (!processing) setConfirmOpen(open); }}>
                 <DialogContent className="sm:max-w-md border-border bg-background text-foreground shadow-xl">

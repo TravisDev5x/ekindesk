@@ -48,8 +48,8 @@ const DialogContent = React.forwardRef<
           <span className="sr-only">Close</span>
         </DialogPrimitive.Close>
       </div>
-      {/* Contenido desplazable; en sm con pt-6 para no quedar bajo el botón cerrar */}
-      <div className="flex-1 min-h-0 overflow-y-auto px-6 pb-6 pt-2 sm:pt-6">
+      {/* Contenido desplazable; en móvil respeta safe-area-inset-bottom */}
+      <div className="flex-1 min-h-0 overflow-y-auto px-6 pt-2 sm:pt-6" style={{ paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom))' }}>
         {children}
       </div>
     </DialogPrimitive.Content>

@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
 import axios from "@/lib/axios";
 import { loadCatalogs } from "@/lib/catalogCache";
@@ -14,7 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { notify } from "@/lib/notify";
-import { Loader2, Paperclip, Trash2, AlertTriangle, Building2, CalendarDays, User } from "lucide-react";
+import { Loader2, Paperclip, Trash2, AlertTriangle, Building2, CalendarDays, User, MessageSquare, UserCog } from "lucide-react";
 
 export default function IncidentDetalle() {
     const { id } = useParams();
@@ -32,6 +32,8 @@ export default function IncidentDetalle() {
     const [assigneeId, setAssigneeId] = useState("none");
     const [files, setFiles] = useState([]);
     const [uploading, setUploading] = useState(false);
+    const updateSectionRef = useRef(null);
+    const assignSectionRef = useRef(null);
 
     const load = async () => {
         try {
@@ -176,8 +178,12 @@ export default function IncidentDetalle() {
         return "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20";
     };
 
+    const scrollToRef = (ref) => {
+        ref?.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    };
+
     return (
-        <div className="w-full max-w-[1920px] mx-auto p-4 md:p-6 lg:p-8 space-y-6">
+        <div className="w-full max-w-[1920px] mx-auto p-4 md:p-6 lg:p-8 space-y-6 pb-content-mobile">
             <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
                 <div className="flex items-center gap-3">
                     <div className="h-10 w-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center shadow-sm">
@@ -273,7 +279,7 @@ export default function IncidentDetalle() {
             </Card>
 
             {(canChangeStatus || canComment) && (
-                <Card className="border border-border/50 shadow-sm">
+                <Card ref={updateSectionRef} className="border border-border/50 shadow-sm">
                     <CardHeader className="pb-3">
                         <CardTitle>Actualizar</CardTitle>
                         <CardDescription className="text-xs">Cambios de estado o severidad quedan registrados en el historial.</CardDescription>
@@ -303,7 +309,7 @@ export default function IncidentDetalle() {
                                 className="min-h-[100px] bg-muted/10"
                             />
                             {canComment && (
-                                <Button onClick={() => update({})} disabled={updating}>
+                                <Button onClick={() => update({})} disabled={updating} className="min-h-[44px] md:min-h-0">
                                     {updating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                     Guardar nota / cambio
                                 </Button>
@@ -314,7 +320,7 @@ export default function IncidentDetalle() {
             )}
 
             {canAssign && (
-                <Card className="border border-border/50 shadow-sm">
+                <Card ref={assignSectionRef} className="border border-border/50 shadow-sm">
                     <CardHeader className="pb-3">
                         <CardTitle>Responsable</CardTitle>
                         <CardDescription className="text-xs">Tomar, reasignar o liberar la incidencia.</CardDescription>
@@ -337,20 +343,39 @@ export default function IncidentDetalle() {
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <Button onClick={assignIncident} disabled={updating || assigneeId === "none"} className="self-end">
+                            <Button onClick={assignIncident} disabled={updating || assigneeId === "none"} className="self-end min-h-[44px] md:min-h-0">
                                 Reasignar
                             </Button>
                             <div className="flex gap-2 self-end">
-                                <Button onClick={takeIncident} disabled={updating || Boolean(incident.assigned_user_id)}>
+                                <Button onClick={takeIncident} disabled={updating || Boolean(incident.assigned_user_id)} className="min-h-[44px] md:min-h-0">
                                     Tomar
                                 </Button>
-                                <Button variant="outline" onClick={unassignIncident} disabled={updating || !incident.assigned_user_id}>
+                                <Button variant="outline" onClick={unassignIncident} disabled={updating || !incident.assigned_user_id} className="min-h-[44px] md:min-h-0">
                                     Liberar
                                 </Button>
                             </div>
                         </div>
                     </CardContent>
                 </Card>
+            )}
+
+            {/* Barra de acciones fija en móvil */}
+            {(canChangeStatus || canComment || canAssign) && (
+                <div
+                    className="md:hidden fixed left-0 right-0 z-40 flex items-center justify-center gap-2 border-t border-border/60 bg-background/95 backdrop-blur-sm py-2 px-4"
+                    style={{ bottom: "max(4.5rem, calc(env(safe-area-inset-bottom) + 4rem))" }}
+                >
+                    {(canChangeStatus || canComment) && (
+                        <Button variant="outline" size="sm" className="flex-1 min-h-[44px] gap-1.5" onClick={() => scrollToRef(updateSectionRef)}>
+                            <MessageSquare className="h-4 w-4" /> Comentar / Estado
+                        </Button>
+                    )}
+                    {canAssign && (
+                        <Button variant="outline" size="sm" className="flex-1 min-h-[44px] gap-1.5" onClick={() => scrollToRef(assignSectionRef)}>
+                            <UserCog className="h-4 w-4" /> Asignar
+                        </Button>
+                    )}
+                </div>
             )}
 
             <Card className="border border-border/50 shadow-sm">

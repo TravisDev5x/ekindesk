@@ -27,15 +27,9 @@ import {
 } from "lucide-react";
 
 const OPTIONS_THEME = [
-    { value: "light", label: "Claro", description: "Blanco limpio", color: "bg-slate-100" },
-    { value: "light-dim", label: "Claro suave", description: "Fondo gris claro", color: "bg-slate-200" },
-    { value: "adminlte-legacy", label: "AdminLTE 4", description: "Estilo AdminLTE v4 (Bootstrap 5)", color: "bg-[#3b7ddd]" },
-    { value: "dark", label: "Oscuro", description: "Oscuro equilibrado", color: "bg-slate-900" },
-    { value: "dark-deep", label: "Oscuro profundo", description: "Más contraste", color: "bg-black" },
-    { value: "aeroglass", label: "AeroGlass", description: "Transparencia con brillo sutil", color: "bg-blue-100/50" },
-    { value: "aeroglass-dark", label: "AeroGlass Oscuro", description: "Vidrio ahumado", color: "bg-blue-950/50" },
-    { value: "liquidglass-rose", label: "LiquidGlass Rosa", description: "Cristal líquido en tonos rosa", color: "bg-rose-200/70" },
-    { value: "liquidglass-rose-dark", label: "LiquidGlass Rosa Oscuro", description: "Rosa ahumado", color: "bg-rose-950/60" },
+    { value: "light", label: "Claro", description: "Tema claro", color: "bg-background" },
+    { value: "dark", label: "Oscuro", description: "Tema oscuro", color: "bg-card" },
+    { value: "system", label: "Sistema", description: "Según el sistema operativo", color: "bg-muted" },
 ];
 
 const OPTIONS_LOCALE = [
@@ -171,7 +165,7 @@ export default function Settings() {
     };
 
     return (
-        <div className="max-w-4xl mx-auto pb-20 space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="max-w-4xl mx-auto pb-content-mobile space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-500">
             {/* Header */}
             <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b pb-6 border-border/40">
                 <div className="space-y-1">

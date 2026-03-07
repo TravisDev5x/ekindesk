@@ -571,7 +571,7 @@ export default function AppLayout() {
                         </div>
                     </main>
                 </div>
-                <MobileBottomBar onOpenMenu={setMobileMenuOpen} forceVisible={forceDeviceView} />
+                <MobileBottomBar onOpenMenu={setMobileMenuOpen} forceVisible={forceDeviceView} unreadCount={unreadCount} />
             </div>
         </TooltipProvider>
     )

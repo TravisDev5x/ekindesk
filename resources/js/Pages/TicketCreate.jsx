@@ -127,7 +127,7 @@ export default function TicketCreate() {
     }
 
     return (
-        <div className="w-full p-4 md:p-6 min-h-0">
+        <div className="w-full p-4 md:p-6 min-h-0 pb-content-mobile">
             <div className="mb-6">
                 <Button variant="ghost" size="sm" asChild>
                     <Link to={backTo} className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground">
@@ -160,7 +160,7 @@ export default function TicketCreate() {
                                     placeholder="Ej: Fallo en impresora de recepción"
                                     value={form.subject}
                                     onChange={(e) => setForm({ ...form, subject: e.target.value })}
-                                    className="w-full"
+                                    className="w-full min-h-[44px] md:min-h-0"
                                     aria-required
                                 />
                             </div>
@@ -343,10 +343,10 @@ export default function TicketCreate() {
                     </CardContent>
 
                     <CardFooter className="flex justify-end gap-2 border-t pt-4 px-6 pb-6">
-                        <Button type="button" variant="outline" asChild>
+                        <Button type="button" variant="outline" asChild className="min-h-[44px] md:min-h-0">
                             <Link to={backTo}>Cancelar</Link>
                         </Button>
-                        <Button type="submit" disabled={saving}>
+                        <Button type="submit" disabled={saving} className="min-h-[44px] md:min-h-0">
                             {saving ? (
                                 <><Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden /> Creando...</>
                             ) : (

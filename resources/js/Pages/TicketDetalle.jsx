@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
 import axios from "@/lib/axios";
 import { useAuth } from "@/context/AuthContext";
@@ -14,7 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { notify } from "@/lib/notify";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Loader2, MessageSquare, Lock, History, ArrowLeft, ChevronDown, ChevronUp, UserCheck, AlertTriangle, XCircle } from "lucide-react";
+import { Loader2, MessageSquare, Lock, History, ArrowLeft, ChevronDown, ChevronUp, UserCheck, AlertTriangle, XCircle, UserCog, RefreshCw } from "lucide-react";
 
 export default function TicketDetalle() {
     const { id } = useParams();
@@ -34,6 +34,9 @@ export default function TicketDetalle() {
     const [macros, setMacros] = useState([]);
     const [macrosLoading, setMacrosLoading] = useState(false);
     const [selectedMacroId, setSelectedMacroId] = useState("");
+    const commentSectionRef = useRef(null);
+    const assignSectionRef = useRef(null);
+    const updateSectionRef = useRef(null);
 
     useEffect(() => {
         let mounted = true;
@@ -229,8 +232,12 @@ export default function TicketDetalle() {
 
     const isRequester = user && Number(user.id) === Number(ticket.requester_id);
 
+    const scrollToRef = (ref) => {
+        ref?.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    };
+
     return (
-        <div className="space-y-6 max-w-5xl mx-auto pb-8">
+        <div className="space-y-6 max-w-5xl mx-auto pb-content-mobile">
             <div className="flex items-center gap-3">
                 <Button variant="ghost" size="sm" asChild className="text-muted-foreground hover:text-foreground -ml-2">
                     <Link to={backToListLink}><ArrowLeft className="h-4 w-4 mr-1" /> Volver al listado</Link>
@@ -365,7 +372,7 @@ export default function TicketDetalle() {
             </Card>
 
             {canEdit && (
-                <Card>
+                <Card ref={updateSectionRef}>
                     <CardHeader>
                         <CardTitle>Actualizar</CardTitle>
                         <p className="text-sm text-muted-foreground">Cambios de estado, prioridad o área quedan registrados en el historial.</p>
@@ -438,7 +445,7 @@ export default function TicketDetalle() {
                                 Actualizar fecha
                             </Button>
                         </div>
-                        <div className="md:col-span-3 space-y-2">
+                        <div className="md:col-span-3 space-y-2" ref={commentSectionRef}>
                             {canComment && macros.length > 0 && (
                                 <div className="flex items-center gap-2">
                                     <Label className="text-xs text-muted-foreground">Plantilla:</Label>
@@ -462,7 +469,7 @@ export default function TicketDetalle() {
                                         <Checkbox checked={isInternalNote} onCheckedChange={(v) => setIsInternalNote(!!v)} disabled={updating} />
                                         <span className="text-muted-foreground">Nota interna (no visible para el solicitante)</span>
                                     </label>
-                                    <Button onClick={() => update({})} disabled={updating}>
+                                    <Button onClick={() => update({})} disabled={updating} className="min-h-[44px] md:min-h-0">
                                         {updating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                         Guardar nota / cambio
                                     </Button>
@@ -474,7 +481,7 @@ export default function TicketDetalle() {
             )}
 
             {canAssign && (
-                <Card>
+                <Card ref={assignSectionRef}>
                     <CardHeader>
                         <CardTitle>Responsable</CardTitle>
                         <p className="text-sm text-muted-foreground">Tomar, reasignar o liberar el ticket.</p>
@@ -494,20 +501,44 @@ export default function TicketDetalle() {
                                     ))}
                                 </SelectContent>
                             </Select>
-                            <Button onClick={assignTicket} disabled={updating || assigneeId === "none" || (hasAssignee && !canAssign)}>
+                            <Button onClick={assignTicket} disabled={updating || assigneeId === "none" || (hasAssignee && !canAssign)} className="min-h-[44px] md:min-h-0">
                                 Reasignar
                             </Button>
                             <div className="flex gap-2">
-                                <Button onClick={takeTicket} disabled={updating || hasAssignee || !canAssign}>
+                                <Button onClick={takeTicket} disabled={updating || hasAssignee || !canAssign} className="min-h-[44px] md:min-h-0">
                                     Tomar
                                 </Button>
-                                <Button variant="outline" onClick={unassignTicket} disabled={updating || !hasAssignee || !canRelease} title={hasAssignee && !canRelease ? "Solo el responsable actual puede liberar el ticket" : ""}>
+                                <Button variant="outline" onClick={unassignTicket} disabled={updating || !hasAssignee || !canRelease} title={hasAssignee && !canRelease ? "Solo el responsable actual puede liberar el ticket" : ""} className="min-h-[44px] md:min-h-0">
                                     Liberar
                                 </Button>
                             </div>
                         </div>
                     </CardContent>
                 </Card>
+            )}
+
+            {/* Barra de acciones fija en móvil: Comentar, Asignar, Estado */}
+            {(canEdit || canAssign) && (
+                <div
+                    className="md:hidden fixed left-0 right-0 z-40 flex items-center justify-center gap-2 border-t border-border/60 bg-background/95 backdrop-blur-sm py-2 px-4"
+                    style={{ bottom: "max(4.5rem, calc(env(safe-area-inset-bottom) + 4rem))" }}
+                >
+                    {canEdit && (
+                        <>
+                            <Button variant="outline" size="sm" className="flex-1 min-h-[44px] gap-1.5" onClick={() => scrollToRef(commentSectionRef)}>
+                                <MessageSquare className="h-4 w-4" /> Comentar
+                            </Button>
+                            <Button variant="outline" size="sm" className="flex-1 min-h-[44px] gap-1.5" onClick={() => scrollToRef(updateSectionRef)}>
+                                <RefreshCw className="h-4 w-4" /> Estado
+                            </Button>
+                        </>
+                    )}
+                    {canAssign && (
+                        <Button variant="outline" size="sm" className="flex-1 min-h-[44px] gap-1.5" onClick={() => scrollToRef(assignSectionRef)}>
+                            <UserCog className="h-4 w-4" /> Asignar
+                        </Button>
+                    )}
+                </div>
             )}
 
             <Card>

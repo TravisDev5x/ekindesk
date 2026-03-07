@@ -175,13 +175,83 @@ const StateBadge = memo(({ state }) => {
     );
 });
 
+// ------------------------------------------------------------------
+// VISTA MÓVIL: CARD POR TICKET (solo visible en viewport < md)
+// ------------------------------------------------------------------
+const TicketCard = memo(function TicketCard({ ticket }) {
+    const needsAttention = !ticket.assigned_user && !ticket.assignedUser;
+    const isOverdue = Boolean(ticket.is_overdue);
+    const assignedName = ticket.assigned_user?.name || ticket.assignedUser?.name;
+
+    return (
+        <Card
+            className={cn(
+                "shadow-sm border border-border/60 overflow-hidden transition-colors",
+                isOverdue && "border-l-4 border-l-destructive bg-destructive/5"
+            )}
+        >
+            <CardContent className="p-4 flex flex-col gap-3">
+                <div className="flex items-start justify-between gap-2">
+                    <div className="font-mono text-xs font-bold text-primary/80 bg-primary/5 py-1 px-2 rounded shrink-0">
+                        #{String(ticket.id).padStart(5, "0")}
+                    </div>
+                    <StateBadge state={ticket.state} />
+                </div>
+                <p className="font-semibold text-sm text-foreground line-clamp-2" title={ticket.subject}>
+                    {ticket.subject}
+                </p>
+                <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
+                    <Badge variant="outline" className="text-[10px] h-4 px-1.5 font-normal rounded-sm border-muted-foreground/30">
+                        {ticket.ticket_type?.name}
+                    </Badge>
+                    <span className="flex items-center gap-1">
+                        <Clock className="w-3 h-3 shrink-0" /> {new Date(ticket.created_at).toLocaleDateString()}
+                    </span>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                    <PriorityBadge priority={ticket.priority} />
+                    {assignedName ? (
+                        <span className="text-xs text-muted-foreground flex items-center gap-1">
+                            <User className="w-3 h-3" /> {assignedName}
+                        </span>
+                    ) : (
+                        <span className="text-xs text-muted-foreground italic flex items-center gap-1">
+                            <AlertCircle className="w-3 h-3 text-orange-400" /> Sin asignar
+                        </span>
+                    )}
+                </div>
+                {ticket.sla_status_text && (
+                    <p className={cn("text-xs", ticket.is_overdue ? "text-destructive font-medium" : "text-muted-foreground")}>
+                        {ticket.sla_status_text}
+                    </p>
+                )}
+                <div className="flex items-center justify-between gap-2 pt-1">
+                    <span className="text-[11px] text-muted-foreground flex items-center gap-1 truncate min-w-0">
+                        <Building2 className="w-3 h-3 shrink-0" /> {ticket.sede?.name}
+                    </span>
+                    <Button
+                        asChild
+                        variant={needsAttention ? "default" : "secondary"}
+                        size="sm"
+                        className="h-9 min-h-[44px] shrink-0 text-xs font-semibold"
+                    >
+                        <Link to={`/tickets/${ticket.id}`} className="flex items-center gap-2">
+                            Gestionar <ArrowRightCircle className="w-3.5 h-3.5" />
+                        </Link>
+                    </Button>
+                </div>
+            </CardContent>
+        </Card>
+    );
+});
+
 const SummaryCard = ({ title, value, icon: Icon, variant = "default", hint, className }) => {
     // Definición de variantes de color (Compatible Light/Dark)
     const variants = {
         default: "bg-card border-border/50 text-foreground", // Estilo clásico blanco/negro
         blue: "bg-blue-50/50 border-blue-100 text-blue-900 dark:bg-blue-900/10 dark:border-blue-900/50 dark:text-blue-100",
         red: "bg-red-50/50 border-red-100 text-red-900 dark:bg-red-900/10 dark:border-red-900/50 dark:text-red-100",
-        slate: "bg-slate-50/50 border-slate-100 text-slate-900 dark:bg-slate-800/10 dark:border-slate-800/50 dark:text-slate-100",
+        slate: "bg-muted/50 border-border text-foreground",
         violet: "bg-violet-50/50 border-violet-100 text-violet-900 dark:bg-violet-900/10 dark:border-violet-900/50 dark:text-violet-100",
     };
 
@@ -190,7 +260,7 @@ const SummaryCard = ({ title, value, icon: Icon, variant = "default", hint, clas
         default: "bg-muted/20 text-muted-foreground",
         blue: "bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400",
         red: "bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400",
-        slate: "bg-slate-100 text-slate-600 dark:bg-slate-500/20 dark:text-slate-400",
+        slate: "bg-muted text-muted-foreground",
         violet: "bg-violet-100 text-violet-600 dark:bg-violet-500/20 dark:text-violet-400",
     };
 
@@ -693,50 +763,102 @@ export default function Tickets() {
                     </CardContent>
                 </Card>
 
-                {/* TABLA */}
-                <Card className="border border-border/50 shadow-sm overflow-hidden bg-card">
-                    <div className="p-0">
-                        <Table>
-                            <TableHeader className="bg-muted/40">
-                                <TableRow className="border-b border-border/50 hover:bg-transparent">
-                                    <TableHead className="w-[80px] font-bold text-[11px] uppercase tracking-wider text-muted-foreground text-center">Folio</TableHead>
-                                    <TableHead className="min-w-[280px] font-bold text-[11px] uppercase tracking-wider text-muted-foreground">Detalle del Ticket</TableHead>
-                                    <TableHead className="w-[140px] font-bold text-[11px] uppercase tracking-wider text-muted-foreground">Estado</TableHead>
-                                    <TableHead className="w-[100px] font-bold text-[11px] uppercase tracking-wider text-muted-foreground text-center">Prioridad</TableHead>
-                                    <TableHead className="min-w-[150px] font-bold text-[11px] uppercase tracking-wider text-muted-foreground">Asignado a</TableHead>
-                                    <TableHead className="min-w-[120px] font-bold text-[11px] uppercase tracking-wider text-muted-foreground">SLA</TableHead>
-                                    <TableHead className="min-w-[180px] font-bold text-[11px] uppercase tracking-wider text-muted-foreground">Ubicación</TableHead>
-                                    <TableHead className="w-[120px] text-right font-bold text-[11px] uppercase tracking-wider text-muted-foreground pr-6">Acciones</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {loading ? (
-                                    Array.from({ length: 5 }).map((_, i) => (
-                                        <TableRow key={i}>
-                                            <TableCell colSpan={8} className="h-16 px-4">
-                                                <div className="flex items-center gap-4">
-                                                    <Skeleton className="h-8 w-12" />
-                                                    <div className="flex-1 space-y-2">
-                                                        <Skeleton className="h-4 w-3/4" />
-                                                        <Skeleton className="h-3 w-1/4" />
+                {/* VISTA MÓVIL: CARDS (visible solo en viewport < md) */}
+                <div className="block md:hidden space-y-3">
+                    {loading ? (
+                        Array.from({ length: 4 }).map((_, i) => (
+                            <Card key={i} className="border border-border/50 overflow-hidden">
+                                <CardContent className="p-4 space-y-3">
+                                    <div className="flex justify-between gap-2">
+                                        <Skeleton className="h-6 w-16" />
+                                        <Skeleton className="h-5 w-20" />
+                                    </div>
+                                    <Skeleton className="h-4 w-full" />
+                                    <Skeleton className="h-4 w-3/4" />
+                                    <div className="flex gap-2">
+                                        <Skeleton className="h-5 w-20" />
+                                        <Skeleton className="h-5 w-24" />
+                                    </div>
+                                    <div className="flex justify-end"><Skeleton className="h-9 w-24" /></div>
+                                </CardContent>
+                            </Card>
+                        ))
+                    ) : tickets.length === 0 ? (
+                        <Card className="border border-dashed border-border/60">
+                            <CardContent className="py-12 px-4 text-center">
+                                <div className="p-5 bg-muted/30 rounded-2xl inline-flex mb-4">
+                                    <Ticket className="w-12 h-12 opacity-50" />
+                                </div>
+                                <p className="font-semibold text-foreground/90">No hay tickets</p>
+                                <p className="text-sm mt-1 text-muted-foreground max-w-sm mx-auto">
+                                    {hasActiveFilters
+                                        ? "Ningún ticket coincide con los filtros."
+                                        : "Aún no hay tickets registrados."}
+                                </p>
+                                <div className="flex flex-wrap justify-center gap-2 mt-4">
+                                    {canCreate && !hasActiveFilters && (
+                                        <Button onClick={handleCreateOpen} size="sm">
+                                            <Plus className="w-4 h-4 mr-2" /> Crear ticket
+                                        </Button>
+                                    )}
+                                    {hasActiveFilters && (
+                                        <Button variant="outline" size="sm" onClick={handleClearFilters}>
+                                            <X className="w-4 h-4 mr-2" /> Limpiar filtros
+                                        </Button>
+                                    )}
+                                </div>
+                            </CardContent>
+                        </Card>
+                    ) : (
+                        tickets.map((t) => <TicketCard key={t.id} ticket={t} />)
+                    )}
+                </div>
+
+                {/* TABLA DESKTOP: scroll horizontal en contenedor + visible solo en md+ */}
+                <Card className="border border-border/50 shadow-sm overflow-hidden bg-card hidden md:block">
+                    <div className="overflow-x-auto -mx-0">
+                        <div className="min-w-[800px] p-0">
+                            <Table>
+                                <TableHeader className="bg-muted/40">
+                                    <TableRow className="border-b border-border/50 hover:bg-transparent">
+                                        <TableHead className="w-[80px] font-bold text-[11px] uppercase tracking-wider text-muted-foreground text-center">Folio</TableHead>
+                                        <TableHead className="min-w-[280px] font-bold text-[11px] uppercase tracking-wider text-muted-foreground">Detalle del Ticket</TableHead>
+                                        <TableHead className="w-[140px] font-bold text-[11px] uppercase tracking-wider text-muted-foreground">Estado</TableHead>
+                                        <TableHead className="w-[100px] font-bold text-[11px] uppercase tracking-wider text-muted-foreground text-center">Prioridad</TableHead>
+                                        <TableHead className="min-w-[150px] font-bold text-[11px] uppercase tracking-wider text-muted-foreground">Asignado a</TableHead>
+                                        <TableHead className="min-w-[120px] font-bold text-[11px] uppercase tracking-wider text-muted-foreground">SLA</TableHead>
+                                        <TableHead className="min-w-[180px] font-bold text-[11px] uppercase tracking-wider text-muted-foreground">Ubicación</TableHead>
+                                        <TableHead className="w-[120px] text-right font-bold text-[11px] uppercase tracking-wider text-muted-foreground pr-6">Acciones</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {loading ? (
+                                        Array.from({ length: 5 }).map((_, i) => (
+                                            <TableRow key={i}>
+                                                <TableCell colSpan={8} className="h-16 px-4">
+                                                    <div className="flex items-center gap-4">
+                                                        <Skeleton className="h-8 w-12" />
+                                                        <div className="flex-1 space-y-2">
+                                                            <Skeleton className="h-4 w-3/4" />
+                                                            <Skeleton className="h-3 w-1/4" />
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))
-                                ) : tickets.length === 0 ? (
-                                    <TableRow>
-                                        <TableCell colSpan={8} className="h-72 py-12 text-center">
-                                            <div className="flex flex-col items-center justify-center gap-4 text-muted-foreground">
-                                                <div className="p-5 bg-muted/30 rounded-2xl">
-                                                    <Ticket className="w-12 h-12 opacity-50" />
-                                                </div>
-                                                <div>
-                                                    <p className="font-semibold text-foreground/90">No hay tickets</p>
-                                                    <p className="text-sm mt-1 max-w-sm text-center">
-                                                        {hasActiveFilters
-                                                            ? "Ningún ticket coincide con los filtros. Prueba a limpiar filtros o ampliar la búsqueda."
-                                                            : "Aún no hay tickets registrados. Crea el primero para comenzar."}
+                                                </TableCell>
+                                            </TableRow>
+                                        ))
+                                    ) : tickets.length === 0 ? (
+                                        <TableRow>
+                                            <TableCell colSpan={8} className="h-72 py-12 text-center">
+                                                <div className="flex flex-col items-center justify-center gap-4 text-muted-foreground">
+                                                    <div className="p-5 bg-muted/30 rounded-2xl">
+                                                        <Ticket className="w-12 h-12 opacity-50" />
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-semibold text-foreground/90">No hay tickets</p>
+                                                        <p className="text-sm mt-1 max-w-sm text-center">
+                                                            {hasActiveFilters
+                                                                ? "Ningún ticket coincide con los filtros. Prueba a limpiar filtros o ampliar la búsqueda."
+                                                                : "Aún no hay tickets registrados. Crea el primero para comenzar."}
                                                     </p>
                                                 </div>
                                                 {canCreate && !hasActiveFilters && (
@@ -752,57 +874,58 @@ export default function Tickets() {
                                             </div>
                                         </TableCell>
                                     </TableRow>
-                                ) : (
-                                    tickets.map((t) => <TicketRow key={t.id} ticket={t} />)
-                                )}
-                            </TableBody>
-                        </Table>
-                    </div>
-
-                    {/* FOOTER TABLA (PAGINACION) */}
-                    <div className="border-t border-border/50 px-4 py-3 bg-muted/20 flex flex-col sm:flex-row items-center justify-between gap-4">
-                        <p className="text-xs text-muted-foreground">
-                            {pagination.total === 0 ? (
-                                "Sin resultados"
-                            ) : (
-                                <>
-                                    Mostrando <span className="font-medium text-foreground">
-                                        {(pagination.current_page - 1) * perPage + 1}–{Math.min(pagination.current_page * perPage, pagination.total)}
-                                    </span> de <span className="font-medium text-foreground">{pagination.total}</span> tickets
-                                </>
-                            )}
-                        </p>
-
-                        <div className="flex items-center gap-2">
-                            <Select value={String(perPage)} onValueChange={(v) => { setPerPage(Number(v)); setCurrentPage(1); }}>
-                                <SelectTrigger className="w-16 h-8 text-xs bg-background"><SelectValue /></SelectTrigger>
-                                <SelectContent>
-                                    {[10, 25, 50, 100].map(n => <SelectItem key={n} value={String(n)}>{n}</SelectItem>)}
-                                </SelectContent>
-                            </Select>
-
-                            <div className="flex items-center border rounded-md bg-background shadow-sm">
-                                <Button
-                                    variant="ghost" size="icon" className="h-8 w-8 rounded-r-none border-r"
-                                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                                    disabled={currentPage === 1 || loading}
-                                >
-                                    <ChevronLeft className="h-4 w-4" />
-                                </Button>
-                                <span className="text-xs font-medium w-24 text-center">
-                                    {currentPage} / {pagination.last_page}
-                                </span>
-                                <Button
-                                    variant="ghost" size="icon" className="h-8 w-8 rounded-l-none border-l"
-                                    onClick={() => setCurrentPage(p => Math.min(pagination.last_page, p + 1))}
-                                    disabled={currentPage === pagination.last_page || loading}
-                                >
-                                    <ChevronRight className="h-4 w-4" />
-                                </Button>
-                            </div>
+                                    ) : (
+                                        tickets.map((t) => <TicketRow key={t.id} ticket={t} />)
+                                    )}
+                                </TableBody>
+                            </Table>
                         </div>
                     </div>
                 </Card>
+
+                {/* PAGINACIÓN (común para vista cards móvil y tabla desktop) */}
+                <div className="border border-border/50 rounded-lg px-4 py-3 bg-muted/20 flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <p className="text-xs text-muted-foreground">
+                        {pagination.total === 0 ? (
+                            "Sin resultados"
+                        ) : (
+                            <>
+                                Mostrando <span className="font-medium text-foreground">
+                                    {(pagination.current_page - 1) * perPage + 1}–{Math.min(pagination.current_page * perPage, pagination.total)}
+                                </span> de <span className="font-medium text-foreground">{pagination.total}</span> tickets
+                            </>
+                        )}
+                    </p>
+
+                    <div className="flex items-center gap-2">
+                        <Select value={String(perPage)} onValueChange={(v) => { setPerPage(Number(v)); setCurrentPage(1); }}>
+                            <SelectTrigger className="w-16 h-8 text-xs bg-background"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                                {[10, 25, 50, 100].map(n => <SelectItem key={n} value={String(n)}>{n}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+
+                        <div className="flex items-center border rounded-md bg-background shadow-sm">
+                            <Button
+                                variant="ghost" size="icon" className="h-8 w-8 rounded-r-none border-r min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0"
+                                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                disabled={currentPage === 1 || loading}
+                            >
+                                <ChevronLeft className="h-4 w-4" />
+                            </Button>
+                            <span className="text-xs font-medium w-24 text-center">
+                                {currentPage} / {pagination.last_page}
+                            </span>
+                            <Button
+                                variant="ghost" size="icon" className="h-8 w-8 rounded-l-none border-l min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0"
+                                onClick={() => setCurrentPage(p => Math.min(pagination.last_page, p + 1))}
+                                disabled={currentPage === pagination.last_page || loading}
+                            >
+                                <ChevronRight className="h-4 w-4" />
+                            </Button>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             {/* MODAL CREAR TICKET */}

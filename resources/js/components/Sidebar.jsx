@@ -79,11 +79,13 @@ const SidebarItem = ({
     isCollapsed,
     isChild = false,
     tooltipSide = 'right',
+    onNavigate,
 }) => {
     const linkEl = (
         <NavLink
             to={to}
             end={to === '/'}
+            onClick={() => onNavigate?.()}
             className={({ isActive }) =>
                 cn(
                     'flex items-center rounded-md transition-colors min-w-0',
@@ -125,7 +127,7 @@ const SidebarItem = ({
 // ----------------------------------------------------------------------
 // SUB-COMPONENTE: GroupItem (Grupo con hijos, tooltip en colapsado)
 // ----------------------------------------------------------------------
-function GroupItem({ label, icon: Icon, children, collapsed, dropdownSide = 'right', tooltipSide = 'right' }) {
+function GroupItem({ label, icon: Icon, children, collapsed, dropdownSide = 'right', tooltipSide = 'right', onNavigate }) {
     const [open, setOpen] = useState(false)
 
     if (collapsed) {
@@ -474,6 +476,7 @@ export function Sidebar({ collapsed, onToggle }) {
                                                         collapsed
                                                         dropdownSide={dropdownSide}
                                                         tooltipSide={tooltipSide}
+                                                        onNavigate={onToggle}
                                                     >
                                                         {item.children.map((child, childIdx) => {
                                                             if (child.type === 'separator') {
@@ -490,7 +493,7 @@ export function Sidebar({ collapsed, onToggle }) {
                                                                     asChild
                                                                     className="cursor-pointer focus:bg-accent/50"
                                                                 >
-                                                                    <NavLink to={child.to} className="flex w-full items-center gap-3 px-2 py-2">
+                                                                    <NavLink to={child.to} className="flex w-full items-center gap-3 px-2 py-2" onClick={() => onNavigate?.()}>
                                                                         <ChildIcon size={ICON_SIZE} strokeWidth={ICON_STROKE} className="shrink-0 opacity-70" />
                                                                         <span className="truncate whitespace-nowrap text-sm">{child.label}</span>
                                                                     </NavLink>
@@ -508,6 +511,7 @@ export function Sidebar({ collapsed, onToggle }) {
                                                     collapsed={false}
                                                     dropdownSide={dropdownSide}
                                                     tooltipSide={tooltipSide}
+                                                    onNavigate={onToggle}
                                                 >
                                                     {item.children.map((child, childIdx) => {
                                                         if (child.type === 'separator') {
@@ -528,6 +532,7 @@ export function Sidebar({ collapsed, onToggle }) {
                                                                 isCollapsed={false}
                                                                 isChild
                                                                 tooltipSide={tooltipSide}
+                                                                onNavigate={onToggle}
                                                             />
                                                         )
                                                     })}
@@ -542,6 +547,7 @@ export function Sidebar({ collapsed, onToggle }) {
                                                 to={item.to}
                                                 isCollapsed={collapsed}
                                                 tooltipSide={tooltipSide}
+                                                onNavigate={onToggle}
                                             />
                                         )
                                     })}

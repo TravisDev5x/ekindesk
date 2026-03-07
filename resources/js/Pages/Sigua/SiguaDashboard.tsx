@@ -55,9 +55,9 @@ import type { SiguaDashboardData, SiguaFilters, IndicadorSistema, CampanaEnRiesg
 function CustomTooltip({ active, payload, label }) {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-slate-800 text-slate-100 p-3 rounded-md shadow-xl border border-slate-700 z-50">
+      <div className="bg-popover text-popover-foreground p-3 rounded-md shadow-xl border border-border z-50">
         {label != null && label !== "" && (
-          <p className="font-semibold border-b border-slate-600 pb-1 mb-2 text-slate-300">{label}</p>
+          <p className="font-semibold border-b border-border pb-1 mb-2 text-muted-foreground">{label}</p>
         )}
         {payload.map((entry, index) => (
           <p key={index} className="text-sm">
@@ -668,7 +668,7 @@ export default function SiguaDashboard() {
           {/* Gráfica 1: Cuentas por sistema (BarChart) */}
           <div
             ref={refChartCuentasPorSistema}
-            className="rounded-lg [&:fullscreen]:flex [&:fullscreen]:flex-col [&:fullscreen]:p-8 [&:fullscreen]:bg-white [&:fullscreen]:dark:bg-slate-900 [&:fullscreen>*]:flex-1 [&:fullscreen>*]:flex [&:fullscreen>*]:flex-col [&:fullscreen>*]:min-h-0 [&:fullscreen_[data-chart-container]]:flex-1 [&:fullscreen_[data-chart-container]]:min-h-0"
+            className="rounded-lg [&:fullscreen]:flex [&:fullscreen]:flex-col [&:fullscreen]:p-8 [&:fullscreen]:bg-background [&:fullscreen>*]:flex-1 [&:fullscreen>*]:flex [&:fullscreen>*]:flex-col [&:fullscreen>*]:min-h-0 [&:fullscreen_[data-chart-container]]:flex-1 [&:fullscreen_[data-chart-container]]:min-h-0"
           >
             <Card className="shadow-sm border-border/60 h-full flex flex-col min-h-0">
               <CardHeader className="pb-2 flex flex-row items-start justify-between gap-2">
@@ -718,7 +718,7 @@ export default function SiguaDashboard() {
           <div className="grid gap-6 md:grid-cols-2">
             <div
               ref={refChartDistribucionTipo}
-              className="rounded-lg [&:fullscreen]:flex [&:fullscreen]:flex-col [&:fullscreen]:p-8 [&:fullscreen]:bg-white [&:fullscreen]:dark:bg-slate-900 [&:fullscreen>*]:flex-1 [&:fullscreen>*]:flex [&:fullscreen>*]:flex-col [&:fullscreen>*]:min-h-0 [&:fullscreen_[data-chart-container]]:flex-1 [&:fullscreen_[data-chart-container]]:min-h-0"
+              className="rounded-lg [&:fullscreen]:flex [&:fullscreen]:flex-col [&:fullscreen]:p-8 [&:fullscreen]:bg-background [&:fullscreen>*]:flex-1 [&:fullscreen>*]:flex [&:fullscreen>*]:flex-col [&:fullscreen>*]:min-h-0 [&:fullscreen_[data-chart-container]]:flex-1 [&:fullscreen_[data-chart-container]]:min-h-0"
             >
             <Card className="shadow-sm border-border/60 h-full flex flex-col min-h-0">
               <CardHeader className="pb-2 flex flex-row items-start justify-between gap-2">
@@ -774,7 +774,7 @@ export default function SiguaDashboard() {
             </div>
             <div
               ref={refChartEstatusCA01}
-              className="rounded-lg [&:fullscreen]:flex [&:fullscreen]:flex-col [&:fullscreen]:p-8 [&:fullscreen]:bg-white [&:fullscreen]:dark:bg-slate-900 [&:fullscreen>*]:flex-1 [&:fullscreen>*]:flex [&:fullscreen>*]:flex-col [&:fullscreen>*]:min-h-0 [&:fullscreen_[data-chart-container]]:flex-1 [&:fullscreen_[data-chart-container]]:min-h-0"
+              className="rounded-lg [&:fullscreen]:flex [&:fullscreen]:flex-col [&:fullscreen]:p-8 [&:fullscreen]:bg-background [&:fullscreen>*]:flex-1 [&:fullscreen>*]:flex [&:fullscreen>*]:flex-col [&:fullscreen>*]:min-h-0 [&:fullscreen_[data-chart-container]]:flex-1 [&:fullscreen_[data-chart-container]]:min-h-0"
             >
             <Card className="shadow-sm border-border/60 h-full flex flex-col min-h-0">
               <CardHeader className="pb-2 flex flex-row items-start justify-between gap-2">
@@ -861,7 +861,7 @@ export default function SiguaDashboard() {
             </Card>
             <div
               ref={refChartTendenciaSeguridad}
-              className="rounded-lg [&:fullscreen]:flex [&:fullscreen]:flex-col [&:fullscreen]:p-8 [&:fullscreen]:bg-white [&:fullscreen]:dark:bg-slate-900 [&:fullscreen>*]:flex-1 [&:fullscreen>*]:flex [&:fullscreen>*]:flex-col [&:fullscreen>*]:min-h-0 [&:fullscreen_[data-chart-container]]:flex-1 [&:fullscreen_[data-chart-container]]:min-h-0"
+              className="rounded-lg [&:fullscreen]:flex [&:fullscreen]:flex-col [&:fullscreen]:p-8 [&:fullscreen]:bg-background [&:fullscreen>*]:flex-1 [&:fullscreen>*]:flex [&:fullscreen>*]:flex-col [&:fullscreen>*]:min-h-0 [&:fullscreen_[data-chart-container]]:flex-1 [&:fullscreen_[data-chart-container]]:min-h-0"
             >
             <Card className="shadow-sm border-border/60 h-full flex flex-col min-h-0">
               <CardHeader className="pb-2 flex flex-row items-start justify-between gap-2">
@@ -909,7 +909,7 @@ export default function SiguaDashboard() {
           <div className="grid gap-6 md:grid-cols-2">
             <div
               ref={refChartEstadoCA01}
-              className="rounded-lg [&:fullscreen]:flex [&:fullscreen]:flex-col [&:fullscreen]:p-8 [&:fullscreen]:bg-white [&:fullscreen]:dark:bg-slate-900 [&:fullscreen>*]:flex-1 [&:fullscreen>*]:flex [&:fullscreen>*]:flex-col [&:fullscreen>*]:min-h-0 [&:fullscreen_[data-chart-container]]:flex-1 [&:fullscreen_[data-chart-container]]:min-h-0"
+              className="rounded-lg [&:fullscreen]:flex [&:fullscreen]:flex-col [&:fullscreen]:p-8 [&:fullscreen]:bg-background [&:fullscreen>*]:flex-1 [&:fullscreen>*]:flex [&:fullscreen>*]:flex-col [&:fullscreen>*]:min-h-0 [&:fullscreen_[data-chart-container]]:flex-1 [&:fullscreen_[data-chart-container]]:min-h-0"
             >
             <Card className="shadow-sm border-border/60 h-full flex flex-col min-h-0">
               <CardHeader className="pb-2 flex flex-row items-start justify-between gap-2">
@@ -967,7 +967,7 @@ export default function SiguaDashboard() {
             {/* Gráfica: Bitácoras últimos 30 días (AreaChart) */}
             <div
               ref={refChartBitacoras30}
-              className="rounded-lg [&:fullscreen]:flex [&:fullscreen]:flex-col [&:fullscreen]:p-8 [&:fullscreen]:bg-white [&:fullscreen]:dark:bg-slate-900 [&:fullscreen>*]:flex-1 [&:fullscreen>*]:flex [&:fullscreen>*]:flex-col [&:fullscreen>*]:min-h-0 [&:fullscreen_[data-chart-container]]:flex-1 [&:fullscreen_[data-chart-container]]:min-h-0"
+              className="rounded-lg [&:fullscreen]:flex [&:fullscreen]:flex-col [&:fullscreen]:p-8 [&:fullscreen]:bg-background [&:fullscreen>*]:flex-1 [&:fullscreen>*]:flex [&:fullscreen>*]:flex-col [&:fullscreen>*]:min-h-0 [&:fullscreen_[data-chart-container]]:flex-1 [&:fullscreen_[data-chart-container]]:min-h-0"
             >
             <Card className="shadow-sm border-border/60 h-full flex flex-col min-h-0">
               <CardHeader className="pb-2 flex flex-row items-start justify-between gap-2">

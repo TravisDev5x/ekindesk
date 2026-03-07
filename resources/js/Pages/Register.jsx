@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import axios from "@/lib/axios";
 import { passwordWithConfirmationSchema } from "@/lib/passwordSchema";
-import { useTheme } from "@/hooks/useTheme";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -10,7 +9,6 @@ import { Link } from "react-router-dom";
 import { Eye, EyeOff, Check, X } from "lucide-react";
 
 export default function Register() {
-    const { isDark, toggleTheme } = useTheme();
     // Asegurar cookie CSRF al cargar la página (evita "CSRF token mismatch" al enviar el formulario)
     useEffect(() => {
         axios.get("/sanctum/csrf-cookie", { withCredentials: true }).catch(() => {});
@@ -132,20 +130,11 @@ export default function Register() {
                 className="absolute inset-0 z-[1] pointer-events-none backdrop-blur-[6px] sm:backdrop-blur-[8px] bg-background/40 dark:bg-background/50"
                 aria-hidden
             />
-            <Button
-                type="button"
-                variant="ghost"
-                onClick={toggleTheme}
-                className="absolute top-4 right-4 z-10 h-auto min-h-[44px] min-w-[44px] flex items-center justify-center text-xs font-semibold text-muted-foreground hover:text-foreground border border-border px-3 py-2 rounded-full bg-background/70 dark:bg-background/60 backdrop-blur-md hover:bg-background/80 md:py-1"
-                aria-label="Cambiar tema"
-            >
-                {isDark ? "Modo claro" : "Modo oscuro"}
-            </Button>
             <Card className="relative z-10 w-full max-w-[460px] max-h-[90dvh] flex flex-col shadow-2xl border-border/80 bg-card/80 dark:bg-card/70 backdrop-blur-md overflow-hidden">
                 <CardHeader className="shrink-0">
                     <CardTitle className="text-center">Registro de Usuario</CardTitle>
                 </CardHeader>
-                <CardContent className="min-h-0 overflow-y-auto pb-[max(1rem,env(safe-area-inset-bottom))]">
+                <CardContent className="min-h-0 overflow-y-auto pb-20 md:pb-[max(1rem,env(safe-area-inset-bottom))]">
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div className="space-y-2">
                             <Label>Número de empleado</Label>
@@ -156,7 +145,7 @@ export default function Register() {
                                 }
                                 autoComplete="username"
                                 disabled={loading}
-                                className="focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:border-transparent"
+                                className="focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-transparent md:focus-visible:ring-primary/50"
                             />
                         </div>
 
@@ -167,7 +156,7 @@ export default function Register() {
                                 onChange={(e) => setForm({ ...form, first_name: e.target.value })}
                                 placeholder="Ej. Juan Carlos"
                                 disabled={loading}
-                                className="focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:border-transparent"
+                                className="focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-transparent md:focus-visible:ring-primary/50"
                             />
                         </div>
                         <div className="space-y-2">
@@ -177,7 +166,7 @@ export default function Register() {
                                 onChange={(e) => setForm({ ...form, paternal_last_name: e.target.value })}
                                 placeholder="Ej. Pérez"
                                 disabled={loading}
-                                className="focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:border-transparent"
+                                className="focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-transparent md:focus-visible:ring-primary/50"
                             />
                         </div>
                         <div className="space-y-2">
@@ -187,7 +176,7 @@ export default function Register() {
                                 onChange={(e) => setForm({ ...form, maternal_last_name: e.target.value })}
                                 placeholder="Ej. García"
                                 disabled={loading}
-                                className="focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:border-transparent"
+                                className="focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-transparent md:focus-visible:ring-primary/50"
                             />
                         </div>
 
@@ -199,7 +188,7 @@ export default function Register() {
                                 onChange={(e) => setForm({ ...form, email: e.target.value })}
                                 autoComplete="email"
                                 disabled={loading}
-                                className="focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:border-transparent"
+                                className="focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-transparent md:focus-visible:ring-primary/50"
                             />
                         </div>
 
@@ -210,7 +199,7 @@ export default function Register() {
                                 onChange={(e) => setForm({ ...form, phone: e.target.value })}
                                 maxLength={10}
                                 disabled={loading}
-                                className="focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:border-transparent"
+                                className="focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-transparent md:focus-visible:ring-primary/50"
                             />
                         </div>
 
@@ -224,7 +213,7 @@ export default function Register() {
                                     onChange={(e) => setForm({ ...form, password: e.target.value })}
                                     autoComplete="new-password"
                                     disabled={loading}
-                                    className="pr-12 focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:border-transparent"
+                                    className="pr-12 focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-transparent md:focus-visible:ring-primary/50"
                                 />
                                 <Button
                                     type="button"
@@ -279,7 +268,7 @@ export default function Register() {
                                     onChange={(e) => setForm({ ...form, password_confirmation: e.target.value })}
                                     autoComplete="new-password"
                                     disabled={loading}
-                                    className="pr-12 focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:border-transparent"
+                                    className="pr-12 focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-transparent md:focus-visible:ring-primary/50"
                                 />
                                 <Button
                                     type="button"
@@ -313,12 +302,12 @@ export default function Register() {
                         {error && <p className="text-red-500 text-sm" role="alert">{error}</p>}
                         {success && <p className="text-emerald-500 text-sm">{success}</p>}
 
-                        <Button type="submit" className="w-full" disabled={loading}>
+                        <Button type="submit" className="w-full min-h-[44px] md:min-h-0" disabled={loading}>
                             {loading ? "Registrando..." : "Crear cuenta"}
                         </Button>
                         <p className="text-center text-xs text-muted-foreground flex flex-wrap items-center justify-center gap-x-1 gap-y-1">
                             <span>¿Ya tienes cuenta?</span>
-                            <Link to="/login" className="inline-flex items-center min-h-[44px] py-3 text-primary hover:underline md:min-h-0 md:py-0">
+                            <Link to="/login" className="inline-flex items-center min-h-[44px] min-w-[44px] py-2.5 text-primary hover:underline md:min-h-0 md:min-w-0 md:py-0">
                                 Inicia sesión
                             </Link>
                         </p>

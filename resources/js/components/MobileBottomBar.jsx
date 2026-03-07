@@ -13,7 +13,7 @@ const baseItems = [
   { to: '/resolbeb', labelKey: 'nav.resolbeb', icon: LayoutDashboard, end: true },
 ]
 
-export function MobileBottomBar({ onOpenMenu, forceVisible = false }) {
+export function MobileBottomBar({ onOpenMenu, forceVisible = false, unreadCount = 0 }) {
   const { t } = useI18n()
   const location = useLocation()
   const { user } = useAuth()
@@ -41,7 +41,7 @@ export function MobileBottomBar({ onOpenMenu, forceVisible = false }) {
           'rounded-2xl py-2 px-1',
           'fixed left-1/2 -translate-x-1/2 z-50',
           'bg-background/90 supports-[backdrop-filter]:bg-background/60 backdrop-blur-xl',
-          'border border-white/10 shadow-2xl'
+          'border border-border/60 shadow-2xl'
         )}
         style={{
           bottom: 'max(1rem, env(safe-area-inset-bottom))',
@@ -61,7 +61,7 @@ export function MobileBottomBar({ onOpenMenu, forceVisible = false }) {
                 'flex flex-col items-center justify-center gap-0.5 rounded-xl py-2 px-2 min-w-[56px] min-h-[44px] transition-colors shrink-0',
                 isActive
                   ? 'bg-primary text-primary-foreground'
-                  : 'text-foreground/85 hover:bg-white/10 hover:text-foreground'
+                  : 'text-foreground/85 hover:bg-muted/60 hover:text-foreground'
               )}
               aria-current={isActive ? 'page' : undefined}
             >
@@ -76,12 +76,15 @@ export function MobileBottomBar({ onOpenMenu, forceVisible = false }) {
           type="button"
           onClick={() => onOpenMenu?.(true)}
           className={cn(
-            'flex flex-col items-center justify-center gap-0.5 rounded-xl py-2 px-2 min-w-[56px] min-h-[44px] transition-colors shrink-0',
+            'relative flex flex-col items-center justify-center gap-0.5 rounded-xl py-2 px-2 min-w-[56px] min-h-[44px] transition-colors shrink-0',
             'text-foreground/85 hover:bg-white/10 hover:text-foreground'
           )}
-          aria-label="Abrir menú"
+          aria-label={unreadCount > 0 ? 'Abrir menú (notificaciones sin leer)' : 'Abrir menú'}
         >
           <Menu size={ICON_SIZE} strokeWidth={2} className="shrink-0" />
+          {unreadCount > 0 && (
+            <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-destructive ring-2 ring-background" aria-hidden />
+          )}
           <span className="text-[10px] font-medium leading-tight">Más</span>
         </button>
       </div>

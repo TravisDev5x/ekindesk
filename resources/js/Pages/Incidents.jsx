@@ -154,6 +154,66 @@ const StatusBadge = memo(({ status }) => {
     );
 });
 
+// ------------------------------------------------------------------
+// VISTA MÓVIL: CARD POR INCIDENCIA (solo visible en viewport < md)
+// ------------------------------------------------------------------
+const IncidentCard = memo(function IncidentCard({ incident }) {
+    const status = incident.incident_status || incident.incidentStatus;
+    const severity = incident.incident_severity || incident.incidentSeverity;
+    const type = incident.incident_type || incident.incidentType;
+    const assignedUser = incident.assigned_user || incident.assignedUser;
+    const needsAttention = !assignedUser;
+
+    return (
+        <Card className="shadow-sm border border-border/60 overflow-hidden transition-colors">
+            <CardContent className="p-4 flex flex-col gap-3">
+                <div className="flex items-start justify-between gap-2">
+                    <div className="font-mono text-xs font-bold text-primary/80 bg-primary/5 py-1 px-2 rounded shrink-0">
+                        #{String(incident.id).padStart(5, "0")}
+                    </div>
+                    <StatusBadge status={status} />
+                </div>
+                <p className="font-semibold text-sm text-foreground line-clamp-2" title={incident.subject}>
+                    {incident.subject}
+                </p>
+                <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
+                    <Badge variant="outline" className="text-[10px] h-4 px-1.5 font-normal rounded-sm border-muted-foreground/30">
+                        {type?.name}
+                    </Badge>
+                    <span className="flex items-center gap-1">
+                        <Clock className="w-3 h-3 shrink-0" /> {new Date(incident.created_at).toLocaleDateString()}
+                    </span>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                    <SeverityBadge severity={severity} />
+                    {assignedUser ? (
+                        <span className="text-xs text-muted-foreground">{assignedUser.name}</span>
+                    ) : (
+                        <span className="text-xs text-muted-foreground italic flex items-center gap-1">
+                            <AlertTriangle className="w-3 h-3 text-orange-400" /> Sin asignar
+                        </span>
+                    )}
+                </div>
+                <div className="flex items-center justify-between gap-2 pt-1">
+                    <span className="text-[11px] text-muted-foreground flex items-center gap-1 truncate min-w-0">
+                        <Building2 className="w-3 h-3 shrink-0" /> {incident.sede?.name}
+                    </span>
+                    <Button
+                        asChild
+                        variant={needsAttention ? "default" : "secondary"}
+                        size="sm"
+                        className="h-9 min-h-[44px] shrink-0 text-xs font-semibold"
+                    >
+                        <Link to={`/incidents/${incident.id}`} className="flex items-center gap-2">
+                            Gestionar <ArrowRightCircle className="w-3.5 h-3.5" />
+                        </Link>
+                    </Button>
+                </div>
+            </CardContent>
+        </Card>
+    );
+});
+
 export default function Incidents() {
     const { user, can } = useAuth();
 
@@ -461,93 +521,134 @@ export default function Incidents() {
                 </CardContent>
             </Card>
 
-            <Card className="border border-border/50 shadow-sm overflow-hidden bg-card">
-                <div className="p-0">
-                    <Table>
-                        <TableHeader className="bg-muted/40">
-                            <TableRow className="border-b border-border/50 hover:bg-transparent">
-                                <TableHead className="w-[80px] font-bold text-[11px] uppercase tracking-wider text-muted-foreground text-center">Folio</TableHead>
-                                <TableHead className="min-w-[280px] font-bold text-[11px] uppercase tracking-wider text-muted-foreground">Detalle</TableHead>
-                                <TableHead className="w-[140px] font-bold text-[11px] uppercase tracking-wider text-muted-foreground">Estado</TableHead>
-                                <TableHead className="w-[110px] font-bold text-[11px] uppercase tracking-wider text-muted-foreground text-center">Severidad</TableHead>
-                                <TableHead className="min-w-[150px] font-bold text-[11px] uppercase tracking-wider text-muted-foreground">Responsable</TableHead>
-                                <TableHead className="min-w-[160px] font-bold text-[11px] uppercase tracking-wider text-muted-foreground">Sede</TableHead>
-                                <TableHead className="w-[120px] text-right font-bold text-[11px] uppercase tracking-wider text-muted-foreground pr-6">Acciones</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {loading ? (
-                                Array.from({ length: 5 }).map((_, i) => (
-                                    <TableRow key={i}>
-                                        <TableCell colSpan={7} className="h-16 px-4">
-                                            <div className="flex items-center gap-4">
-                                                <Skeleton className="h-8 w-12" />
-                                                <div className="flex-1 space-y-2">
-                                                    <Skeleton className="h-4 w-3/4" />
-                                                    <Skeleton className="h-3 w-1/4" />
+            {/* VISTA MÓVIL: CARDS */}
+            <div className="block md:hidden space-y-3">
+                {loading ? (
+                    Array.from({ length: 4 }).map((_, i) => (
+                        <Card key={i} className="border border-border/50 overflow-hidden">
+                            <CardContent className="p-4 space-y-3">
+                                <div className="flex justify-between gap-2">
+                                    <Skeleton className="h-6 w-16" />
+                                    <Skeleton className="h-5 w-20" />
+                                </div>
+                                <Skeleton className="h-4 w-full" />
+                                <Skeleton className="h-4 w-3/4" />
+                                <div className="flex gap-2">
+                                    <Skeleton className="h-5 w-20" />
+                                    <Skeleton className="h-5 w-24" />
+                                </div>
+                                <div className="flex justify-end"><Skeleton className="h-9 w-24" /></div>
+                            </CardContent>
+                        </Card>
+                    ))
+                ) : incidents.length === 0 ? (
+                    <Card className="border border-dashed border-border/60">
+                        <CardContent className="py-12 px-4 text-center">
+                            <div className="p-4 bg-muted/20 rounded-full inline-flex mb-4">
+                                <AlertTriangle className="w-8 h-8 opacity-40" />
+                            </div>
+                            <p className="font-medium text-foreground/90">No se encontraron incidencias</p>
+                            <p className="text-sm mt-1 text-muted-foreground max-w-sm mx-auto">
+                                Intenta cambiar los filtros o realiza una nueva búsqueda.
+                            </p>
+                        </CardContent>
+                    </Card>
+                ) : (
+                    incidents.map((i) => <IncidentCard key={i.id} incident={i} />)
+                )}
+            </div>
+
+            {/* TABLA DESKTOP: scroll horizontal + visible solo en md+ */}
+            <Card className="border border-border/50 shadow-sm overflow-hidden bg-card hidden md:block">
+                <div className="overflow-x-auto">
+                    <div className="min-w-[800px] p-0">
+                        <Table>
+                            <TableHeader className="bg-muted/40">
+                                <TableRow className="border-b border-border/50 hover:bg-transparent">
+                                    <TableHead className="w-[80px] font-bold text-[11px] uppercase tracking-wider text-muted-foreground text-center">Folio</TableHead>
+                                    <TableHead className="min-w-[280px] font-bold text-[11px] uppercase tracking-wider text-muted-foreground">Detalle</TableHead>
+                                    <TableHead className="w-[140px] font-bold text-[11px] uppercase tracking-wider text-muted-foreground">Estado</TableHead>
+                                    <TableHead className="w-[110px] font-bold text-[11px] uppercase tracking-wider text-muted-foreground text-center">Severidad</TableHead>
+                                    <TableHead className="min-w-[150px] font-bold text-[11px] uppercase tracking-wider text-muted-foreground">Responsable</TableHead>
+                                    <TableHead className="min-w-[160px] font-bold text-[11px] uppercase tracking-wider text-muted-foreground">Sede</TableHead>
+                                    <TableHead className="w-[120px] text-right font-bold text-[11px] uppercase tracking-wider text-muted-foreground pr-6">Acciones</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {loading ? (
+                                    Array.from({ length: 5 }).map((_, i) => (
+                                        <TableRow key={i}>
+                                            <TableCell colSpan={7} className="h-16 px-4">
+                                                <div className="flex items-center gap-4">
+                                                    <Skeleton className="h-8 w-12" />
+                                                    <div className="flex-1 space-y-2">
+                                                        <Skeleton className="h-4 w-3/4" />
+                                                        <Skeleton className="h-3 w-1/4" />
+                                                    </div>
                                                 </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))
+                                ) : incidents.length === 0 ? (
+                                    <TableRow>
+                                        <TableCell colSpan={7} className="h-64 text-center">
+                                            <div className="flex flex-col items-center justify-center gap-3 text-muted-foreground">
+                                                <div className="p-4 bg-muted/20 rounded-full">
+                                                    <AlertTriangle className="w-8 h-8 opacity-40" />
+                                                </div>
+                                                <p className="font-medium">No se encontraron incidencias</p>
+                                                <p className="text-xs max-w-xs text-center">
+                                                    Intenta cambiar los filtros o realiza una nueva búsqueda.
+                                                </p>
                                             </div>
                                         </TableCell>
                                     </TableRow>
-                                ))
-                            ) : incidents.length === 0 ? (
-                                <TableRow>
-                                    <TableCell colSpan={7} className="h-64 text-center">
-                                        <div className="flex flex-col items-center justify-center gap-3 text-muted-foreground">
-                                            <div className="p-4 bg-muted/20 rounded-full">
-                                                <AlertTriangle className="w-8 h-8 opacity-40" />
-                                            </div>
-                                            <p className="font-medium">No se encontraron incidencias</p>
-                                            <p className="text-xs max-w-xs text-center">
-                                                Intenta cambiar los filtros o realiza una nueva búsqueda.
-                                            </p>
-                                        </div>
-                                    </TableCell>
-                                </TableRow>
-                            ) : (
-                                incidents.map((i) => (
-                                    <IncidentRow key={i.id} incident={i} />
-                                ))
-                            )}
-                        </TableBody>
-                    </Table>
-                </div>
-
-                <CardFooter className="border-t border-border/50 px-4 py-3 bg-muted/20 flex flex-col sm:flex-row items-center justify-between gap-4">
-                    <p className="text-xs text-muted-foreground">
-                        Mostrando <span className="font-medium text-foreground">{incidents.length}</span> de <span className="font-medium text-foreground">{pagination.total}</span> incidencias
-                    </p>
-
-                    <div className="flex items-center gap-2">
-                        <Select value={String(perPage)} onValueChange={(v) => { setPerPage(Number(v)); setCurrentPage(1); }}>
-                            <SelectTrigger className="w-16 h-8 text-xs bg-background"><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                                {[10, 25, 50, 100].map(n => <SelectItem key={n} value={String(n)}>{n}</SelectItem>)}
-                            </SelectContent>
-                        </Select>
-
-                        <div className="flex items-center border rounded-md bg-background shadow-sm">
-                            <Button
-                                variant="ghost" size="icon" className="h-8 w-8 rounded-r-none border-r"
-                                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                                disabled={currentPage === 1 || loading}
-                            >
-                                <ChevronLeft className="h-4 w-4" />
-                            </Button>
-                            <span className="text-xs font-medium w-24 text-center">
-                                {currentPage} / {pagination.last_page}
-                            </span>
-                            <Button
-                                variant="ghost" size="icon" className="h-8 w-8 rounded-l-none border-l"
-                                onClick={() => setCurrentPage(p => Math.min(pagination.last_page, p + 1))}
-                                disabled={currentPage === pagination.last_page || loading}
-                            >
-                                <ChevronRight className="h-4 w-4" />
-                            </Button>
-                        </div>
+                                ) : (
+                                    incidents.map((i) => (
+                                        <IncidentRow key={i.id} incident={i} />
+                                    ))
+                                )}
+                            </TableBody>
+                        </Table>
                     </div>
-                </CardFooter>
+                </div>
             </Card>
+
+            {/* PAGINACIÓN (común móvil y desktop) */}
+            <div className="border border-border/50 rounded-lg px-4 py-3 bg-muted/20 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <p className="text-xs text-muted-foreground">
+                    Mostrando <span className="font-medium text-foreground">{incidents.length}</span> de <span className="font-medium text-foreground">{pagination.total}</span> incidencias
+                </p>
+
+                <div className="flex items-center gap-2">
+                    <Select value={String(perPage)} onValueChange={(v) => { setPerPage(Number(v)); setCurrentPage(1); }}>
+                        <SelectTrigger className="w-16 h-8 text-xs bg-background"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                            {[10, 25, 50, 100].map(n => <SelectItem key={n} value={String(n)}>{n}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+
+                    <div className="flex items-center border rounded-md bg-background shadow-sm">
+                        <Button
+                            variant="ghost" size="icon" className="h-8 w-8 rounded-r-none border-r min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0"
+                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                            disabled={currentPage === 1 || loading}
+                        >
+                            <ChevronLeft className="h-4 w-4" />
+                        </Button>
+                        <span className="text-xs font-medium w-24 text-center">
+                            {currentPage} / {pagination.last_page}
+                        </span>
+                        <Button
+                            variant="ghost" size="icon" className="h-8 w-8 rounded-l-none border-l min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0"
+                            onClick={() => setCurrentPage(p => Math.min(pagination.last_page, p + 1))}
+                            disabled={currentPage === pagination.last_page || loading}
+                        >
+                            <ChevronRight className="h-4 w-4" />
+                        </Button>
+                    </div>
+                </div>
+            </div>
             </div>
 
             <Dialog open={open} onOpenChange={setOpen}>

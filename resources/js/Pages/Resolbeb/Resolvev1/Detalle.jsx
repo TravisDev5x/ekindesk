@@ -209,7 +209,7 @@ export default function ResolbebDetalle() {
     const isRequester = user && Number(user.id) === Number(ticket.requester_id);
 
     return (
-        <div className="space-y-6 max-w-5xl mx-auto pb-8">
+        <div className="space-y-6 max-w-5xl mx-auto pb-content-mobile">
             <div className="flex items-center gap-3">
                 <Button variant="ghost" size="sm" asChild className="text-muted-foreground hover:text-foreground -ml-2">
                     <Link to={backToListLink}><ArrowLeft className="h-4 w-4 mr-1" /> Volver al listado</Link>
