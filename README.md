@@ -60,16 +60,6 @@ El nombre **EkinDesk** refleja identidad y propósito: un escritorio de soporte 
 
 ---
 
-## 📸 Screenshots
-
-> ⚠️ **Pendiente:** Agrega capturas de pantalla del dashboard, lista de tickets y formulario de creación en `docs/screenshots/`.
-
-| Dashboard | Tickets | Detalle |
-|-----------|---------|---------|
-| ![Dashboard](docs/screenshots/dashboard.png) | ![Tickets](docs/screenshots/tickets.png) | ![Detalle](docs/screenshots/detalle.png) |
-
----
-
 ## 🚀 Instalación rápida
 
 ### Requisitos previos
