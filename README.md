@@ -16,7 +16,7 @@
   <img src="https://img.shields.io/badge/shadcn%2Fui-Components-000000?style=flat-square" alt="shadcn/ui"/>
   <img src="https://img.shields.io/badge/MySQL-8+-4479A1?style=flat-square&logo=mysql&logoColor=white" alt="MySQL"/>
   <img src="https://img.shields.io/badge/Sanctum-Auth-FF2D20?style=flat-square&logo=laravel&logoColor=white" alt="Sanctum"/>
-  <img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" alt="License"/>
+  <img src="https://img.shields.io/badge/License-Source_Available-yellow?style=flat-square" alt="License"/>
 </p>
 
 ---
@@ -180,15 +180,15 @@ Acceso: [http://127.0.0.1:8000](http://127.0.0.1:8000)
 
 ---
 
-## 🤝 Contribuciones
+## 🤝 Contacto
 
-EkinDesk es un proyecto personal en desarrollo activo. Si encuentras algún bug o tienes una sugerencia, abre un [issue](https://github.com/TravisDev5x/ekindesk/issues).
+EkinDesk es un proyecto personal en desarrollo activo. Si tienes preguntas o comentarios, puedes contactarme en eric_perez96@outlook.com.
 
 ---
 
 ## 📄 Licencia
 
-Distribuido bajo la licencia MIT. Ver [`LICENSE`](LICENSE) para más información.
+Este proyecto es **Source Available** — el código es público para consulta y referencia, pero **no está permitido** copiarlo, redistribuirlo ni usarlo como base para otros proyectos. Ver [`LICENSE`](LICENSE) para los términos completos.
 
 ---
 
