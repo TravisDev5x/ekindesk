@@ -10,6 +10,7 @@ use App\Http\Middleware\AuditReportAccess;
 use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\SetLocale;
 use App\Http\Middleware\EnsurePermissionOrAdmin;
+use App\Http\Middleware\HandleInertiaRequests;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -45,6 +46,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->web(append: [
             SecurityHeaders::class,
+            HandleInertiaRequests::class,
         ]);
 
         // Alias para poder usarlo en rutas (y colocar después de auth)

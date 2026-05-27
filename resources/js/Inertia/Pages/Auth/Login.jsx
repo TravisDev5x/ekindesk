@@ -1,0 +1,219 @@
+import { useEffect, useState } from "react";
+import { Head, Link } from "@inertiajs/react";
+import axios from "@/lib/axios";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { cn } from "@/lib/utils";
+import { Loader2, Eye, EyeOff, Sun, Moon } from "lucide-react";
+
+function getInitialIsDark() {
+    if (typeof window === "undefined") return false;
+    const stored = localStorage.getItem("theme");
+    if (stored === "dark") return true;
+    if (stored === "light") return false;
+    return window.matchMedia("(prefers-color-scheme: dark)").matches;
+}
+
+export default function Login() {
+    const [form, setForm] = useState({ identifier: "", password: "" });
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
+    const [isDark, setIsDark] = useState(getInitialIsDark);
+    const [remember, setRemember] = useState(() => {
+        if (typeof localStorage === "undefined") return false;
+        const saved = localStorage.getItem("login.remember");
+        const savedId = localStorage.getItem("login.identifier") || "";
+        if (saved === "1" && savedId) {
+            setTimeout(() => setForm((f) => ({ ...f, identifier: savedId })), 0);
+            return true;
+        }
+        return false;
+    });
+
+    useEffect(() => {
+        axios.get("/sanctum/csrf-cookie", { withCredentials: true }).catch(() => {});
+    }, []);
+
+    useEffect(() => {
+        const root = document.documentElement;
+        root.classList.toggle("dark", isDark);
+        root.style.colorScheme = isDark ? "dark" : "light";
+        localStorage.setItem("theme", isDark ? "dark" : "light");
+    }, [isDark]);
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setError("");
+        setLoading(true);
+
+        try {
+            await axios.post("/api/login", {
+                identifier: form.identifier.trim(),
+                password: form.password,
+            });
+            if (remember) {
+                localStorage.setItem("login.remember", "1");
+                localStorage.setItem("login.identifier", form.identifier.trim());
+            } else {
+                localStorage.removeItem("login.remember");
+                localStorage.removeItem("login.identifier");
+            }
+            window.location.href = "/";
+        } catch (err) {
+            const status = err?.response?.status;
+            const serverMessage = err?.response?.data?.errors?.root;
+            if ((status === 422 || status === 403) && typeof serverMessage === "string") {
+                setError(serverMessage);
+            } else if (status === 429) {
+                setError("Demasiados intentos. Intenta de nuevo en unos segundos.");
+            } else if (status >= 500) {
+                setError("Error del servidor. Intenta nuevamente.");
+            } else {
+                setError("No se pudo iniciar sesión.");
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <>
+            <Head title="Iniciar sesión" />
+            <div className="flex min-h-[100dvh] flex-col items-center justify-center text-foreground relative px-4 py-6 pb-[max(2rem,calc(2rem+env(safe-area-inset-bottom)))] overflow-y-auto md:min-h-screen md:h-screen md:overflow-hidden md:pb-6">
+                <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute top-4 right-4 z-20 h-11 w-11 rounded-full border border-border/50 bg-background/80 backdrop-blur-sm hover:bg-muted/50"
+                    onClick={() => setIsDark((v) => !v)}
+                    aria-label={isDark ? "Cambiar a tema claro" : "Cambiar a tema oscuro"}
+                >
+                    <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0 text-orange-500" />
+                    <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100 text-blue-500" />
+                </Button>
+
+                <div
+                    className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat"
+                    style={{ backgroundImage: "url(/images/auth-hero.png)" }}
+                    aria-hidden
+                />
+                <div
+                    className={cn(
+                        "absolute inset-0 z-[1] pointer-events-none",
+                        "backdrop-blur-[6px] sm:backdrop-blur-[8px]",
+                        "bg-background/40 dark:bg-background/50",
+                    )}
+                    aria-hidden
+                />
+
+                <Card className="relative z-10 w-full max-w-[400px] shadow-2xl border-border/80 bg-card/90 dark:bg-card/85 backdrop-blur-md flex-shrink-0 my-auto md:my-0">
+                    <CardHeader className="text-center space-y-1">
+                        <CardTitle className="text-xl text-foreground">HelpDesk Enterprise</CardTitle>
+                        <p className="text-sm text-foreground/80 font-medium">EMPRESARIAL</p>
+                        <p className="text-xs text-foreground/75 pt-1">Accede con tus credenciales corporativas.</p>
+                    </CardHeader>
+                    <CardContent className="pb-20 md:pb-6">
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="login-identifier">Correo o número de empleado</Label>
+                                <Input
+                                    id="login-identifier"
+                                    value={form.identifier}
+                                    onChange={(e) => setForm((prev) => ({ ...prev, identifier: e.target.value }))}
+                                    autoFocus
+                                    autoComplete="username"
+                                    disabled={loading}
+                                    aria-invalid={Boolean(error)}
+                                    className="focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-transparent md:focus-visible:ring-primary/50"
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="login-password">Contraseña</Label>
+                                <div className="relative">
+                                    <Input
+                                        id="login-password"
+                                        type={showPassword ? "text" : "password"}
+                                        value={form.password}
+                                        onChange={(e) => setForm((prev) => ({ ...prev, password: e.target.value }))}
+                                        autoComplete="current-password"
+                                        disabled={loading}
+                                        className="pr-12 focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-transparent md:focus-visible:ring-primary/50"
+                                        aria-invalid={Boolean(error)}
+                                    />
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={() => setShowPassword((v) => !v)}
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground hover:bg-transparent"
+                                        disabled={loading}
+                                        aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                                    >
+                                        {showPassword ? (
+                                            <EyeOff className="h-4 w-4" aria-hidden />
+                                        ) : (
+                                            <Eye className="h-4 w-4" aria-hidden />
+                                        )}
+                                    </Button>
+                                </div>
+                                <p className="text-right">
+                                    <Link
+                                        href="/forgot-password"
+                                        className="inline-flex items-center justify-end min-h-[44px] min-w-[44px] py-2.5 text-xs text-primary hover:underline font-medium md:min-h-0 md:min-w-0 md:py-0"
+                                    >
+                                        ¿Olvidaste tu contraseña?
+                                    </Link>
+                                </p>
+                            </div>
+
+                            <label className="flex cursor-pointer items-center gap-2 w-fit min-h-[44px] py-1 md:min-h-0 md:py-0" htmlFor="remember">
+                                <Checkbox
+                                    id="remember"
+                                    checked={remember}
+                                    onCheckedChange={(v) => setRemember(Boolean(v))}
+                                    disabled={loading}
+                                />
+                                <span className="text-sm text-muted-foreground select-none">Recordarme</span>
+                            </label>
+
+                            {error ? (
+                                <p className="text-red-500 text-sm" role="alert" aria-live="polite">
+                                    {error}
+                                </p>
+                            ) : null}
+
+                            <Button type="submit" className="w-full gap-2 min-h-[44px] md:min-h-0" disabled={loading}>
+                                {loading ? <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden /> : null}
+                                <span>{loading ? "Entrando..." : "Entrar"}</span>
+                            </Button>
+
+                            <p className="text-center text-xs text-foreground/80 flex flex-wrap items-center justify-center gap-x-1 gap-y-1">
+                                <span>¿No tienes cuenta?</span>
+                                <Link href="/register" className="inline-flex items-center min-h-[44px] min-w-[44px] py-2.5 text-primary hover:underline font-medium md:min-h-0 md:min-w-0 md:py-0">
+                                    Regístrate
+                                </Link>
+                            </p>
+                        </form>
+                    </CardContent>
+                </Card>
+
+                <div className="relative z-10 mt-6 text-center text-xs space-y-1 px-4 py-3 pb-[max(1rem,env(safe-area-inset-bottom))] rounded-xl bg-background/85 dark:bg-background/90 backdrop-blur-sm border border-border/50 shadow-lg">
+                    <p className="text-foreground font-medium">¿Necesitas ayuda para acceder?</p>
+                    <Link
+                        href="/manual"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center justify-center min-h-[44px] min-w-[44px] py-2.5 text-primary hover:underline font-semibold md:min-h-0 md:min-w-0 md:py-0"
+                    >
+                        Ver manual de acceso
+                    </Link>
+                </div>
+            </div>
+        </>
+    );
+}

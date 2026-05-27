@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
+use Inertia\Inertia;
 
 /*
 |--------------------------------------------------------------------------
@@ -42,7 +43,11 @@ $spaHeaders = [
 // ==========================
 // LOGIN VISUAL (SPA)
 // ==========================
-Route::get('/login', fn () => response()->view('app')->withHeaders($spaHeaders))->name('login');
+Route::get('/login', fn () => Inertia::render('Auth/Login'))->middleware('guest')->name('login');
+Route::get('/forgot-password', fn () => Inertia::render('Auth/ForgotPassword'))->middleware('guest')->name('password.request');
+Route::get('/reset-password', fn () => Inertia::render('Auth/ResetPassword'))->middleware('guest')->name('password.reset');
+Route::get('/verify-email', fn () => Inertia::render('Auth/VerifyEmail'))->middleware('guest')->name('verification.verify');
+Route::get('/force-change-password', fn () => Inertia::render('Auth/ForceChangePassword'))->middleware('auth')->name('password.force-change');
 
 // ==========================
 // SPA (React)

@@ -6,7 +6,7 @@ import path from "path";
 export default defineConfig({
     plugins: [
         laravel({
-            input: ["resources/css/app.css", "resources/js/app.jsx"],
+            input: ["resources/css/app.css", "resources/js/app.jsx", "resources/js/inertia.jsx"],
             refresh: true,
         }),
         react(),
@@ -31,6 +31,8 @@ export default defineConfig({
         alias: {
             "@": path.resolve(__dirname, "resources/js"),
         },
+        // Una sola copia de React para SPA + Inertia (evita createContext undefined).
+        dedupe: ["react", "react-dom"],
     },
     build: {
         target: "es2020",
@@ -38,14 +40,6 @@ export default defineConfig({
         sourcemap: false,
         rollupOptions: {
             output: {
-                manualChunks(id) {
-                    if (id.includes("node_modules")) {
-                        if (id.includes("react-router-dom")) return "router";
-                        if (id.includes("react-dom") || id.includes("/react/") || id.includes("scheduler")) return "react-vendor";
-                        if (id.includes("lucide-react") || id.includes("@radix-ui") || id.includes("date-fns") || id.includes("react-day-picker")) return "ui-vendor";
-                        return "vendor";
-                    }
-                },
                 chunkFileNames: "js/[name]-[hash].js",
                 entryFileNames: "js/[name]-[hash].js",
                 assetFileNames: "assets/[name]-[hash][extname]",
