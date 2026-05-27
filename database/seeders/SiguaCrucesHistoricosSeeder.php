@@ -7,6 +7,7 @@ use App\Models\Sigua\Cruce;
 use App\Models\Sigua\CruceResultado;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Cruces históricos de los últimos 3 meses para que la gráfica de tendencia del Dashboard se vea real.
@@ -18,6 +19,12 @@ class SiguaCrucesHistoricosSeeder extends Seeder
     public function run(): void
     {
         $this->command->info('SiguaCrucesHistoricosSeeder: 3 cruces (anomalías 20 → 12 → 5).');
+
+        $empleadoIds = DB::table('sigua_empleados_rh')->pluck('id')->toArray();
+        if (empty($empleadoIds)) {
+            $this->command->warn('Sin empleados RH — saltando cruces históricos');
+            return;
+        }
 
         $ejecutadoPor = User::first()?->id ?? 1;
         $sistemasIncluidos = [['id' => 1, 'slug' => 'neotel'], ['id' => 2, 'slug' => 'ahevaa']];
@@ -75,7 +82,7 @@ class SiguaCrucesHistoricosSeeder extends Seeder
             for ($k = 0; $k < $meta['limpias']; $k++) {
                 CruceResultado::create([
                     'cruce_id' => $cruce->id,
-                    'empleado_rh_id' => $k + 1,
+                    'empleado_rh_id' => $empleadoIds[array_rand($empleadoIds)],
                     'num_empleado' => 'EMP-' . str_pad((string) (1000 + $k), 4, '0', STR_PAD_LEFT),
                     'nombre_empleado' => 'Empleado ' . (1000 + $k),
                     'sede' => $sedes[$k % count($sedes)],
