@@ -41,9 +41,10 @@ $spaHeaders = [
 ];
 
 // ==========================
-// LOGIN VISUAL (SPA)
+// AUTH (Inertia) — antes del catch-all SPA
 // ==========================
 Route::get('/login', fn () => Inertia::render('Auth/Login'))->middleware('guest')->name('login');
+Route::get('/register', fn () => Inertia::render('Auth/Register'))->middleware('guest')->name('register');
 Route::get('/forgot-password', fn () => Inertia::render('Auth/ForgotPassword'))->middleware('guest')->name('password.request');
 Route::get('/reset-password', fn () => Inertia::render('Auth/ResetPassword'))->middleware('guest')->name('password.reset');
 Route::get('/verify-email', fn () => Inertia::render('Auth/VerifyEmail'))->middleware('guest')->name('verification.verify');
