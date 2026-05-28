@@ -12,15 +12,25 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
+use App\Services\ClientScopeService;
 
 class UserController extends Controller
 {
+    public function __construct(
+        protected ClientScopeService $clientScope
+    ) {}
+
     /**
      * Display a listing of the resource.
      */
     public function index(Request $request)
     {
         $query = User::with(['campaign', 'area', 'position', 'sede', 'ubicacion', 'roles']);
+
+        $actor = Auth::user();
+        if ($actor) {
+            $this->clientScope->applyUserScope($query, $actor);
+        }
 
         if ($request->input('status') === 'only') {
             $query->onlyTrashed();
@@ -130,7 +140,7 @@ class UserController extends Controller
             'paternal_last_name' => 'required|string|max:255',
             'maternal_last_name' => 'nullable|string|max:255',
             'email' => 'nullable|email|max:255|unique:users,email',
-            'employee_number' => 'required|unique:users,employee_number',
+            'employee_number' => 'nullable|unique:users,employee_number',
             'phone' => 'nullable|string|size:10|regex:/^\d{10}$/',
             'role_id' => 'required|exists:roles,id,deleted_at,NULL',
             'password' => [
@@ -155,6 +165,10 @@ class UserController extends Controller
         $sedeId = $request->filled('sede')
             ? \App\Models\Sede::where('name', $request->sede)->first()->id
             : \App\Models\Sede::where('code', 'REMOTO')->value('id');
+        $actor = Auth::user();
+        if ($actor && ! $this->clientScope->assertSedeAccessible($actor, (int) $sedeId)) {
+            return response()->json(['message' => 'La sede no pertenece a tu cliente'], 422);
+        }
         $ubicacionId = null;
         if ($request->filled('ubicacion')) {
             $ubicacionId = \App\Models\Ubicacion::where('name', $request->ubicacion)
@@ -180,7 +194,7 @@ class UserController extends Controller
             'paternal_last_name' => $request->paternal_last_name,
             'maternal_last_name' => $request->maternal_last_name,
             'email' => $request->filled('email') ? $request->email : null,
-            'employee_number' => $request->employee_number,
+            'employee_number' => $request->filled('employee_number') ? $request->employee_number : null,
             'phone' => $request->filled('phone') ? $request->phone : null,
             'password' => Hash::make($request->password),
             'campaign_id' => $campaignId,
@@ -204,7 +218,7 @@ class UserController extends Controller
             'paternal_last_name' => 'required|string|max:255',
             'maternal_last_name' => 'nullable|string|max:255',
             'email' => 'nullable|email|max:255|unique:users,email,' . $user->id,
-            'employee_number' => 'required|unique:users,employee_number,' . $user->id,
+            'employee_number' => 'nullable|unique:users,employee_number,' . $user->id,
             'phone' => 'nullable|string|size:10|regex:/^\d{10}$/',
             'role_id' => 'required|exists:roles,id,deleted_at,NULL',
             'status' => 'sometimes|in:pending_email,pending_admin,active,blocked',
@@ -234,7 +248,12 @@ class UserController extends Controller
             $user->position_id = \App\Models\Position::where('name', $request->position)->first()->id;
         }
         if ($request->has('sede')) {
-            $user->sede_id = \App\Models\Sede::where('name', $request->sede)->first()->id;
+            $newSedeId = \App\Models\Sede::where('name', $request->sede)->first()->id;
+            $actor = Auth::user();
+            if ($actor && ! $this->clientScope->assertSedeAccessible($actor, (int) $newSedeId)) {
+                return response()->json(['message' => 'La sede no pertenece a tu cliente'], 422);
+            }
+            $user->sede_id = $newSedeId;
         }
         if ($request->has('ubicacion')) {
             $ubicacion = \App\Models\Ubicacion::where('name', $request->ubicacion)->first();

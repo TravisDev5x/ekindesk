@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils";
 const DEFAULT_PER_PAGE_OPTIONS = ["10", "15", "25", "50", "100"];
 
 /**
- * Paginación reutilizable para tablas (catálogos, SIGUA, usuarios).
+ * Paginación reutilizable para tablas (catálogos, usuarios, tickets).
  * Compatible con paginación client-side (lista en memoria) y server-side (API).
  *
  * @param {number} total - Total de registros

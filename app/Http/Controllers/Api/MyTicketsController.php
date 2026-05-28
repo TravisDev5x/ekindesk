@@ -9,6 +9,7 @@ use App\Models\Ticket;
 use App\Models\TicketAreaAccess;
 use App\Models\TicketAttachment;
 use App\Models\TicketHistory;
+use App\Services\ClientScopeService;
 use App\Services\RequesterTicketService;
 use Illuminate\Support\Facades\Gate;
 use Carbon\Carbon;
@@ -24,7 +25,8 @@ use Illuminate\Support\Facades\Storage;
 class MyTicketsController extends Controller
 {
     public function __construct(
-        protected RequesterTicketService $requesterTicketService
+        protected RequesterTicketService $requesterTicketService,
+        protected ClientScopeService $clientScope,
     ) {}
 
     /**
@@ -114,6 +116,9 @@ class MyTicketsController extends Controller
         Gate::authorize('requester.create.ticket');
 
         $data = $request->validated();
+        if ($error = $this->clientScope->stampTicketSiteFromUser($user, $data)) {
+            return $error;
+        }
         $data['requester_id'] = $user->id;
         $data['requester_position_id'] = $user->position_id ?? null;
         $clientCreatedAt = Carbon::parse($data['created_at'])->timezone(config('app.timezone'));
@@ -156,7 +161,8 @@ class MyTicketsController extends Controller
             $ticket->load(
                 'areaOrigin:id,name',
                 'areaCurrent:id,name',
-                'sede:id,name',
+                'sede:id,name,client_id',
+                'cliente:id,name',
                 'ubicacion:id,name',
                 'ticketType:id,name',
                 'priority:id,name,level',

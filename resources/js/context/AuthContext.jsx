@@ -4,7 +4,14 @@ import axios from "@/lib/axios";
 const AuthContext = createContext(null);
 
 /** Rutas donde NUNCA se debe llamar /check-auth (siempre 401; no es un bug). */
-const GUEST_ONLY_PATHS = ["/login", "/register", "/forgot-password", "/reset-password", "/verify-email"];
+const GUEST_ONLY_PATHS = [
+    "/login",
+    "/register",
+    "/register/accept",
+    "/forgot-password",
+    "/reset-password",
+    "/verify-email",
+];
 
 function isGuestOnlyPath() {
     const path = typeof window !== "undefined" ? window.location.pathname : "";
@@ -30,6 +37,7 @@ export const AuthProvider = ({ children }) => {
                         ...payload.user,
                         roles: payload.roles || [],
                         permissions: payload.permissions || [],
+                        onboarding_redirect: payload.onboarding_redirect ?? null,
                     });
                 } else {
                     setUser(null);
@@ -46,7 +54,9 @@ export const AuthProvider = ({ children }) => {
             ...data.user,
             roles: data.roles || [],
             permissions: data.permissions || [],
+            onboarding_redirect: data.onboarding_redirect ?? null,
         });
+        window.location.href = data.onboarding_redirect || "/";
     }, []);
 
     const logout = useCallback(async () => {
@@ -73,6 +83,7 @@ export const AuthProvider = ({ children }) => {
                     ...payload.user,
                     roles: payload.roles || [],
                     permissions: payload.permissions || [],
+                    onboarding_redirect: payload.onboarding_redirect ?? null,
                 });
             } else {
                 setUser(null);

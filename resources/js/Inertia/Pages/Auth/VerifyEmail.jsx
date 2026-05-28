@@ -44,6 +44,9 @@ export default function VerifyEmail() {
                 if (!active) return;
                 setStatus(STATUS.success);
                 setMessage(res?.data?.message || "Correo verificado. Ya puedes iniciar sesión.");
+                if (res?.data?.onboarding_redirect) {
+                    window.location.href = res.data.onboarding_redirect;
+                }
             })
             .catch((err) => {
                 if (!active) return;

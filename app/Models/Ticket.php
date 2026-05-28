@@ -24,6 +24,7 @@ class Ticket extends Model
         'area_origin_id',
         'area_current_id',
         'sede_id',
+        'client_id',
         'ubicacion_id',
         'requester_id',
         'requester_position_id',
@@ -57,6 +58,7 @@ class Ticket extends Model
     public function areaOrigin(): BelongsTo { return $this->belongsTo(\App\Models\Area::class, 'area_origin_id'); }
     public function areaCurrent(): BelongsTo { return $this->belongsTo(\App\Models\Area::class, 'area_current_id'); }
     public function sede(): BelongsTo { return $this->belongsTo(\App\Models\Sede::class, 'sede_id'); }
+    public function cliente(): BelongsTo { return $this->belongsTo(\App\Models\Cliente::class, 'client_id'); }
     public function ubicacion(): BelongsTo { return $this->belongsTo(\App\Models\Ubicacion::class, 'ubicacion_id'); }
     public function requester(): BelongsTo { return $this->belongsTo(\App\Models\User::class, 'requester_id'); }
     public function requesterPosition(): BelongsTo { return $this->belongsTo(\App\Models\Position::class, 'requester_position_id'); }

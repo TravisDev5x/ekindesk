@@ -1,19 +1,16 @@
-import { useEffect, useState, useCallback, memo } from "react";
+import { useEffect, useState, useCallback, useMemo, memo } from "react";
 import { Link, Navigate, useSearchParams, useLocation } from "react-router-dom";
 import axios from "@/lib/axios";
 import { useAuth } from "@/context/AuthContext";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Separator } from "@/components/ui/separator";
+import { TicketCreateDialog } from "@/components/tickets/TicketCreateDialog";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Label } from "@/components/ui/label";
 import { notify } from "@/lib/notify";
 import { loadCatalogs, clearCatalogCache } from "@/lib/catalogCache";
 import { cn } from "@/lib/utils";
@@ -213,7 +210,7 @@ export default function Resolvev1Index() {
     const [currentPage, setCurrentPage] = useState(1);
     const [lastUpdated, setLastUpdated] = useState(null);
     const [searchParams] = useSearchParams();
-    const defaultFilters = { area: "all", sede: "all", type: "all", priority: "all", state: "all", search: "", assignment: "all", assignee: "all", sla: "all" };
+    const defaultFilters = { client: "all", area: "all", sede: "all", type: "all", priority: "all", state: "all", search: "", assignment: "all", assignee: "all", sla: "all" };
     const [filters, setFilters] = useState(() => {
         const saved = localStorage.getItem("resolvev1.tickets.filters");
         return saved ? { ...defaultFilters, ...JSON.parse(saved) } : defaultFilters;
@@ -236,6 +233,21 @@ export default function Resolvev1Index() {
     const isSolicitanteOnly = !canManageAll && !canViewArea && (can("tickets.create") || can("tickets.view_own"));
     const areaUsers = catalogs.area_users || [];
     const canUseAssignmentFilters = canViewArea || canAssign;
+    const userClientId = user?.client_id ? String(user.client_id) : null;
+    const canFilterByClient = canManageAll;
+    const clients = catalogs.clients || [];
+
+    const filteredSedes = useMemo(() => {
+        const sedes = catalogs.sedes || [];
+        if (filters.client === "all") return sedes;
+        return sedes.filter((s) => String(s.client_id) === String(filters.client));
+    }, [catalogs.sedes, filters.client]);
+
+    useEffect(() => {
+        if (!canManageAll && userClientId && filters.client !== userClientId) {
+            setFilters((prev) => ({ ...prev, client: userClientId, sede: "all" }));
+        }
+    }, [canManageAll, userClientId, filters.client]);
 
     const [form, setForm] = useState({
         subject: "", description: "", area_origin_id: "", area_current_id: "",
@@ -247,6 +259,8 @@ export default function Resolvev1Index() {
         setSummaryLoading(true);
         try {
             const params = { page: currentPage, per_page: perPage, search: filters.search };
+            if (filters.client !== "all") params.client_id = filters.client;
+            else if (!canManageAll && userClientId) params.client_id = userClientId;
             if (canManageAll) {
                 if (filters.area !== "all") params.area_current_id = filters.area;
                 if (filters.sede !== "all") params.sede_id = filters.sede;
@@ -323,17 +337,31 @@ export default function Resolvev1Index() {
         setOpen(true);
     };
 
+    const ticketSiteContext = useMemo(() => {
+        const sedeId = user?.sede_id || user?.sede?.id;
+        if (!sedeId) return null;
+        const sede = (catalogs.sedes || []).find((s) => String(s.id) === String(sedeId));
+        const client = (catalogs.clients || []).find((c) => String(c.id) === String(user?.client_id || sede?.client_id));
+        return {
+            sedeName: user?.sede?.name || sede?.name || "Tu sede",
+            clientName: user?.client_name || client?.name || null,
+        };
+    }, [user, catalogs.sedes, catalogs.clients]);
+
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!form.area_current_id || !form.sede_id || !form.ticket_type_id || !form.priority_id || !form.ticket_state_id) {
-            notify.error("Completa todos los campos obligatorios (sede, área responsable, área origen, tipo, prioridad).");
+        if (!ticketSiteContext) {
+            notify.error("Tu usuario no tiene sede asignada. No puedes crear tickets hasta que un administrador te la asigne.");
+            return;
+        }
+        if (!form.area_current_id || !form.ticket_type_id || !form.priority_id || !form.ticket_state_id) {
+            notify.error("Completa todos los campos obligatorios (área responsable, área origen, tipo, prioridad).");
             return;
         }
         setSaving(true);
         const payload = {
             subject: (form.subject || "").trim(),
             description: form.description?.trim() || null,
-            sede_id: Number(form.sede_id),
             area_origin_id: Number(form.area_origin_id),
             area_current_id: Number(form.area_current_id),
             priority_id: Number(form.priority_id),
@@ -358,18 +386,23 @@ export default function Resolvev1Index() {
         finally { setSaving(false); }
     };
 
-    const handleClearFilters = () => setFilters({ ...defaultFilters });
+    const handleClearFilters = () => setFilters({
+        ...defaultFilters,
+        client: !canManageAll && userClientId ? userClientId : "all",
+    });
     const hasActiveFilters = canManageAll
-        ? (filters.search !== "" || filters.area !== "all" || filters.sede !== "all" || filters.type !== "all" || filters.state !== "all" || filters.priority !== "all" || filters.assignment !== "all" || (filters.assignment === "user" && filters.assignee !== "all") || filters.sla !== "all")
+        ? (filters.search !== "" || filters.client !== "all" || filters.area !== "all" || filters.sede !== "all" || filters.type !== "all" || filters.state !== "all" || filters.priority !== "all" || filters.assignment !== "all" || (filters.assignment === "user" && filters.assignee !== "all") || filters.sla !== "all")
         : (filters.search !== "" || filters.sede !== "all" || filters.type !== "all");
     const activeFilterCount = canManageAll
-        ? [filters.search, filters.area !== "all", filters.sede !== "all", filters.type !== "all", filters.priority !== "all", filters.state !== "all", filters.assignment !== "all", filters.assignment === "user" && filters.assignee !== "all", filters.sla !== "all"].filter(Boolean).length
+        ? [filters.search, filters.client !== "all", filters.area !== "all", filters.sede !== "all", filters.type !== "all", filters.priority !== "all", filters.state !== "all", filters.assignment !== "all", filters.assignment === "user" && filters.assignee !== "all", filters.sla !== "all"].filter(Boolean).length
         : [filters.search, filters.sede !== "all", filters.type !== "all"].filter(Boolean).length;
 
     const [exporting, setExporting] = useState(false);
     const handleExport = useCallback(async () => {
         const params = {};
         if (filters.search) params.search = filters.search;
+        if (filters.client !== "all") params.client_id = filters.client;
+        else if (!canManageAll && userClientId) params.client_id = userClientId;
         if (filters.area !== "all") params.area_current_id = filters.area;
         if (filters.sede !== "all") params.sede_id = filters.sede;
         if (filters.type !== "all") params.ticket_type_id = filters.type;
@@ -517,8 +550,27 @@ export default function Resolvev1Index() {
                                     </Badge>
                                 </div>
                             </div>
-                            <Separator className="bg-border/40" />
-                            <div className={cn("grid gap-3", canManageAll ? "grid-cols-2 md:grid-cols-3 lg:grid-cols-5" : "grid-cols-2 md:grid-cols-2")}>
+                            <div role="separator" className="shrink-0 h-px w-full bg-border/40" />
+                            <div className={cn("grid gap-3", canManageAll ? "grid-cols-2 md:grid-cols-3 lg:grid-cols-6" : "grid-cols-2 md:grid-cols-3")}>
+                                {canFilterByClient && (
+                                    <Select
+                                        value={filters.client}
+                                        onValueChange={(v) => setFilters((f) => ({ ...f, client: v, sede: "all" }))}
+                                    >
+                                        <SelectTrigger className="h-8 text-xs bg-background"><SelectValue placeholder="Cliente" /></SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">Todos los clientes</SelectItem>
+                                            {clients.map((c) => (
+                                                <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                )}
+                                {!canFilterByClient && user?.client_name ? (
+                                    <div className="flex h-8 items-center rounded-md border border-border/60 bg-muted/30 px-3 text-xs text-muted-foreground col-span-2 md:col-span-1">
+                                        Cliente: <span className="ml-1 font-medium text-foreground">{user.client_name}</span>
+                                    </div>
+                                ) : null}
                                 {canManageAll && (
                                     <>
                                         <Select value={filters.state} onValueChange={(v) => setFilters(f => ({ ...f, state: v }))}>
@@ -548,7 +600,7 @@ export default function Resolvev1Index() {
                                     <SelectTrigger className="h-8 text-xs bg-background"><SelectValue placeholder="Sede" /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">Todas las sedes</SelectItem>
-                                        {catalogs.sedes.map(s => <SelectItem key={s.id} value={String(s.id)}>{s.name}</SelectItem>)}
+                                        {filteredSedes.map(s => <SelectItem key={s.id} value={String(s.id)}>{s.name}</SelectItem>)}
                                     </SelectContent>
                                 </Select>
                                 {canManageAll && (
@@ -677,78 +729,16 @@ export default function Resolvev1Index() {
                 </Card>
             </div>
 
-            <Dialog open={open} onOpenChange={setOpen}>
-                <DialogContent className="sm:max-w-2xl p-0 overflow-hidden gap-0 border-0 shadow-2xl">
-                    <DialogHeader className="p-6 bg-primary text-primary-foreground">
-                        <DialogTitle className="text-xl font-bold flex items-center gap-2">
-                            <Plus className="w-5 h-5 bg-primary-foreground/20 rounded p-0.5" />
-                            Nuevo Ticket
-                        </DialogTitle>
-                        <DialogDescription className="text-primary-foreground/70">
-                            Completa la información requerida para registrar el incidente.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <form onSubmit={handleSubmit} className="flex flex-col">
-                        <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                                <div className="space-y-2 md:col-span-2">
-                                    <Label className="text-xs font-bold uppercase text-muted-foreground">Asunto <span className="text-destructive">*</span></Label>
-                                    <Input required className="font-medium" placeholder="Ej: Fallo en impresora de recepción" value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })} />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label className="text-xs font-bold uppercase text-muted-foreground">Tipo</Label>
-                                    <Select value={form.ticket_type_id} onValueChange={v => setForm({ ...form, ticket_type_id: v })}>
-                                        <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
-                                        <SelectContent>{catalogs.ticket_types.map(t => <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>)}</SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label className="text-xs font-bold uppercase text-muted-foreground">Prioridad</Label>
-                                    <Select value={form.priority_id} onValueChange={v => setForm({ ...form, priority_id: v })}>
-                                        <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
-                                        <SelectContent>{catalogs.priorities.map(p => <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>)}</SelectContent>
-                                    </Select>
-                                </div>
-                            </div>
-                            <Separator />
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 bg-muted/20 p-4 rounded-lg border border-border/50">
-                                <div className="space-y-2">
-                                    <Label className="text-xs font-bold uppercase text-muted-foreground flex items-center gap-1"><MapPin className="w-3 h-3" /> Sede</Label>
-                                    <Select value={form.sede_id} onValueChange={v => setForm({ ...form, sede_id: v })}>
-                                        <SelectTrigger className="bg-background"><SelectValue placeholder="Seleccionar" /></SelectTrigger>
-                                        <SelectContent>{catalogs.sedes.map(s => <SelectItem key={s.id} value={String(s.id)}>{s.name}</SelectItem>)}</SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label className="text-xs font-bold uppercase text-primary flex items-center gap-1"><User className="w-3 h-3" /> Asignar a Área <span className="text-destructive">*</span></Label>
-                                    <Select value={form.area_current_id} onValueChange={v => setForm({ ...form, area_current_id: v })}>
-                                        <SelectTrigger className="bg-background border-primary/30 ring-offset-primary/10"><SelectValue placeholder="Área responsable" /></SelectTrigger>
-                                        <SelectContent>{catalogs.areas.map(a => <SelectItem key={a.id} value={String(a.id)}>{a.name}</SelectItem>)}</SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="space-y-2 md:col-span-2">
-                                    <Label className="text-xs font-bold uppercase text-muted-foreground">Área Solicitante (Origen)</Label>
-                                    <Select value={form.area_origin_id} onValueChange={v => setForm({ ...form, area_origin_id: v })}>
-                                        <SelectTrigger className="bg-background"><SelectValue placeholder="Seleccionar origen" /></SelectTrigger>
-                                        <SelectContent>{catalogs.areas.map(a => <SelectItem key={a.id} value={String(a.id)}>{a.name}</SelectItem>)}</SelectContent>
-                                    </Select>
-                                </div>
-                            </div>
-                            <div className="space-y-2">
-                                <Label className="text-xs font-bold uppercase text-muted-foreground">Detalle del incidente</Label>
-                                <Textarea className="min-h-[120px] resize-none bg-muted/10 focus:bg-background transition-colors" placeholder="Describe qué pasó, cuándo y si hay mensajes de error..." value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} />
-                            </div>
-                        </div>
-                        <DialogFooter className="p-4 border-t bg-muted/10">
-                            <Button type="button" variant="ghost" onClick={() => setOpen(false)}>Cancelar</Button>
-                            <Button type="submit" disabled={saving}>
-                                {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
-                                Crear Ticket
-                            </Button>
-                        </DialogFooter>
-                    </form>
-                </DialogContent>
-            </Dialog>
+            <TicketCreateDialog
+                open={open}
+                onOpenChange={setOpen}
+                form={form}
+                setForm={setForm}
+                catalogs={catalogs}
+                saving={saving}
+                onSubmit={handleSubmit}
+                siteContext={ticketSiteContext}
+            />
         </div>
     );
 }

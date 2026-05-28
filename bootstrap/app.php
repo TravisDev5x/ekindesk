@@ -11,6 +11,7 @@ use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\SetLocale;
 use App\Http\Middleware\EnsurePermissionOrAdmin;
 use App\Http\Middleware\HandleInertiaRequests;
+use App\Http\Middleware\EnsureOnboardingComplete;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -18,11 +19,6 @@ return Application::configure(basePath: dirname(__DIR__))
         api: __DIR__.'/../routes/api.php',
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
-        then: function () {
-            \Illuminate\Support\Facades\Route::middleware('api')
-                ->prefix('api')
-                ->group(base_path('routes/sigua.php'));
-        },
     )
     ->withMiddleware(function (Middleware $middleware): void {
 
@@ -47,6 +43,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             SecurityHeaders::class,
             HandleInertiaRequests::class,
+            EnsureOnboardingComplete::class,
         ]);
 
         // Alias para poder usarlo en rutas (y colocar después de auth)
@@ -57,6 +54,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
+            'onboarding' => EnsureOnboardingComplete::class,
         ]);
 
     })

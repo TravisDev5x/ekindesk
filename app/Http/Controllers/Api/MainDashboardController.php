@@ -15,8 +15,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 
 /**
- * Hub principal: métricas agregadas de SIGUA (Accesos) y RESOLBEB (Tickets).
- * Integra datos de ambos módulos para la página de inicio.
+ * Hub principal: métricas agregadas de RESOLBEB (tickets).
  */
 class MainDashboardController extends Controller
 {
@@ -27,62 +26,14 @@ class MainDashboardController extends Controller
             return response()->json(['message' => 'No autorizado'], 401);
         }
 
-        $sigua = $this->siguaMetrics($user);
         $resolbeb = $this->resolbebMetrics($user);
-        $atencionInmediata = $this->atencionInmediata($user, $sigua, $resolbeb);
+        $atencionInmediata = $this->atencionInmediata($user, $resolbeb);
 
         return response()->json([
-            'sigua' => $sigua,
             'resolbeb' => $resolbeb,
             'atencion_inmediata' => $atencionInmediata,
             'agentes_disponibles' => $this->agentesDisponibles(),
         ]);
-    }
-
-    /**
-     * Métricas SIGUA: total cuentas, % CA-01 firmados, alertas cuentas sin dueño.
-     */
-    private function siguaMetrics($user): array
-    {
-        if (! $user->can('sigua.dashboard') && ! $user->can('sigua.cuentas.view')) {
-            return [
-                'total_cuentas' => 0,
-                'porcentaje_ca01_firmados' => 0,
-                'alertas_cuentas_sin_dueño' => 0,
-                'ca01_vigentes' => 0,
-                'ca01_vencidos' => 0,
-            ];
-        }
-
-        $cuentaModel = \App\Models\Sigua\CuentaGenerica::class;
-        $ca01Model = \App\Models\Sigua\FormatoCA01::class;
-
-        $totalCuentas = $cuentaModel::where('estado', 'activa')->count();
-        $cuentasCumplen = $cuentaModel::where('estado', 'activa')
-            ->where(function ($q) {
-                $q->whereNotNull('empleado_rh_id')
-                    ->orWhereHas('formatosCA01', fn ($q2) => $q2->where('sigua_ca01.estado', 'vigente'));
-            })
-            ->count();
-        $porcentajeCa01 = $totalCuentas > 0
-            ? round(min(100, $cuentasCumplen / $totalCuentas * 100), 1)
-            : 100;
-
-        $cuentasSinDueño = $cuentaModel::where('estado', 'activa')
-            ->whereNull('empleado_rh_id')
-            ->where('tipo', '!=', 'generica')
-            ->count();
-
-        $ca01Vigentes = $ca01Model::vigentes()->whereDate('fecha_vencimiento', '>=', Carbon::today())->count();
-        $ca01Vencidos = $ca01Model::vencidos()->count();
-
-        return [
-            'total_cuentas' => $totalCuentas,
-            'porcentaje_ca01_firmados' => $porcentajeCa01,
-            'alertas_cuentas_sin_dueño' => $cuentasSinDueño,
-            'ca01_vigentes' => $ca01Vigentes,
-            'ca01_vencidos' => $ca01Vencidos,
-        ];
     }
 
     /**
@@ -151,21 +102,11 @@ class MainDashboardController extends Controller
     }
 
     /**
-     * Top 5 riesgos para "Atención Inmediata" (mezcla accesos y tickets).
+     * Top 5 riesgos para "Atención Inmediata" (tickets).
      */
-    private function atencionInmediata($user, array $sigua, array $resolbeb): array
+    private function atencionInmediata($user, array $resolbeb): array
     {
         $items = [];
-
-        if (($sigua['alertas_cuentas_sin_dueño'] ?? 0) > 0) {
-            $items[] = [
-                'tipo' => 'acceso',
-                'titulo' => 'Cuentas sin vincular',
-                'detalle' => $sigua['alertas_cuentas_sin_dueño'].' cuentas activas sin responsable asignado.',
-                'severidad' => 'alta',
-                'enlace' => '/sigua',
-            ];
-        }
 
         if (($resolbeb['tickets_sla_vencido'] ?? 0) > 0) {
             $items[] = [
@@ -185,7 +126,7 @@ class MainDashboardController extends Controller
                 ->whereNotIn('ticket_state_id', $finalStateIds)
                 ->with(['priority:id,name', 'state:id,name'])
                 ->orderByRaw('COALESCE(due_at, DATE_ADD(created_at, INTERVAL '.Ticket::SLA_LIMIT_HOURS.' HOUR)) ASC')
-                ->limit(3)
+                ->limit(5)
                 ->get();
             foreach ($criticos as $t) {
                 $items[] = [
@@ -196,16 +137,6 @@ class MainDashboardController extends Controller
                     'enlace' => '/resolbeb/tickets/'.$t->id,
                 ];
             }
-        }
-
-        if (($sigua['ca01_vencidos'] ?? 0) > 0) {
-            $items[] = [
-                'tipo' => 'acceso',
-                'titulo' => 'Formatos CA-01 vencidos',
-                'detalle' => $sigua['ca01_vencidos'].' formatos requieren renovación.',
-                'severidad' => 'alta',
-                'enlace' => '/sigua',
-            ];
         }
 
         return array_slice(array_values($items), 0, 5);

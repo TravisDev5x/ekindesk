@@ -161,23 +161,42 @@ class FullDemoSeeder extends Seeder
             ->pluck('name')
             ->all();
 
-        $roles = [
-            // Admin: todo (incluye también los sigua.* que agregará SiguaPermissionsSeeder)
-            'admin' => $allWebPermissions,
-            // Soporte: opera tickets en su área/sede
-            'soporte' => [
-                'tickets.view_area',
-                'tickets.comment',
-                'tickets.change_status',
-                'tickets.assign',
+        $soportePerms = [
+            'tickets.view_area',
+            'tickets.comment',
+            'tickets.change_status',
+            'tickets.assign',
+            'tickets.filter_by_sede',
+            'tickets.escalate',
+        ];
+
+        $supervisorPerms = array_values(array_unique(array_merge(
+            $soportePerms,
+            [
+                'tickets.manage_all',
                 'tickets.filter_by_sede',
-            ],
-            // Usuario normal: levanta y consulta sus tickets
+                'incidents.view_area',
+                'incidents.manage_all',
+            ]
+        )));
+
+        $roles = [
+            // Admin: todos los permisos del núcleo helpdesk
+            'admin' => $allWebPermissions,
+            // Gerente / supervisor: todos los tickets + quién atiende
+            'gerente' => $supervisorPerms,
+            'supervisor' => $supervisorPerms,
+            // Soporte L1–L3: cola de solicitantes en su ámbito
+            'soporte' => $soportePerms,
+            'soporte_n1' => $soportePerms,
+            'soporte_n2' => $soportePerms,
+            'soporte_n3' => $soportePerms,
+            // Usuario solicitante
             'usuario' => [
                 'tickets.create',
                 'tickets.view_own',
             ],
-            // Consultor: lectura ampliada
+            // Consultor: lectura ampliada (mismo panel que soporte)
             'consultor' => [
                 'tickets.view_area',
                 'tickets.view_own',

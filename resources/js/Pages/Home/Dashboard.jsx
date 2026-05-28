@@ -16,19 +16,14 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
 } from "recharts";
 import {
   LayoutDashboard,
-  FileCheck,
   Ticket,
-  UserX,
   Users,
   AlertTriangle,
   ArrowRight,
-  Shield,
+  Clock,
   AlertCircle,
   RefreshCw,
 } from "lucide-react";
@@ -157,15 +152,9 @@ export default function HomeDashboard() {
     fetchHub();
   }, [fetchHub]);
 
-  const sigua = data?.sigua || {};
   const resolbeb = data?.resolbeb || {};
   const atencion = data?.atencion_inmediata || [];
   const agentes = data?.agentes_disponibles ?? 0;
-
-  const pieCa01 = [
-    { name: "Vigentes", value: sigua.ca01_vigentes ?? 0, color: CHART_COLORS[0] },
-    { name: "Vencidos", value: sigua.ca01_vencidos ?? 0, color: CHART_COLORS[1] },
-  ].filter((d) => d.value > 0);
 
   const barPrioridad = resolbeb.tickets_por_prioridad || [];
 
@@ -215,7 +204,7 @@ export default function HomeDashboard() {
             Panel principal
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Vista consolidada de accesos (SIGUA) y tickets (RESOLBEB).
+            Vista consolidada de tickets (RESOLBEB).
           </p>
         </div>
 
@@ -235,24 +224,23 @@ export default function HomeDashboard() {
             {/* KPIs superiores */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <KpiCard
-                title="% Cumplimiento CA-01"
-                value={sigua.porcentaje_ca01_firmados != null ? `${sigua.porcentaje_ca01_firmados}%` : "—"}
-                icon={FileCheck}
-                hint="Formatos de acceso firmados"
-              />
-              <KpiCard
-                title="Tickets críticos activos"
-                value={resolbeb.tickets_sla_vencido ?? 0}
+                title="Tickets abiertos"
+                value={resolbeb.tickets_abiertos ?? 0}
                 icon={Ticket}
-                variant={resolbeb.tickets_sla_vencido > 0 ? "danger" : "default"}
-                hint="SLA vencido"
+                hint="En proceso o pendientes"
               />
               <KpiCard
-                title="Cuentas sin vincular"
-                value={sigua.alertas_cuentas_sin_dueño ?? 0}
-                icon={UserX}
-                variant={sigua.alertas_cuentas_sin_dueño > 0 ? "warning" : "default"}
-                hint="Sin responsable asignado"
+                title="SLA vencido"
+                value={resolbeb.tickets_sla_vencido ?? 0}
+                icon={AlertTriangle}
+                variant={resolbeb.tickets_sla_vencido > 0 ? "danger" : "default"}
+                hint="Fuera de tiempo de resolución"
+              />
+              <KpiCard
+                title="MTTR hoy"
+                value={resolbeb.mttr_hoy != null ? `${resolbeb.mttr_hoy} h` : "—"}
+                icon={Clock}
+                hint="Tiempo medio de resolución"
               />
               <KpiCard
                 title="Agentes disponibles"
@@ -263,45 +251,7 @@ export default function HomeDashboard() {
             </div>
 
             {/* Gráficas */}
-            <div className="grid gap-4 md:grid-cols-2">
-              <Card className="border-border bg-card shadow-sm">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base flex items-center gap-2 text-card-foreground">
-                    <Shield className="h-4 w-4 text-muted-foreground" />
-                    Salud formatos de acceso
-                  </CardTitle>
-                  <CardDescription>CA-01 vigentes vs vencidos</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-[300px] w-full">
-                    {pieCa01.length > 0 ? (
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie
-                            data={pieCa01}
-                            dataKey="value"
-                            nameKey="name"
-                            cx="50%"
-                            cy="50%"
-                            outerRadius={90}
-                            label={({ name, value }) => `${name}: ${value}`}
-                          >
-                            {pieCa01.map((entry, i) => (
-                              <Cell key={i} fill={entry.color} />
-                            ))}
-                          </Pie>
-                          <Tooltip content={<HubTooltip />} cursor={{ fill: "rgba(148, 163, 184, 0.1)" }} />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    ) : (
-                      <div className="h-full flex items-center justify-center text-muted-foreground text-sm">
-                        Sin datos de CA-01
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-
+            <div className="grid gap-4 md:grid-cols-1 max-w-3xl">
               <Card className="border-border bg-card shadow-sm">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-base flex items-center gap-2 text-card-foreground">
@@ -356,7 +306,7 @@ export default function HomeDashboard() {
                       {atencion.map((item, i) => (
                         <TableRow key={i}>
                           <TableCell className="text-xs font-medium text-muted-foreground">
-                            {item.tipo === "acceso" ? "Acceso" : "Ticket"}
+                            Ticket
                           </TableCell>
                           <TableCell className="font-medium text-foreground">
                             {item.titulo}

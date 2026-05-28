@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { NavLink, Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import { useSidebarPosition } from '@/context/SidebarPositionContext'
@@ -77,6 +77,19 @@ export default function AppLayout() {
     const [hoverPreviewEnabled, setHoverPreviewEnabled] = useState(() => user?.sidebar_hover_preview ?? true)
     const hoverTempExpandRef = useRef(false)
     const { position: sidebarPosition } = useSidebarPosition()
+
+    /** Al elegir un módulo/ruta: fijar expandida (no toggle) y salir del preview por hover. */
+    const handleSidebarNavigate = useCallback(() => {
+        hoverTempExpandRef.current = false
+        if (!focused) {
+            setCollapsed(false)
+        }
+    }, [focused])
+
+    const handleSidebarToggle = useCallback(() => {
+        hoverTempExpandRef.current = false
+        setCollapsed((v) => !v)
+    }, [])
 
     // Scroll del área de contenido: opacidad del fade superior (0 = sin efecto, 1 = fade visible)
     const mainScrollRef = useRef(null)
@@ -211,6 +224,7 @@ export default function AppLayout() {
         '/sessions': t('nav.sessions'),
         '/audit-command': 'Centro de auditoría',
         '/sedes': t('nav.sedes'),
+        '/clientes': t('nav.clientes'),
         '/ubicaciones': t('nav.ubicaciones'),
         '/mis-tickets': t('section.myTickets'),
         '/tickets': t('section.tickets'),
@@ -224,26 +238,8 @@ export default function AppLayout() {
         '/ticket-macros': 'Plantillas de respuesta',
         '/incidents': t('section.incidents'),
         '/profile': t('layout.profile'),
-        '/sigua': 'SIGUA',
-        '/sigua/cuentas': 'SIGUA · Cuentas',
-        '/sigua/ca01': 'SIGUA · CA-01',
-        '/sigua/bitacora': 'SIGUA · Bitácora',
-        '/sigua/bitacora-sede': 'SIGUA · Bitácora Sede',
-        '/sigua/bitacora/sede': 'SIGUA · Bitácora Sede',
-        '/sigua/ca01/nuevo': 'SIGUA · CA-01 Nuevo',
-        '/sigua/incidentes': 'SIGUA · Incidentes',
-        '/sigua/importar': 'SIGUA · Importar',
-        '/sigua/cruces': 'SIGUA · Cruces',
-        '/sigua/reportes': 'SIGUA · Reportes',
-        '/sigua/empleados-rh': 'SIGUA · Empleados RH',
-        '/sigua/sistemas': 'SIGUA · Sistemas',
-        '/sigua/alertas': 'SIGUA · Alertas',
-        '/sigua/configuracion': 'SIGUA · Configuración',
     }
     const title = titleMap[pathname] ?? (
-        pathname?.match(/^\/sigua\/ca01\/\d+$/) ? 'SIGUA · CA-01 Detalle' :
-        pathname?.match(/^\/sigua\/incidentes\/\d+$/) ? 'SIGUA · Incidente' :
-        pathname?.match(/^\/sigua\/empleados-rh\/\d+$/) ? 'SIGUA · Empleado RH' :
         pathname?.match(/^\/resolbeb\/tickets\/\d+$/) ? 'Resolbeb · Ticket' :
         t('layout.section.default')
     )
@@ -327,7 +323,11 @@ export default function AppLayout() {
                         }
                     }}
                 >
-                    <Sidebar collapsed={collapsed || focused} onToggle={() => setCollapsed((v) => !v)} />
+                    <Sidebar
+                        collapsed={collapsed || focused}
+                        onToggle={handleSidebarToggle}
+                        onNavigate={handleSidebarNavigate}
+                    />
                 </aside>
 
 {/* --- MAIN CONTENT WRAPPER --- */}

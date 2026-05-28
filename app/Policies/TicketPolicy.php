@@ -24,6 +24,10 @@ class TicketPolicy
      */
     public function view(User $user, Ticket $ticket): bool
     {
+        if (! app(\App\Services\ClientScopeService::class)->ticketVisibleToUser($user, $ticket)) {
+            return false;
+        }
+
         $scope = $this->scopeType($user);
         if ($scope === 'all') return true;
         $areaId = $user->area_id;
@@ -119,7 +123,7 @@ class TicketPolicy
         }
 
         $areaId = $user->area_id;
-        return $query->where(function ($q) use ($scope, $user, $areaId) {
+        $query = $query->where(function ($q) use ($scope, $user, $areaId) {
             if (in_array($scope, ['area', 'area+own']) && $areaId) {
                 $q->where('area_current_id', $areaId);
                 if ($scope === 'area+own') {
@@ -129,6 +133,8 @@ class TicketPolicy
                 $q->where('requester_id', $user->id);
             }
         });
+
+        return app(\App\Services\ClientScopeService::class)->applyTicketScope($query, $user);
     }
 
     /**

@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\CampaignController;
 use App\Http\Controllers\Api\AreaController;
 use App\Http\Controllers\Api\PositionController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Controllers\Api\InvitationController;
 use App\Http\Controllers\Api\UserRoleController;
 use App\Http\Controllers\Api\CatalogController;
 use App\Http\Controllers\Api\ProfileController;
@@ -42,7 +43,7 @@ Route::post('logout', [AuthController::class, 'logout'])
 Route::get('ping', [AuthController::class, 'ping'])
     ->middleware(['auth:sanctum','locale']);
 
-// Hub principal (página de inicio: SIGUA + RESOLBEB)
+// Hub principal (página de inicio: RESOLBEB)
 Route::get('dashboard/hub-summary', [\App\Http\Controllers\Api\MainDashboardController::class, 'getHubSummary'])
     ->middleware(['auth:sanctum', 'locale']);
 
@@ -79,6 +80,11 @@ Route::middleware(['auth:sanctum','locale','perm:users.manage'])->group(function
 
     Route::apiResource('users', UserController::class)
         ->only(['index', 'store', 'update', 'destroy']);
+
+    Route::post('invitations/{invitation}/resend', [InvitationController::class, 'resend'])
+        ->middleware('throttle:10,1');
+    Route::apiResource('invitations', InvitationController::class)
+        ->only(['index', 'store', 'destroy']);
 
 });
 
@@ -120,6 +126,8 @@ Route::middleware(['auth:sanctum','locale','perm:catalogs.manage'])->group(funct
     Route::apiResource('campaigns', CampaignController::class)
         ->only(['index', 'store', 'update', 'destroy']);
     Route::apiResource('sedes', \App\Http\Controllers\Api\SedeController::class)
+        ->only(['index', 'store', 'update', 'destroy']);
+    Route::apiResource('clientes', \App\Http\Controllers\Api\ClienteController::class)
         ->only(['index', 'store', 'update', 'destroy']);
     Route::apiResource('ubicaciones', \App\Http\Controllers\Api\UbicacionController::class)
         ->only(['index', 'store', 'update', 'destroy']);

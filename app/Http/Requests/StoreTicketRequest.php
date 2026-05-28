@@ -21,7 +21,7 @@ class StoreTicketRequest extends FormRequest
             'description' => 'nullable|string|max:10000',
             'area_origin_id' => 'required|exists:areas,id',
             'area_current_id' => 'required|exists:areas,id',
-            'sede_id' => 'required|exists:sites,id',
+            'sede_id' => 'nullable|exists:sites,id',
             'ubicacion_id' => 'nullable|exists:locations,id',
             'ticket_type_id' => 'required|exists:ticket_types,id',
             'priority_id' => 'nullable|exists:priorities,id',

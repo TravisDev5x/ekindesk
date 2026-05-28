@@ -36,26 +36,7 @@ return new class extends Migration
             'incidents.manage_all',
         ];
 
-        $siguaPerms = [
-            'sigua.dashboard',
-            'sigua.cuentas.view',
-            'sigua.cuentas.manage',
-            'sigua.ca01.view',
-            'sigua.ca01.manage',
-            'sigua.ca01.firmar',
-            'sigua.bitacora.view',
-            'sigua.bitacora.registrar',
-            'sigua.bitacora.sede',
-            'sigua.incidentes.view',
-            'sigua.incidentes.manage',
-            'sigua.importar',
-            'sigua.cruces',
-            'sigua.cruces.view',
-            'sigua.cruces.ejecutar',
-            'sigua.reportes',
-        ];
-
-        $allPerms = array_unique(array_merge($core, $ticketPerms, $incidentPerms, $siguaPerms));
+        $allPerms = array_unique(array_merge($core, $ticketPerms, $incidentPerms));
 
         foreach ($guards as $guard) {
             foreach ($allPerms as $name) {

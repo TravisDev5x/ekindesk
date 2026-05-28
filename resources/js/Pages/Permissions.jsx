@@ -17,21 +17,6 @@ const LABELS = {
     "permissions.manage": "Gestionar permisos",
     "catalogs.manage": "Gestionar catálogos",
     "notifications.manage": "Gestionar notificaciones",
-    // SIGUA
-    "sigua.dashboard": "Ver dashboard SIGUA",
-    "sigua.cuentas.view": "Ver cuentas genéricas",
-    "sigua.cuentas.manage": "CRUD cuentas genéricas",
-    "sigua.ca01.view": "Ver formatos CA-01",
-    "sigua.ca01.manage": "Crear/editar CA-01",
-    "sigua.ca01.firmar": "Firmar CA-01",
-    "sigua.bitacora.view": "Ver bitácora",
-    "sigua.bitacora.registrar": "Registrar en bitácora",
-    "sigua.bitacora.sede": "Ver bitácora por sede",
-    "sigua.incidentes.view": "Ver incidentes SIGUA",
-    "sigua.incidentes.manage": "Gestionar incidentes SIGUA",
-    "sigua.importar": "Importar archivos Excel",
-    "sigua.cruces": "Ejecutar cruces RH/AD",
-    "sigua.reportes": "Generar reportes SIGUA",
 };
 
 const formatLabel = (name) => LABELS[name] || name.split('.').pop().replace(/\b\w/g, (c) => c.toUpperCase());

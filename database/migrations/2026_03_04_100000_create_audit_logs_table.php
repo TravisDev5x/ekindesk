@@ -8,7 +8,7 @@ return new class extends Migration
 {
     /**
      * Tabla global de auditoría polimórfica (trazabilidad ISO 27001).
-     * Una sola libreta para Tickets, SIGUA (Cuentas, CA-01, Sistemas, Incidentes, etc.).
+     * Auditoría polimórfica (p. ej. tickets).
      */
     public function up(): void
     {

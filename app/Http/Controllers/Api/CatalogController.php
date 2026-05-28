@@ -8,14 +8,19 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use App\Services\ClientScopeService;
 
 class CatalogController extends Controller
 {
+    public function __construct(
+        protected ClientScopeService $clientScope
+    ) {}
+
     /** TTL caché catálogos (segundos). */
     private const CATALOG_CACHE_TTL = 600; // 10 minutos
 
     /** Módulos permitidos para carga parcial. */
-    private const ALLOWED_MODULES = ['core', 'tickets', 'incidents', 'sigua'];
+    private const ALLOWED_MODULES = ['core', 'tickets', 'incidents'];
 
     public function index(Request $request)
     {
@@ -73,7 +78,6 @@ class CatalogController extends Controller
                 'core' => $this->getCoreCatalogs($user),
                 'tickets' => $this->getTicketsCatalogs($user),
                 'incidents' => $this->getIncidentsCatalogs(),
-                'sigua' => $this->getSiguaCatalogs($user),
                 default => [],
             };
             $data = array_merge($data, $chunk);
@@ -87,8 +91,7 @@ class CatalogController extends Controller
         return array_merge(
             $this->getCoreCatalogs($user),
             $this->getTicketsCatalogs($user),
-            $this->getIncidentsCatalogs(),
-            $this->getSiguaCatalogs($user)
+            $this->getIncidentsCatalogs()
         );
     }
 
@@ -98,30 +101,32 @@ class CatalogController extends Controller
         $guards = ['web', 'sanctum'];
         $areaUsers = collect();
         if ($user) {
-            $canViewAllUsers = $user->can('tickets.manage_all') || $user->can('incidents.manage_all');
-            $canViewAreaUsers = $user->can('tickets.view_area') || $user->can('incidents.view_area');
-            if ($canViewAllUsers) {
-                $areaUsers = DB::table('users')
-                    ->whereNull('deleted_at')
-                    ->orderBy('name')
-                    ->get(['id', 'name', 'area_id', 'position_id']);
-            } elseif ($canViewAreaUsers && $user->area_id) {
-                $areaUsers = DB::table('users')
-                    ->whereNull('deleted_at')
-                    ->where('area_id', $user->area_id)
-                    ->orderBy('name')
-                    ->get(['id', 'name', 'area_id', 'position_id']);
-            }
+            $areaUsers = $this->clientScope
+                ->usersQueryForCatalog($user)
+                ->orderBy('name')
+                ->get(['id', 'name', 'area_id', 'position_id']);
+        }
+
+        $sedesQuery = $this->clientScope->sedesQueryForUser($user)->orderBy('name');
+        $sedes = $sedesQuery->get(['id', 'name', 'type', 'client_id']);
+        $sedeIds = $sedes->pluck('id');
+
+        $ubicacionesQuery = DB::table('locations')
+            ->join('sites', 'sites.id', '=', 'locations.sede_id')
+            ->where('locations.is_active', true);
+        if ($sedeIds->isNotEmpty()) {
+            $ubicacionesQuery->whereIn('locations.sede_id', $sedeIds);
+        } else {
+            $ubicacionesQuery->whereRaw('0 = 1');
         }
 
         return [
+            'clients' => $user ? $this->clientScope->clientsForCatalog($user) : [],
             'campaigns' => DB::table('campaigns')->where('is_active', true)->orderBy('name')->get(['id', 'name']),
             'areas' => DB::table('areas')->where('is_active', true)->orderBy('name')->get(['id', 'name']),
             'positions' => DB::table('positions')->where('is_active', true)->orderBy('name')->get(['id', 'name']),
-            'sedes' => DB::table('sites')->where('is_active', true)->orderBy('name')->get(['id', 'name', 'type']),
-            'ubicaciones' => DB::table('locations')
-                ->join('sites', 'sites.id', '=', 'locations.sede_id')
-                ->where('locations.is_active', true)
+            'sedes' => $sedes,
+            'ubicaciones' => $ubicacionesQuery
                 ->orderBy('sites.name')
                 ->orderBy('locations.name')
                 ->get([
@@ -130,6 +135,7 @@ class CatalogController extends Controller
                     'locations.code',
                     'locations.sede_id',
                     'sites.name as sede_name',
+                    'sites.client_id',
                 ]),
             'roles' => DB::table('roles')
                 ->whereNull('deleted_at')
@@ -149,20 +155,10 @@ class CatalogController extends Controller
     {
         $areaUsers = collect();
         if ($user) {
-            $canViewAllUsers = $user->can('tickets.manage_all') || $user->can('incidents.manage_all');
-            $canViewAreaUsers = $user->can('tickets.view_area') || $user->can('incidents.view_area');
-            if ($canViewAllUsers) {
-                $areaUsers = DB::table('users')
-                    ->whereNull('deleted_at')
-                    ->orderBy('name')
-                    ->get(['id', 'name', 'area_id', 'position_id']);
-            } elseif ($canViewAreaUsers && $user->area_id) {
-                $areaUsers = DB::table('users')
-                    ->whereNull('deleted_at')
-                    ->where('area_id', $user->area_id)
-                    ->orderBy('name')
-                    ->get(['id', 'name', 'area_id', 'position_id']);
-            }
+            $areaUsers = $this->clientScope
+                ->usersQueryForCatalog($user)
+                ->orderBy('name')
+                ->get(['id', 'name', 'area_id', 'position_id']);
         }
 
         return [
@@ -191,24 +187,6 @@ class CatalogController extends Controller
             'incident_severities' => DB::table('incident_severities')->orderBy('level')->orderBy('name')->get(['id', 'name', 'code', 'level', 'is_active']),
             'incident_statuses' => DB::table('incident_statuses')->orderBy('name')->get(['id', 'name', 'code', 'is_active', 'is_final']),
         ];
-    }
-
-    /** SIGUA: sistemas (sigua_systems). Solo si el usuario tiene permiso y la tabla existe. */
-    private function getSiguaCatalogs($user): array
-    {
-        if (! Schema::hasTable('sigua_systems')) {
-            return ['sistemas' => collect()];
-        }
-        if ($user && ! $user->can('sigua.dashboard') && ! $user->can('sigua.cuentas.view')) {
-            return ['sistemas' => collect()];
-        }
-        $columns = ['id', 'name', 'slug'];
-        if (Schema::hasColumn('sigua_systems', 'activo')) {
-            $sistemas = DB::table('sigua_systems')->where('activo', true)->orderBy('orden')->orderBy('name')->get($columns);
-        } else {
-            $sistemas = DB::table('sigua_systems')->orderBy('name')->get($columns);
-        }
-        return ['sistemas' => $sistemas];
     }
 
     private function getImpactLevels()

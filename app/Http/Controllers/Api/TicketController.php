@@ -29,9 +29,14 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
+use App\Services\ClientScopeService;
 
 class TicketController extends Controller
 {
+    public function __construct(
+        protected ClientScopeService $clientScope
+    ) {}
+
     public function index(Request $request)
     {
         $user = Auth::user();
@@ -50,7 +55,8 @@ class TicketController extends Controller
         $query = Ticket::with([
             'areaOrigin:id,name',
             'areaCurrent:id,name',
-            'sede:id,name',
+            'sede:id,name,client_id',
+            'cliente:id,name',
             'ubicacion:id,name,sede_id',
             'requester:id,name,email',
             'assignedUser:id,name,position_id',
@@ -77,10 +83,11 @@ class TicketController extends Controller
             $assigneeId = (int) $request->input('assigned_user_id');
             $allowed = true;
             if (!$user->can('tickets.manage_all')) {
-                $allowed = DB::table('users')
-                    ->where('id', $assigneeId)
-                    ->where('area_id', $user->area_id)
-                    ->exists();
+                $allowed = $this->clientScope->assertUserAccessible($user, $assigneeId)
+                    && DB::table('users')
+                        ->where('id', $assigneeId)
+                        ->where('area_id', $user->area_id)
+                        ->exists();
             }
             if ($allowed) {
                 $query->where('assigned_user_id', $assigneeId);
@@ -137,10 +144,11 @@ class TicketController extends Controller
             $assigneeId = (int) $request->input('assigned_user_id');
             $allowed = true;
             if (!$user->can('tickets.manage_all')) {
-                $allowed = DB::table('users')
-                    ->where('id', $assigneeId)
-                    ->where('area_id', $user->area_id)
-                    ->exists();
+                $allowed = $this->clientScope->assertUserAccessible($user, $assigneeId)
+                    && DB::table('users')
+                        ->where('id', $assigneeId)
+                        ->where('area_id', $user->area_id)
+                        ->exists();
             }
             if ($allowed) {
                 $query->where('assigned_user_id', $assigneeId);
@@ -227,7 +235,9 @@ class TicketController extends Controller
             $query->whereNull('assigned_user_id');
         } elseif ($request->filled('assigned_user_id')) {
             $assigneeId = (int) $request->input('assigned_user_id');
-            $allowed = $user->can('tickets.manage_all') || DB::table('users')->where('id', $assigneeId)->where('area_id', $user->area_id)->exists();
+            $allowed = $user->can('tickets.manage_all')
+                || ($this->clientScope->assertUserAccessible($user, $assigneeId)
+                    && DB::table('users')->where('id', $assigneeId)->where('area_id', $user->area_id)->exists());
             if ($allowed) {
                 $query->where('assigned_user_id', $assigneeId);
             }
@@ -282,7 +292,8 @@ class TicketController extends Controller
         $ticket->load([
             'areaOrigin:id,name',
             'areaCurrent:id,name',
-            'sede:id,name',
+            'sede:id,name,client_id',
+            'cliente:id,name',
             'ubicacion:id,name,sede_id',
             'requester:id,name,email',
             'requesterPosition:id,name',
@@ -423,6 +434,10 @@ class TicketController extends Controller
 
         $data = $request->validated();
 
+        if ($error = $this->clientScope->stampTicketSiteFromUser($user, $data)) {
+            return $error;
+        }
+
         if (!empty($data['impact_level_id']) && !empty($data['urgency_level_id'])) {
             $matrix = PriorityMatrix::where('impact_level_id', $data['impact_level_id'])
                 ->where('urgency_level_id', $data['urgency_level_id'])
@@ -477,7 +492,8 @@ class TicketController extends Controller
             $ticket->load(
                 'areaOrigin:id,name',
                 'areaCurrent:id,name',
-                'sede:id,name',
+                'sede:id,name,client_id',
+                'cliente:id,name',
                 'ubicacion:id,name',
                 'ticketType:id,name',
                 'priority:id,name,level',
@@ -500,6 +516,13 @@ class TicketController extends Controller
         Gate::authorize('update', $ticket);
 
         $data = $request->validated();
+
+        if (isset($data['sede_id'])) {
+            if (! $this->clientScope->assertSedeAccessible($user, (int) $data['sede_id'])) {
+                return response()->json(['message' => 'La sede seleccionada no pertenece a tu cliente'], 422);
+            }
+            $data['client_id'] = $this->clientScope->syncTicketClientFromSede((int) $data['sede_id']);
+        }
 
         if (!empty($data['impact_level_id']) && !empty($data['urgency_level_id'])) {
             $matrix = PriorityMatrix::where('impact_level_id', $data['impact_level_id'])
@@ -1134,10 +1157,11 @@ class TicketController extends Controller
 
     protected function applyCatalogFilters(Request $request, User $user, $query): void
     {
+        $this->clientScope->applyClientFilter($request, $user, $query);
+
         $filters = [
             'area_current_id' => 'area_current_id',
             'area_origin_id' => 'area_origin_id',
-            'sede_id' => 'sede_id',
             'ubicacion_id' => 'ubicacion_id',
             'ticket_type_id' => 'ticket_type_id',
             'priority_id' => 'priority_id',
@@ -1146,10 +1170,16 @@ class TicketController extends Controller
 
         foreach ($filters as $param => $column) {
             if ($request->filled($param)) {
-                if ($param === 'sede_id' && !$user->can('tickets.filter_by_sede') && !$user->can('tickets.manage_all') && !$user->can('tickets.view_area')) {
-                    continue;
-                }
                 $query->where($column, $request->input($param));
+            }
+        }
+
+        if ($request->filled('sede_id')) {
+            $canFilterSede = $user->can('tickets.filter_by_sede')
+                || $user->can('tickets.manage_all')
+                || $user->can('tickets.view_area');
+            if ($canFilterSede) {
+                $this->clientScope->applySedeFilter($request, $user, $query);
             }
         }
 

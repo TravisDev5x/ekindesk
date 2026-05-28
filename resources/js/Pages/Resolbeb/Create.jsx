@@ -68,7 +68,11 @@ export default function Resolvev1Create() {
             notify.error("El asunto es obligatorio");
             return;
         }
-        if (!form.sede_id || !form.area_origin_id || !form.area_current_id || !form.ticket_type_id || !form.impact_level_id || !form.urgency_level_id || !form.ticket_state_id) {
+        if (!user?.sede_id && !user?.sede?.id) {
+            notify.error("Tu usuario no tiene sede asignada. Contacta al administrador.");
+            return;
+        }
+        if (!form.area_origin_id || !form.area_current_id || !form.ticket_type_id || !form.impact_level_id || !form.urgency_level_id || !form.ticket_state_id) {
             notify.error("Completa todos los campos obligatorios (incl. Impacto y Urgencia)");
             return;
         }
@@ -78,7 +82,6 @@ export default function Resolvev1Create() {
             const payload = {
                 subject: form.subject.trim(),
                 description: form.description?.trim() || null,
-                sede_id: Number(form.sede_id),
                 area_origin_id: Number(form.area_origin_id),
                 area_current_id: Number(form.area_current_id),
                 impact_level_id: Number(form.impact_level_id),
@@ -194,15 +197,17 @@ export default function Resolvev1Create() {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-muted/20 p-4 rounded-lg border border-border/50">
                             <div className="space-y-2">
+                                <Label>Cliente</Label>
+                                <div className="flex h-10 items-center rounded-md border border-border/60 bg-background px-3 text-sm">
+                                    {user?.client_name || "Sin cliente"}
+                                </div>
+                            </div>
+                            <div className="space-y-2">
                                 <Label className="flex items-center gap-1"><MapPin className="w-3 h-3" /> Sede</Label>
-                                <Select value={form.sede_id} onValueChange={(v) => setForm({ ...form, sede_id: v })}>
-                                    <SelectTrigger className="bg-background"><SelectValue placeholder="Seleccionar sede" /></SelectTrigger>
-                                    <SelectContent>
-                                        {(catalogs.sedes || []).map((s) => (
-                                            <SelectItem key={s.id} value={String(s.id)}>{s.name}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                <div className="flex h-10 items-center rounded-md border border-border/60 bg-background px-3 text-sm">
+                                    {user?.sede?.name || (catalogs.sedes || []).find((s) => String(s.id) === String(user?.sede_id))?.name || "—"}
+                                </div>
+                                <p className="text-xs text-muted-foreground">Asignadas automáticamente a tu perfil.</p>
                             </div>
                             <div className="space-y-2">
                                 <Label className="flex items-center gap-1"><User className="w-3 h-3" /> Área responsable <span className="text-destructive">*</span></Label>

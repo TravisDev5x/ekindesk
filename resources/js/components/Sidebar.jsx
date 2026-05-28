@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react'
-import { NavLink, useNavigate } from 'react-router-dom'
+import React, { useState, useMemo, useEffect } from 'react'
+import { NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import axios from '@/lib/axios'
 import { useSidebarPosition } from '@/context/SidebarPositionContext'
@@ -54,6 +54,7 @@ import {
     Workflow,
     Tags,
     Megaphone,
+    Building2,
     Activity,
     LogIn,
     Link2,
@@ -124,11 +125,56 @@ const SidebarItem = ({
     return <div className="py-0.5">{linkEl}</div>
 }
 
+/** Enlace fuera del SPA (rutas Inertia servidas por web.php). */
+const SidebarExternalItem = ({
+    icon: Icon,
+    label,
+    href,
+    isCollapsed,
+    tooltipSide = 'right',
+    onNavigate,
+}) => {
+    const linkEl = (
+        <a
+            href={href}
+            onClick={() => onNavigate?.()}
+            className={cn(
+                'flex items-center rounded-md transition-colors min-w-0 text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground',
+                isCollapsed ? 'justify-center h-10 w-10 p-0 shrink-0' : 'gap-3 px-3 py-2 justify-start w-full'
+            )}
+        >
+            <Icon size={ICON_SIZE} strokeWidth={ICON_STROKE} className="shrink-0 flex-shrink-0" />
+            {!isCollapsed && (
+                <span className="truncate whitespace-nowrap text-sm font-medium">{label}</span>
+            )}
+        </a>
+    )
+
+    if (isCollapsed) {
+        return (
+            <Tooltip delayDuration={0}>
+                <TooltipTrigger asChild>
+                    <div className="flex justify-center py-1">{linkEl}</div>
+                </TooltipTrigger>
+                <TooltipContent side={tooltipSide} sideOffset={10}>
+                    {label}
+                </TooltipContent>
+            </Tooltip>
+        )
+    }
+
+    return <div className="py-0.5">{linkEl}</div>
+}
+
 // ----------------------------------------------------------------------
 // SUB-COMPONENTE: GroupItem (Grupo con hijos, tooltip en colapsado)
 // ----------------------------------------------------------------------
-function GroupItem({ label, icon: Icon, children, collapsed, dropdownSide = 'right', tooltipSide = 'right', onNavigate }) {
-    const [open, setOpen] = useState(false)
+function GroupItem({ label, icon: Icon, children, collapsed, dropdownSide = 'right', tooltipSide = 'right', onNavigate, defaultOpen = false }) {
+    const [open, setOpen] = useState(defaultOpen)
+
+    useEffect(() => {
+        if (defaultOpen) setOpen(true)
+    }, [defaultOpen])
 
     if (collapsed) {
         return (
@@ -223,17 +269,28 @@ const SectionTitle = ({ children, collapsed, showSeparatorWhenCollapsed }) => {
 // ----------------------------------------------------------------------
 // COMPONENTE: Sidebar
 // ----------------------------------------------------------------------
-export function Sidebar({ collapsed, onToggle }) {
-    const { user, logout, updateUserPrefs } = useAuth()
+function routeMatchesPath(pathname, to) {
+    if (!to) return false
+    if (to === '/') return pathname === '/'
+    return pathname === to || pathname.startsWith(`${to}/`)
+}
+
+export function Sidebar({ collapsed, onToggle, onNavigate }) {
+    const { user, logout, updateUserPrefs, hasRole, can } = useAuth()
     const { t } = useI18n()
     const navigate = useNavigate()
+    const { pathname } = useLocation()
     const { position: sidebarPosition } = useSidebarPosition()
     const tooltipSide = sidebarPosition === 'right' ? 'left' : 'right'
     const dropdownSide = sidebarPosition === 'right' ? 'left' : 'right'
 
     const [toggleBtnTooltipOpen, setToggleBtnTooltipOpen] = useState(false)
 
-    const can = (permission) => Boolean(user?.permissions?.includes(permission))
+    const canSeeClientsModule =
+        Boolean(user?.is_operator) ||
+        hasRole('admin') ||
+        hasRole('super_admin') ||
+        can('clients.view')
 
     const canSeeCatalogs = can('catalogs.manage') || can('tickets.view_area') || can('tickets.manage_all')
     const canSeeIncidents = can('incidents.view_own') || can('incidents.view_area') || can('incidents.manage_all')
@@ -242,21 +299,22 @@ export function Sidebar({ collapsed, onToggle }) {
         (can('tickets.create') || can('tickets.view_own')) &&
         (can('tickets.manage_all') || can('tickets.view_area'))
     const isAdmin = can('users.manage')
-    const canSeeSigua = can('sigua.dashboard')
-
     const NAV = useMemo(() => {
         const sections = []
 
         // BLOQUE 1: GENERAL (todos pueden crear ticket y ver sus tickets)
         const generalItems = [
             { to: '/', label: t('nav.home'), icon: Home, emphasis: true },
+            ...(canSeeClientsModule
+                ? [{ href: '/clients', label: t('nav.clientes'), icon: Building2, external: true }]
+                : []),
             { to: '/calendario', label: t('nav.calendar'), icon: CalendarDays, emphasis: true },
             { to: '/resolbeb/mis-tickets', label: t('nav.myTickets'), icon: Ticket, emphasis: true },
             { to: '/resolbeb/tickets/new', label: t('nav.createTicket'), icon: Layers, emphasis: true },
         ]
         sections.push({ sectionId: 'general', label: t('section.general'), items: generalItems })
 
-        // BLOQUE 2: MÓDULOS — RESOLBEB, TIMEDESK, SIGUA (SIGUA solo si admin/permiso)
+        // BLOQUE 2: MÓDULOS — RESOLBEB, TIMEDESK
         const moduleItems = []
 
         const canSeeResolbeb = canSeeTicketsModule || canSeeMyTickets
@@ -298,35 +356,6 @@ export function Sidebar({ collapsed, onToggle }) {
             })
         }
 
-        if (canSeeSigua) {
-            const siguaChildren = []
-            if (can('sigua.dashboard')) siguaChildren.push({ to: '/sigua', label: t('nav.dashboard'), icon: LayoutDashboard })
-            if (can('sigua.cuentas.view')) siguaChildren.push({ to: '/sigua/cuentas', label: t('nav.siguaAccounts'), icon: Users })
-            if (can('sigua.dashboard') || can('sigua.cuentas.view'))
-                siguaChildren.push({ to: '/sigua/empleados-rh', label: t('nav.siguaEmployees'), icon: UserCircle })
-            if (can('sigua.cuentas.manage') || can('sigua.importar'))
-                siguaChildren.push({ to: '/sigua/sistemas', label: t('nav.systems'), icon: Layers })
-            if (can('sigua.ca01.view')) siguaChildren.push({ to: '/sigua/ca01', label: t('nav.siguaCA01'), icon: FileCheck })
-            if (can('sigua.bitacora.view') || can('sigua.bitacora.registrar') || can('sigua.bitacora.sede'))
-                siguaChildren.push({ to: '/sigua/bitacora', label: t('nav.siguaBitacora'), icon: BookOpen })
-            if (can('sigua.incidentes.view')) siguaChildren.push({ to: '/sigua/incidentes', label: t('nav.incidents'), icon: AlertTriangle })
-            if (can('sigua.importar')) siguaChildren.push({ to: '/sigua/importar', label: t('nav.siguaImport'), icon: Upload })
-            if (can('sigua.cruces')) siguaChildren.push({ to: '/sigua/cruces', label: t('nav.siguaCruces'), icon: GitMerge })
-            if (can('sigua.dashboard') || can('sigua.cuentas.view'))
-                siguaChildren.push({ to: '/sigua/alertas', label: t('nav.siguaAlerts'), icon: Bell })
-            if (can('sigua.dashboard') || can('sigua.cuentas.manage') || can('sigua.importar'))
-                siguaChildren.push({ to: '/sigua/configuracion', label: t('nav.settings'), icon: Settings })
-            if (can('sigua.reportes')) siguaChildren.push({ to: '/sigua/reportes', label: t('nav.siguaReports'), icon: FileSpreadsheet })
-            if (siguaChildren.length > 0) {
-                moduleItems.push({
-                    label: 'SIGUA',
-                    icon: Shield,
-                    emphasis: false,
-                    children: siguaChildren,
-                })
-            }
-        }
-
         if (moduleItems.length > 0) {
             sections.push({ sectionId: 'modules', label: t('section.modules'), items: moduleItems })
         }
@@ -334,6 +363,7 @@ export function Sidebar({ collapsed, onToggle }) {
         // BLOQUE: CATÁLOGOS (colapsable como los demás módulos; sin Roles ni Permisos, van en Sistema)
         const catalogChildren = [
             { to: '/campaigns', label: t('nav.campaigns'), icon: Megaphone },
+            { to: '/clientes', label: t('nav.clientes'), icon: Building2 },
             { to: '/sedes', label: t('nav.sedes'), icon: MapPin },
             { to: '/areas', label: t('nav.areas'), icon: Network },
             { to: '/positions', label: t('nav.positions'), icon: Briefcase },
@@ -367,13 +397,14 @@ export function Sidebar({ collapsed, onToggle }) {
         return sections
     }, [
         t,
+        canSeeClientsModule,
         canSeeCatalogs,
         canSeeIncidents,
         canSeeTicketsModule,
         canSeeMyTickets,
         isAdmin,
-        canSeeSigua,
         user?.permissions,
+        can,
     ])
 
     return (
@@ -467,6 +498,9 @@ export function Sidebar({ collapsed, onToggle }) {
                                 )}>
                                     {section.items.map((item) => {
                                         if (item.children) {
+                                            const groupActive = item.children.some(
+                                                (c) => c.to && routeMatchesPath(pathname, c.to)
+                                            )
                                             if (collapsed) {
                                                 return (
                                                     <GroupItem
@@ -476,7 +510,8 @@ export function Sidebar({ collapsed, onToggle }) {
                                                         collapsed
                                                         dropdownSide={dropdownSide}
                                                         tooltipSide={tooltipSide}
-                                                        onNavigate={onToggle}
+                                                        onNavigate={onNavigate}
+                                                        defaultOpen={groupActive}
                                                     >
                                                         {item.children.map((child, childIdx) => {
                                                             if (child.type === 'separator') {
@@ -511,7 +546,8 @@ export function Sidebar({ collapsed, onToggle }) {
                                                     collapsed={false}
                                                     dropdownSide={dropdownSide}
                                                     tooltipSide={tooltipSide}
-                                                    onNavigate={onToggle}
+                                                    onNavigate={onNavigate}
+                                                    defaultOpen={groupActive}
                                                 >
                                                     {item.children.map((child, childIdx) => {
                                                         if (child.type === 'separator') {
@@ -532,11 +568,24 @@ export function Sidebar({ collapsed, onToggle }) {
                                                                 isCollapsed={false}
                                                                 isChild
                                                                 tooltipSide={tooltipSide}
-                                                                onNavigate={onToggle}
+                                                                onNavigate={onNavigate}
                                                             />
                                                         )
                                                     })}
                                                 </GroupItem>
+                                            )
+                                        }
+                                        if (item.external && item.href) {
+                                            return (
+                                                <SidebarExternalItem
+                                                    key={item.href}
+                                                    icon={item.icon}
+                                                    label={item.label}
+                                                    href={item.href}
+                                                    isCollapsed={collapsed}
+                                                    tooltipSide={tooltipSide}
+                                                    onNavigate={onNavigate}
+                                                />
                                             )
                                         }
                                         return (
@@ -547,7 +596,7 @@ export function Sidebar({ collapsed, onToggle }) {
                                                 to={item.to}
                                                 isCollapsed={collapsed}
                                                 tooltipSide={tooltipSide}
-                                                onNavigate={onToggle}
+                                                onNavigate={onNavigate}
                                             />
                                         )
                                     })}

@@ -51,7 +51,7 @@ export default function Login() {
         setLoading(true);
 
         try {
-            await axios.post("/api/login", {
+            const { data } = await axios.post("/api/login", {
                 identifier: form.identifier.trim(),
                 password: form.password,
             });
@@ -62,7 +62,7 @@ export default function Login() {
                 localStorage.removeItem("login.remember");
                 localStorage.removeItem("login.identifier");
             }
-            window.location.href = "/";
+            window.location.href = data?.onboarding_redirect || "/";
         } catch (err) {
             const status = err?.response?.status;
             const serverMessage = err?.response?.data?.errors?.root;

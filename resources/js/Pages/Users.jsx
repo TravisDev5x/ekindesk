@@ -23,6 +23,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { loadCatalogs as fetchCatalogs, clearCatalogCache } from "@/lib/catalogCache";
 
 // --- ICONOS ---
+import { Link } from "react-router-dom";
 import {
     UserPlus, ShieldCheck, Trash2, Mail, Search,
     SlidersHorizontal, RotateCcw, AlertOctagon,
@@ -740,9 +741,16 @@ export default function Users() {
                     </p>
                 </div>
                 {!showTrashed && (
-                    <Button onClick={() => setCreateOpen(true)} size="sm" className="font-medium">
-                        <UserPlus className="h-4 w-4 mr-2" /> Nuevo
-                    </Button>
+                    <div className="flex flex-wrap gap-2">
+                        <Button asChild variant="outline" size="sm" className="font-medium">
+                            <Link to="/users/invitations">
+                                <Mail className="h-4 w-4 mr-2" /> Invitaciones
+                            </Link>
+                        </Button>
+                        <Button onClick={() => setCreateOpen(true)} size="sm" className="font-medium">
+                            <UserPlus className="h-4 w-4 mr-2" /> Nuevo
+                        </Button>
+                    </div>
                 )}
             </div>
 

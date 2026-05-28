@@ -7,16 +7,15 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
-use App\Models\Traits\SiguaRelations;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Casts\Attribute;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, SoftDeletes, HasRoles, SiguaRelations;
+    use HasFactory, Notifiable, SoftDeletes, HasRoles;
 
     protected $guard_name = 'web';
 
@@ -32,12 +31,14 @@ class User extends Authenticatable implements MustVerifyEmail
         'maternal_last_name',
         'email',
         'password',
-        'employee_number',
         'phone',
         'campaign_id',
         'area_id',
         'position_id',
         'sede_id',
+        'client_id',
+        'is_operator',
+        'onboarding_completed',
         'ubicacion_id',
         'avatar_path',
         'status',
@@ -75,6 +76,8 @@ class User extends Authenticatable implements MustVerifyEmail
             'email_verified_at' => 'datetime',
             'last_login_at' => 'datetime',
             'password' => 'hashed',
+            'is_operator' => 'boolean',
+            'onboarding_completed' => 'boolean',
         ];
     }
 
@@ -155,29 +158,24 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->belongsTo(Sede::class);
     }
 
+    public function client(): BelongsTo
+    {
+        return $this->belongsTo(Cliente::class, 'client_id');
+    }
+
+    public function operatorProfile(): HasOne
+    {
+        return $this->hasOne(OperatorProfile::class);
+    }
+
+    public function isOnboarded(): bool
+    {
+        return (bool) $this->onboarding_completed;
+    }
+
     public function ubicacion(): BelongsTo
     {
         return $this->belongsTo(Ubicacion::class);
-    }
-
-    /**
-     * Formatos CA-01 donde este usuario es gerente (SIGUA).
-     *
-     * @return HasMany<\App\Models\Sigua\FormatoCA01>
-     */
-    public function cuentasResponsables(): HasMany
-    {
-        return $this->hasMany(\App\Models\Sigua\FormatoCA01::class, 'gerente_user_id');
-    }
-
-    /**
-     * Registros de bitácora donde este usuario es supervisor (SIGUA).
-     *
-     * @return HasMany<\App\Models\Sigua\Bitacora>
-     */
-    public function registrosBitacora(): HasMany
-    {
-        return $this->hasMany(\App\Models\Sigua\Bitacora::class, 'supervisor_user_id');
     }
 
 }

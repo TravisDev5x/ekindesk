@@ -19,6 +19,9 @@ import { UserAvatar } from "@/components/user-avatar";
 import { DashboardStackedBar } from "@/components/dashboard/DashboardStackedBar";
 import { ChartErrorBoundary } from "@/components/dashboard/ChartErrorBoundary";
 import { TinyVerticalBarChart } from "@/components/dashboard/TinyVerticalBarChart";
+import { DashboardOperativo } from "@/components/dashboard/DashboardOperativo";
+import { TicketCalendarPreview } from "@/components/dashboard/TicketCalendarPreview";
+import { getDashboardProfile } from "@/lib/dashboardProfile";
 import { cn } from "@/lib/utils";
 import {
     Activity,
@@ -603,13 +606,17 @@ function DashboardSolicitante() {
                 <p className="text-sm text-muted-foreground">Modo solo lectura. Un administrador te asignará un rol para crear y gestionar solicitudes.</p>
             )}
 
-            {/* Actividad reciente: últimas notificaciones (solicitante) */}
+            <TicketCalendarPreview ticketLinkBase="/resolbeb/tickets" />
+
+            {/* Respuestas y novedades sobre tus tickets */}
             <Card className="border-border/60">
                 <CardHeader className="pb-2">
                     <CardTitle className="text-sm font-bold flex items-center gap-2">
-                        <Bell className="h-4 w-4 text-primary" /> Actividad reciente
+                        <Bell className="h-4 w-4 text-primary" /> Respuestas y novedades
                     </CardTitle>
-                    <CardDescription className="text-xs">Últimas notificaciones sobre tus solicitudes.</CardDescription>
+                    <CardDescription className="text-xs">
+                        Comentarios, cambios de estado y avisos de soporte sobre tus solicitudes.
+                    </CardDescription>
                 </CardHeader>
                 <CardContent>
                     {activityLoading ? (
@@ -636,7 +643,7 @@ function DashboardSolicitante() {
                                 );
                                 return ticketId ? (
                                     <li key={n.id}>
-                                        <Link to={`/tickets/${ticketId}`} className="block">
+                                        <Link to={`/resolbeb/tickets/${ticketId}`} className="block">
                                             {content}
                                         </Link>
                                     </li>
@@ -812,7 +819,7 @@ function DashboardSolicitante() {
                                 const lastAt = t.updated_at || t.created_at;
                                 return (
                                     <li key={t.id} className={cn("py-3 first:pt-0", (unassigned || overdue) && "border-l-2 border-l-transparent", unassigned && "border-l-amber-500/50", overdue && "border-l-destructive/50")}>
-                                        <Link to={`/tickets/${t.id}`} className="flex flex-wrap items-center justify-between gap-2 hover:bg-muted/30 -mx-2 px-2 py-1.5 rounded transition-colors block">
+                                        <Link to={`/resolbeb/tickets/${t.id}`} className="flex flex-wrap items-center justify-between gap-2 hover:bg-muted/30 -mx-2 px-2 py-1.5 rounded transition-colors block">
                                             <span className="font-medium text-foreground">#{String(t.id).padStart(5, "0")} — {t.subject}</span>
                                             <div className="flex items-center gap-2 flex-wrap">
                                                 {unassigned && (
@@ -1164,19 +1171,11 @@ function DashboardIntermedio() {
     );
 }
 
-export default function Dashboard() {
+function DashboardAdmin() {
     const { user, can } = useAuth();
     const canManageAll = can("tickets.manage_all");
     const canViewArea = can("tickets.view_area") || canManageAll;
     const canFilterSede = can("tickets.filter_by_sede") || canManageAll;
-
-    const isSolicitanteOnly = !canManageAll && !canViewArea && (can("tickets.create") || can("tickets.view_own"));
-    if (isSolicitanteOnly) {
-        return <DashboardSolicitante />;
-    }
-    if (canViewArea && !canManageAll) {
-        return <DashboardIntermedio />;
-    }
 
     const [catalogs, setCatalogs] = useState({
         areas: [], sedes: [], priorities: [], ticket_states: [], ticket_types: [],
@@ -1594,4 +1593,21 @@ export default function Dashboard() {
             )}
         </div>
     );
+}
+
+export default function Dashboard() {
+    const { user, can } = useAuth();
+    const profile = useMemo(() => getDashboardProfile(user, can), [user, can]);
+
+    switch (profile) {
+        case "solicitante":
+            return <DashboardSolicitante />;
+        case "soporte":
+            return <DashboardOperativo variant="soporte" />;
+        case "supervisor":
+            return <DashboardOperativo variant="supervisor" />;
+        case "admin":
+        default:
+            return <DashboardAdmin />;
+    }
 }

@@ -1,5 +1,5 @@
 /**
- * API del hub principal (página de inicio: SIGUA + RESOLBEB).
+ * API del hub principal (página de inicio: RESOLBEB).
  */
 import axios from "@/lib/axios";
 

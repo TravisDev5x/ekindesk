@@ -11,7 +11,9 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
 use App\Models\User;
 use App\Models\Role;
+use App\Models\UserInvitation;
 use App\Mail\VerifyEmail;
+use App\Services\OnboardingRedirectService;
 
 class AuthController extends Controller
 {
@@ -76,24 +78,34 @@ class AuthController extends Controller
             'last_login_ip' => $request->ip(),
         ])->save();
 
-        $authUser = Auth::user()->load('roles:id,name,guard_name');
+        $authUser = Auth::user()->load([
+            'roles:id,name,guard_name',
+            'sede:id,name,client_id',
+            'sede.cliente:id,name',
+            'operatorProfile:id,user_id',
+        ]);
+        $authPayload = $authUser->toArray();
+        $authPayload['client_id'] = $authUser->sede?->client_id;
+        $authPayload['client_name'] = $authUser->sede?->cliente?->name;
         $permissions = $authUser->getAllPermissions()->pluck('name')->values();
 
+        $onboarding = app(OnboardingRedirectService::class);
+
         return response()->json([
-            'user' => $authUser,
+            'user' => $authPayload,
             'roles' => $authUser->roles->pluck('name'),
             'permissions' => $permissions,
+            'onboarding_redirect' => $onboarding->redirectPath($authUser),
         ]);
     }
 
     public function register(Request $request)
     {
         $validated = $request->validate([
-            'employee_number' => ['required', 'string', 'max:255', 'unique:users,employee_number'],
             'first_name' => ['required', 'string', 'max:255'],
             'paternal_last_name' => ['required', 'string', 'max:255'],
             'maternal_last_name' => ['nullable', 'string', 'max:255'],
-            'email' => ['nullable', 'email', 'unique:users,email'],
+            'email' => ['required', 'email', 'unique:users,email'],
             'phone' => ['nullable', 'digits:10'],
             'sede_id' => ['nullable', 'exists:sites,id'],
             'password' => [
@@ -110,50 +122,53 @@ class AuthController extends Controller
 
         $sedeId = $validated['sede_id'] ?? \App\Models\Sede::where('code', 'REMOTO')->value('id');
 
-        $status = !empty($validated['email']) ? 'pending_email' : 'pending_admin';
+        if ($request->filled('plan')) {
+            session(['invited_plan_slug' => $request->input('plan')]);
+        }
+
         $user = User::create([
-            'employee_number' => $validated['employee_number'],
+            'employee_number' => null,
             'first_name' => $validated['first_name'],
             'paternal_last_name' => $validated['paternal_last_name'],
             'maternal_last_name' => $validated['maternal_last_name'] ?? null,
-            'email' => $validated['email'] ?? null,
+            'email' => $validated['email'],
             'phone' => $validated['phone'] ?? null,
             'password' => Hash::make($validated['password']),
-            'status' => $status,
+            'status' => 'pending_email',
             'sede_id' => $sedeId,
+            'client_id' => null,
+            'is_operator' => false,
+            'onboarding_completed' => false,
+        ]);
+
+        $token = Str::uuid()->toString();
+        DB::table('email_verification_tokens')->insert([
+            'user_id' => $user->id,
+            'token' => $token,
+            'expires_at' => now()->addHours(24),
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
 
         $mailSent = false;
-        if (!empty($validated['email'])) {
-            $token = Str::uuid()->toString();
-            DB::table('email_verification_tokens')->insert([
+        $url = url("/verify-email?token={$token}");
+        try {
+            Mail::to($user->email)->send(new VerifyEmail($url));
+            $mailSent = true;
+        } catch (\Throwable $e) {
+            Log::channel('single')->warning('Envío de correo de verificación fallido', [
                 'user_id' => $user->id,
-                'token' => $token,
-                'expires_at' => now()->addHours(24),
-                'created_at' => now(),
-                'updated_at' => now(),
+                'email' => $user->email,
+                'error' => $e->getMessage(),
             ]);
-
-            $url = url("/verify-email?token={$token}");
-            try {
-                Mail::to($user->email)->send(new VerifyEmail($url));
-                $mailSent = true;
-            } catch (\Throwable $e) {
-                Log::channel('single')->warning('Envío de correo de verificación fallido', [
-                    'user_id' => $user->id,
-                    'email' => $user->email,
-                    'error' => $e->getMessage(),
-                ]);
-                $mailSent = false;
-            }
         }
 
         return response()->json([
-            'message' => !empty($validated['email'])
-                ? ($mailSent
-                    ? 'Registro creado. Revisa tu correo para activar tu cuenta.'
-                    : 'Registro creado. No se pudo enviar el correo de verificacion. Contacta al administrador.')
-                : 'Registro creado. Tu cuenta esta pendiente de aprobacion.',
+            'message' => $mailSent
+                ? 'Registro creado. Revisa tu correo para activar tu cuenta.'
+                : 'Registro creado. No se pudo enviar el correo de verificacion. Contacta al administrador.',
+            'redirect_url' => url('/verify-email'),
+            'onboarding_after_verify' => true,
         ], 201);
     }
 
@@ -185,25 +200,52 @@ class AuthController extends Controller
 
         DB::transaction(function () use ($user, $token) {
             $user->email_verified_at = now();
-            // Tras verificar: pendiente de que admin asigne rol; entra como visitante (solo leer, dash solicitante)
-            $user->status = 'pending_admin';
-            $user->save();
+            $user->status = 'active';
 
-            $visitanteRole = Role::firstOrCreate(
-                ['name' => 'visitante', 'guard_name' => 'web'],
-                ['name' => 'visitante', 'slug' => 'visitante', 'guard_name' => 'web']
-            );
-            if (!$visitanteRole->hasPermissionTo('tickets.view_own')) {
-                $visitanteRole->syncPermissions(['tickets.view_own']);
+            $isInvited = UserInvitation::query()
+                ->where('email', $user->email)
+                ->where('status', 'accepted')
+                ->exists();
+
+            if (! $isInvited && $user->roles()->count() === 0) {
+                $adminRole = Role::where('name', 'admin')->where('guard_name', 'web')->first();
+                if ($adminRole) {
+                    $user->syncRoles([$adminRole]);
+                }
             }
-            $user->syncRoles([$visitanteRole]);
+
+            $user->save();
 
             DB::table('email_verification_tokens')->where('token', $token)->delete();
         });
 
-        return response()->json([
-            'message' => 'Correo verificado. Ya puedes iniciar sesión y ver el panel como visitante. Un administrador te asignará un rol para interactuar.',
+        $user->refresh()->load([
+            'roles:id,name,guard_name',
+            'operatorProfile:id,user_id',
         ]);
+
+        $onboarding = app(OnboardingRedirectService::class);
+        $redirect = $onboarding->redirectPath($user) ?? '/';
+
+        Auth::login($user);
+        if ($request->hasSession()) {
+            $request->session()->regenerate();
+        }
+
+        $authPayload = $user->toArray();
+        $authPayload['client_id'] = $user->sede?->client_id;
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'message' => 'Correo verificado correctamente.',
+                'onboarding_redirect' => $redirect,
+                'user' => $authPayload,
+                'roles' => $user->roles->pluck('name'),
+                'permissions' => $user->getAllPermissions()->pluck('name')->values(),
+            ]);
+        }
+
+        return redirect($redirect);
     }
 
     public function logout(Request $request)

@@ -1,15 +1,15 @@
 import { useState, useEffect, useMemo } from "react";
-import { Head, Link } from "@inertiajs/react";
+import { Head, Link, usePage } from "@inertiajs/react";
 import axios from "@/lib/axios";
 import { passwordWithConfirmationSchema } from "@/lib/passwordSchema";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { Eye, EyeOff, Check, X } from "lucide-react";
 
 const emptyForm = {
-    employee_number: "",
     first_name: "",
     paternal_last_name: "",
     maternal_last_name: "",
@@ -19,7 +19,25 @@ const emptyForm = {
     password_confirmation: "",
 };
 
+function formatPlanPrice(value) {
+    const n = Number(value);
+    if (!n) return "A medida";
+    return new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(n);
+}
+
 export default function Register() {
+    const { plans = [] } = usePage().props;
+
+    const planSlug = useMemo(() => {
+        if (typeof window === "undefined") return null;
+        return new URLSearchParams(window.location.search).get("plan");
+    }, []);
+
+    const selectedPlan = useMemo(() => {
+        if (!planSlug || !Array.isArray(plans) || plans.length === 0) return null;
+        return plans.find((p) => String(p.slug).toLowerCase() === planSlug.toLowerCase()) ?? null;
+    }, [planSlug, plans]);
+
     useEffect(() => {
         axios.get("/sanctum/csrf-cookie", { withCredentials: true }).catch(() => {});
     }, []);
@@ -48,9 +66,12 @@ export default function Register() {
         form.password === form.password_confirmation;
 
     const validate = () => {
-        if (!form.employee_number.trim()) return "El número de empleado es obligatorio.";
         if (!form.first_name.trim()) return "El nombre(s) es obligatorio.";
         if (!form.paternal_last_name.trim()) return "El apellido paterno es obligatorio.";
+        if (!form.email.trim()) return "El correo electrónico es obligatorio.";
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+            return "Ingresa un correo válido.";
+        }
         const passwordValidation = passwordWithConfirmationSchema.safeParse({
             password: form.password,
             password_confirmation: form.password_confirmation,
@@ -80,15 +101,21 @@ export default function Register() {
 
         try {
             const { data } = await axios.post("/api/register", {
-                employee_number: form.employee_number.trim(),
                 first_name: form.first_name.trim(),
                 paternal_last_name: form.paternal_last_name.trim(),
                 maternal_last_name: form.maternal_last_name.trim() || null,
-                email: form.email.trim() || null,
+                email: form.email.trim(),
                 phone: form.phone.trim() || null,
                 password: form.password,
                 password_confirmation: form.password_confirmation,
+                plan: planSlug || undefined,
             });
+
+            if (data?.redirect_url) {
+                window.location.href = data.redirect_url;
+                return;
+            }
+
             setSuccess(data?.message || "Registro creado correctamente.");
             setForm(emptyForm);
         } catch (err) {
@@ -131,23 +158,38 @@ export default function Register() {
                 />
                 <Card className="relative z-10 w-full max-w-[460px] max-h-[90dvh] flex flex-col shadow-2xl border-border/80 bg-card/80 dark:bg-card/70 backdrop-blur-md overflow-hidden">
                     <CardHeader className="shrink-0">
-                        <CardTitle className="text-center">Registro de Usuario</CardTitle>
+                        <CardTitle className="text-center">Registro de operador</CardTitle>
                     </CardHeader>
                     <CardContent className="min-h-0 overflow-y-auto pb-20 md:pb-[max(1rem,env(safe-area-inset-bottom))]">
                         <form onSubmit={handleSubmit} className="space-y-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="reg-employee">Número de empleado</Label>
-                                <Input
-                                    id="reg-employee"
-                                    value={form.employee_number}
-                                    onChange={(e) =>
-                                        setForm({ ...form, employee_number: e.target.value })
-                                    }
-                                    autoComplete="username"
-                                    disabled={loading}
-                                    className="focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-transparent md:focus-visible:ring-primary/50"
-                                />
-                            </div>
+                            {selectedPlan && (
+                                <Card className="border-primary/30 bg-primary/5 shadow-none">
+                                    <CardHeader className="py-3 px-4">
+                                        <div className="flex items-start justify-between gap-2">
+                                            <div>
+                                                <CardTitle className="text-base">
+                                                    Plan {selectedPlan.name}
+                                                </CardTitle>
+                                                <CardDescription className="text-xs">
+                                                    {formatPlanPrice(selectedPlan.price_monthly)}/mes
+                                                    {selectedPlan.trial_days > 0
+                                                        ? ` · ${selectedPlan.trial_days} días de prueba`
+                                                        : ""}
+                                                </CardDescription>
+                                            </div>
+                                            {selectedPlan.highlighted && (
+                                                <Badge variant="secondary">Recomendado</Badge>
+                                            )}
+                                        </div>
+                                        <a
+                                            href="/landing#pricing"
+                                            className="text-xs text-primary hover:underline inline-block mt-2"
+                                        >
+                                            Cambiar plan
+                                        </a>
+                                    </CardHeader>
+                                </Card>
+                            )}
 
                             <div className="space-y-2">
                                 <Label htmlFor="reg-first-name">Nombre(s)</Label>
@@ -157,7 +199,7 @@ export default function Register() {
                                     onChange={(e) => setForm({ ...form, first_name: e.target.value })}
                                     placeholder="Ej. Juan Carlos"
                                     disabled={loading}
-                                    className="focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-transparent md:focus-visible:ring-primary/50"
+                                    required
                                 />
                             </div>
                             <div className="space-y-2">
@@ -168,7 +210,7 @@ export default function Register() {
                                     onChange={(e) => setForm({ ...form, paternal_last_name: e.target.value })}
                                     placeholder="Ej. Pérez"
                                     disabled={loading}
-                                    className="focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-transparent md:focus-visible:ring-primary/50"
+                                    required
                                 />
                             </div>
                             <div className="space-y-2">
@@ -179,12 +221,11 @@ export default function Register() {
                                     onChange={(e) => setForm({ ...form, maternal_last_name: e.target.value })}
                                     placeholder="Ej. García"
                                     disabled={loading}
-                                    className="focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-transparent md:focus-visible:ring-primary/50"
                                 />
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="reg-email">Correo electrónico (opcional)</Label>
+                                <Label htmlFor="reg-email">Correo electrónico</Label>
                                 <Input
                                     id="reg-email"
                                     type="email"
@@ -192,7 +233,7 @@ export default function Register() {
                                     onChange={(e) => setForm({ ...form, email: e.target.value })}
                                     autoComplete="email"
                                     disabled={loading}
-                                    className="focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-transparent md:focus-visible:ring-primary/50"
+                                    required
                                 />
                             </div>
 
@@ -204,7 +245,6 @@ export default function Register() {
                                     onChange={(e) => setForm({ ...form, phone: e.target.value })}
                                     maxLength={10}
                                     disabled={loading}
-                                    className="focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-transparent md:focus-visible:ring-primary/50"
                                 />
                             </div>
 
@@ -218,47 +258,46 @@ export default function Register() {
                                         onChange={(e) => setForm({ ...form, password: e.target.value })}
                                         autoComplete="new-password"
                                         disabled={loading}
-                                        className="pr-12 focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-transparent md:focus-visible:ring-primary/50"
+                                        className="pr-12"
+                                        required
                                     />
                                     <Button
                                         type="button"
                                         variant="ghost"
                                         size="icon"
                                         onClick={() => setShowPassword((v) => !v)}
-                                        className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground hover:bg-transparent"
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8"
                                         disabled={loading}
-                                        aria-label={showPassword ? "Ocultar contraseña" : "Ver contraseña"}
                                     >
-                                        {showPassword ? (
-                                            <EyeOff className="h-4 w-4" aria-hidden />
-                                        ) : (
-                                            <Eye className="h-4 w-4" aria-hidden />
-                                        )}
+                                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                                     </Button>
                                 </div>
                                 <div className="rounded-md border border-border/60 bg-muted/30 px-3 py-2 text-xs space-y-1.5">
                                     <p className="font-medium text-muted-foreground">Requisitos de la contraseña:</p>
                                     <ul className="space-y-1">
-                                        <li className={passwordChecks.length ? "text-emerald-600 dark:text-emerald-400 flex items-center gap-2" : "text-muted-foreground flex items-center gap-2"}>
-                                            {passwordChecks.length ? <Check className="h-3.5 w-3.5 shrink-0" /> : <X className="h-3.5 w-3.5 shrink-0 opacity-50" />}
-                                            Mínimo 12 caracteres
-                                        </li>
-                                        <li className={passwordChecks.lowercase ? "text-emerald-600 dark:text-emerald-400 flex items-center gap-2" : "text-muted-foreground flex items-center gap-2"}>
-                                            {passwordChecks.lowercase ? <Check className="h-3.5 w-3.5 shrink-0" /> : <X className="h-3.5 w-3.5 shrink-0 opacity-50" />}
-                                            Al menos una minúscula
-                                        </li>
-                                        <li className={passwordChecks.uppercase ? "text-emerald-600 dark:text-emerald-400 flex items-center gap-2" : "text-muted-foreground flex items-center gap-2"}>
-                                            {passwordChecks.uppercase ? <Check className="h-3.5 w-3.5 shrink-0" /> : <X className="h-3.5 w-3.5 shrink-0 opacity-50" />}
-                                            Al menos una mayúscula
-                                        </li>
-                                        <li className={passwordChecks.number ? "text-emerald-600 dark:text-emerald-400 flex items-center gap-2" : "text-muted-foreground flex items-center gap-2"}>
-                                            {passwordChecks.number ? <Check className="h-3.5 w-3.5 shrink-0" /> : <X className="h-3.5 w-3.5 shrink-0 opacity-50" />}
-                                            Al menos un número
-                                        </li>
-                                        <li className={passwordChecks.special ? "text-emerald-600 dark:text-emerald-400 flex items-center gap-2" : "text-muted-foreground flex items-center gap-2"}>
-                                            {passwordChecks.special ? <Check className="h-3.5 w-3.5 shrink-0" /> : <X className="h-3.5 w-3.5 shrink-0 opacity-50" />}
-                                            Al menos un carácter especial (!@#$%^&*…)
-                                        </li>
+                                        {[
+                                            ["length", "Mínimo 12 caracteres"],
+                                            ["lowercase", "Al menos una minúscula"],
+                                            ["uppercase", "Al menos una mayúscula"],
+                                            ["number", "Al menos un número"],
+                                            ["special", "Al menos un carácter especial"],
+                                        ].map(([key, label]) => (
+                                            <li
+                                                key={key}
+                                                className={
+                                                    passwordChecks[key]
+                                                        ? "text-emerald-600 dark:text-emerald-400 flex items-center gap-2"
+                                                        : "text-muted-foreground flex items-center gap-2"
+                                                }
+                                            >
+                                                {passwordChecks[key] ? (
+                                                    <Check className="h-3.5 w-3.5 shrink-0" />
+                                                ) : (
+                                                    <X className="h-3.5 w-3.5 shrink-0 opacity-50" />
+                                                )}
+                                                {label}
+                                            </li>
+                                        ))}
                                     </ul>
                                 </div>
                             </div>
@@ -270,51 +309,62 @@ export default function Register() {
                                         id="reg-password-confirmation"
                                         type={showPasswordConfirmation ? "text" : "password"}
                                         value={form.password_confirmation}
-                                        onChange={(e) => setForm({ ...form, password_confirmation: e.target.value })}
+                                        onChange={(e) =>
+                                            setForm({ ...form, password_confirmation: e.target.value })
+                                        }
                                         autoComplete="new-password"
                                         disabled={loading}
-                                        className="pr-12 focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-transparent md:focus-visible:ring-primary/50"
+                                        className="pr-12"
+                                        required
                                     />
                                     <Button
                                         type="button"
                                         variant="ghost"
                                         size="icon"
                                         onClick={() => setShowPasswordConfirmation((v) => !v)}
-                                        className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground hover:bg-transparent"
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8"
                                         disabled={loading}
-                                        aria-label={showPasswordConfirmation ? "Ocultar contraseña" : "Ver contraseña"}
                                     >
                                         {showPasswordConfirmation ? (
-                                            <EyeOff className="h-4 w-4" aria-hidden />
+                                            <EyeOff className="h-4 w-4" />
                                         ) : (
-                                            <Eye className="h-4 w-4" aria-hidden />
+                                            <Eye className="h-4 w-4" />
                                         )}
                                     </Button>
                                 </div>
                                 {form.password_confirmation.length > 0 && (
-                                    <p className={passwordsMatch ? "text-emerald-600 dark:text-emerald-400 text-xs flex items-center gap-1.5" : "text-amber-600 dark:text-amber-400 text-xs flex items-center gap-1.5"}>
-                                        {passwordsMatch ? <Check className="h-3.5 w-3.5" /> : <X className="h-3.5 w-3.5" />}
-                                        {passwordsMatch ? "Las contraseñas coinciden" : "Las contraseñas no coinciden"}
+                                    <p
+                                        className={
+                                            passwordsMatch
+                                                ? "text-emerald-600 dark:text-emerald-400 text-xs"
+                                                : "text-amber-600 dark:text-amber-400 text-xs"
+                                        }
+                                    >
+                                        {passwordsMatch
+                                            ? "Las contraseñas coinciden"
+                                            : "Las contraseñas no coinciden"}
                                     </p>
                                 )}
                             </div>
 
                             <p className="text-xs text-muted-foreground">
-                                Si tienes correo empresarial, recibirás un enlace de verificación. Si no tienes correo, tu cuenta quedará pendiente de aprobación.
+                                Recibirás un enlace de verificación en tu correo para activar la cuenta y continuar con
+                                la configuración de tu empresa.
                             </p>
 
-                            {error ? <p className="text-red-500 text-sm" role="alert">{error}</p> : null}
+                            {error ? (
+                                <p className="text-red-500 text-sm" role="alert">
+                                    {error}
+                                </p>
+                            ) : null}
                             {success ? <p className="text-emerald-500 text-sm">{success}</p> : null}
 
-                            <Button type="submit" className="w-full min-h-[44px] md:min-h-0" disabled={loading}>
+                            <Button type="submit" className="w-full min-h-[44px]" disabled={loading}>
                                 {loading ? "Registrando..." : "Crear cuenta"}
                             </Button>
-                            <p className="text-center text-xs text-muted-foreground flex flex-wrap items-center justify-center gap-x-1 gap-y-1">
-                                <span>¿Ya tienes cuenta?</span>
-                                <Link
-                                    href="/login"
-                                    className="inline-flex items-center min-h-[44px] min-w-[44px] py-2.5 text-primary hover:underline md:min-h-0 md:min-w-0 md:py-0"
-                                >
+                            <p className="text-center text-xs text-muted-foreground">
+                                ¿Ya tienes cuenta?{" "}
+                                <Link href="/login" className="text-primary hover:underline">
                                     Inicia sesión
                                 </Link>
                             </p>

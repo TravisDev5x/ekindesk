@@ -16,9 +16,14 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\DB;
+use App\Services\ClientScopeService;
 
 class TicketAnalyticsController extends Controller
 {
+    public function __construct(
+        protected ClientScopeService $clientScope
+    ) {}
+
     public function __invoke(Request $request)
     {
         $user = Auth::user();
@@ -174,10 +179,11 @@ class TicketAnalyticsController extends Controller
 
     protected function applyFilters(Request $request, $user, $query): void
     {
+        $this->clientScope->applyClientFilter($request, $user, $query);
+
         $filters = [
             'area_current_id' => 'area_current_id',
             'area_origin_id' => 'area_origin_id',
-            'sede_id' => 'sede_id',
             'ubicacion_id' => 'ubicacion_id',
             'ticket_type_id' => 'ticket_type_id',
             'priority_id' => 'priority_id',
@@ -186,10 +192,16 @@ class TicketAnalyticsController extends Controller
 
         foreach ($filters as $param => $column) {
             if ($request->filled($param)) {
-                if ($param === 'sede_id' && !$user->can('tickets.filter_by_sede') && !$user->can('tickets.manage_all')) {
-                    continue;
-                }
                 $query->where($column, $request->input($param));
+            }
+        }
+
+        if ($request->filled('sede_id')) {
+            $canFilterSede = $user->can('tickets.filter_by_sede')
+                || $user->can('tickets.manage_all')
+                || $user->can('tickets.view_area');
+            if ($canFilterSede) {
+                $this->clientScope->applySedeFilter($request, $user, $query);
             }
         }
 
