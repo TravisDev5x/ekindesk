@@ -25,6 +25,31 @@ function formatPlanPrice(value) {
     return new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(n);
 }
 
+function PlanTypeBadge({ type }) {
+    if (type === "msp") {
+        return (
+            <Badge className="border border-blue-500/30 bg-blue-500/20 text-xs text-blue-400">
+                MSP
+            </Badge>
+        );
+    }
+    if (type === "inhouse") {
+        return (
+            <Badge className="border border-cyan-500/30 bg-cyan-500/20 text-xs text-cyan-400">
+                In-House
+            </Badge>
+        );
+    }
+    if (type === "both") {
+        return (
+            <Badge className="border border-slate-500/30 bg-slate-500/20 text-xs text-slate-400">
+                Flexible
+            </Badge>
+        );
+    }
+    return null;
+}
+
 export default function Register() {
     const { plans = [] } = usePage().props;
 
@@ -167,9 +192,12 @@ export default function Register() {
                                     <CardHeader className="py-3 px-4">
                                         <div className="flex items-start justify-between gap-2">
                                             <div>
-                                                <CardTitle className="text-base">
-                                                    Plan {selectedPlan.name}
-                                                </CardTitle>
+                                                <div className="flex flex-wrap items-center gap-2">
+                                                    <CardTitle className="text-base">
+                                                        Plan {selectedPlan.name}
+                                                    </CardTitle>
+                                                    <PlanTypeBadge type={selectedPlan.type} />
+                                                </div>
                                                 <CardDescription className="text-xs">
                                                     {formatPlanPrice(selectedPlan.price_monthly)}/mes
                                                     {selectedPlan.trial_days > 0

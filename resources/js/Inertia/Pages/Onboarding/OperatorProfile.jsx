@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Head, Link, useForm } from "@inertiajs/react";
+import { useFlash } from "@/hooks/useFlash";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,6 +23,7 @@ function formatMoney(value) {
 }
 
 export default function OperatorProfile({ plans = [], selectedPlan = null, step = 1 }) {
+    useFlash();
     const initialPlanId = selectedPlan?.id ? String(selectedPlan.id) : "";
 
     const { data, setData, post, processing, errors } = useForm({

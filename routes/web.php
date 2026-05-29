@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use App\Http\Controllers\Auth\AcceptInvitationController;
+use App\Http\Controllers\LandingController;
 use App\Http\Controllers\Onboarding\OperatorOnboardingController;
 use App\Http\Controllers\Web\ClienteController;
 use App\Models\Plan;
@@ -51,7 +52,7 @@ Route::get('/login', fn () => Inertia::render('Auth/Login'))->middleware('guest'
 Route::get('/register', function () {
     return Inertia::render('Auth/Register', [
         'plans' => Plan::activePublic()->get([
-            'id', 'name', 'slug', 'price_monthly', 'trial_days', 'highlighted',
+            'id', 'name', 'slug', 'type', 'price_monthly', 'trial_days', 'highlighted',
         ]),
     ]);
 })->middleware('guest')->name('register');
@@ -65,6 +66,9 @@ Route::get('/forgot-password', fn () => Inertia::render('Auth/ForgotPassword'))-
 Route::get('/reset-password', fn () => Inertia::render('Auth/ResetPassword'))->middleware('guest')->name('password.reset');
 Route::get('/verify-email', fn () => Inertia::render('Auth/VerifyEmail'))->middleware('guest')->name('verification.verify');
 Route::get('/force-change-password', fn () => Inertia::render('Auth/ForceChangePassword'))->middleware('auth')->name('password.force-change');
+
+// Landing pública (antes del catch-all SPA)
+Route::get('/', [LandingController::class, 'index'])->name('landing');
 
 // Onboarding operador (auth sin middleware onboarding — evita bucle)
 Route::middleware('auth')->group(function () {

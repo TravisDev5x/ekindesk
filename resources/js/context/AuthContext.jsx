@@ -1,5 +1,15 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import axios from "@/lib/axios";
+import { notify } from "@/lib/notify";
+
+function showSessionFlash(flash) {
+    const hasFlash = Object.values(flash ?? {}).some(Boolean);
+    if (!hasFlash) return;
+    if (flash.success) notify.success(flash.success);
+    if (flash.error) notify.error(flash.error);
+    if (flash.info) notify.info(flash.info);
+    if (flash.warning) notify.warning(flash.warning);
+}
 
 const AuthContext = createContext(null);
 
@@ -39,6 +49,7 @@ export const AuthProvider = ({ children }) => {
                         permissions: payload.permissions || [],
                         onboarding_redirect: payload.onboarding_redirect ?? null,
                     });
+                    showSessionFlash(payload.flash);
                 } else {
                     setUser(null);
                 }
@@ -85,6 +96,7 @@ export const AuthProvider = ({ children }) => {
                     permissions: payload.permissions || [],
                     onboarding_redirect: payload.onboarding_redirect ?? null,
                 });
+                showSessionFlash(payload.flash);
             } else {
                 setUser(null);
             }

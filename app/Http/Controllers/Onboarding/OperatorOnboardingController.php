@@ -106,6 +106,13 @@ class OperatorOnboardingController extends Controller
 
         session()->forget(['invited_plan_slug', 'invited_plan_id']);
 
+        if ($plan && $plan->type === 'inhouse') {
+            $user->update(['onboarding_completed' => true]);
+
+            return redirect('/')
+                ->with('success', '¡Bienvenido a EkinDesk! Tu panel está listo.');
+        }
+
         return redirect()->route('onboarding.clients');
     }
 
@@ -122,6 +129,15 @@ class OperatorOnboardingController extends Controller
         }
 
         if ($this->onboarding->wasInvited($user)) {
+            return redirect('/');
+        }
+
+        $user->load('operatorProfile.plan');
+        $plan = $user->operatorProfile?->plan;
+
+        if ($plan && $plan->type === 'inhouse') {
+            $user->update(['onboarding_completed' => true]);
+
             return redirect('/');
         }
 
@@ -176,7 +192,7 @@ class OperatorOnboardingController extends Controller
             $user->update(['onboarding_completed' => true]);
         });
 
-        return redirect('/')->with('flash', 'Cliente agregado. ¡Bienvenido a EkinDesk!');
+        return redirect('/')->with('success', 'Cliente agregado. ¡Bienvenido a EkinDesk!');
     }
 
     public function skipClients()
@@ -189,6 +205,6 @@ class OperatorOnboardingController extends Controller
 
         $user->update(['onboarding_completed' => true]);
 
-        return redirect('/')->with('flash', 'Puedes agregar clientes desde el panel en cualquier momento.');
+        return redirect('/')->with('success', 'Puedes agregar clientes desde el panel en cualquier momento.');
     }
 }

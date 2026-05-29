@@ -45,6 +45,12 @@ class CheckAuthController extends Controller
             'roles' => $user->roles->pluck('name'),
             'permissions' => $permissions,
             'onboarding_redirect' => $onboarding->redirectPath($user),
+            'flash' => [
+                'success' => session()->pull('success'),
+                'error' => session()->pull('error'),
+                'info' => session()->pull('info'),
+                'warning' => session()->pull('warning'),
+            ],
         ]);
     }
 }

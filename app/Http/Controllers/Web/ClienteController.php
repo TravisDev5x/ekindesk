@@ -109,7 +109,7 @@ class ClienteController extends Controller
 
         return redirect()
             ->route('clients.show', $cliente)
-            ->with('flash', 'Cliente creado correctamente');
+            ->with('success', 'Cliente creado correctamente');
     }
 
     public function show(Cliente $client): Response
@@ -185,7 +185,7 @@ class ClienteController extends Controller
 
         return redirect()
             ->route('clients.show', $client)
-            ->with('flash', 'Cliente actualizado');
+            ->with('success', 'Cliente actualizado');
     }
 
     public function destroy(Cliente $client)
@@ -209,7 +209,7 @@ class ClienteController extends Controller
 
         return redirect()
             ->route('clients.index')
-            ->with('flash', 'Cliente eliminado');
+            ->with('success', 'Cliente eliminado');
     }
 
     private function validateClient(Request $request, ?Cliente $client = null): array

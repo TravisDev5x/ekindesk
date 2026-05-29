@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Head, Link, useForm } from "@inertiajs/react";
+import { useFlash } from "@/hooks/useFlash";
 import AuthenticatedLayout from "@/Inertia/Layouts/AuthenticatedLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,6 +26,7 @@ function mapSites(sites) {
 }
 
 export default function ClientsForm({ client, industries, sites: initialSites }) {
+    useFlash();
     const isEditing = client !== null;
 
     const { data, setData, post, put, processing, errors } = useForm({

@@ -1,4 +1,5 @@
 import { Head, Link, router } from "@inertiajs/react";
+import { useFlash } from "@/hooks/useFlash";
 import AuthenticatedLayout from "@/Inertia/Layouts/AuthenticatedLayout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +14,7 @@ function initials(name) {
 }
 
 export default function Show({ client, tickets_summary, sites }) {
+    useFlash();
     const name = client.business_name || client.name;
 
     const confirmDelete = () => {

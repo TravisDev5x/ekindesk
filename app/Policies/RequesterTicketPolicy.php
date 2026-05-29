@@ -22,7 +22,7 @@ class RequesterTicketPolicy
     /** Solo el solicitante puede ver el ticket en "Mis Tickets". */
     public function view(User $user, Ticket $ticket): bool
     {
-        return (int) $ticket->requester_id === (int) $user->id;
+        return $this->requesterOwnsTicket($user, $ticket);
     }
 
     /** Cualquier usuario autenticado puede crear un ticket (será su propio ticket). */
@@ -34,19 +34,19 @@ class RequesterTicketPolicy
     /** Solo el solicitante puede enviar alertas/observaciones. */
     public function alert(User $user, Ticket $ticket): bool
     {
-        return (int) $ticket->requester_id === (int) $user->id;
+        return $this->requesterOwnsTicket($user, $ticket);
     }
 
     /** Solo el solicitante puede añadir comentarios (visibles en el historial). */
     public function comment(User $user, Ticket $ticket): bool
     {
-        return (int) $ticket->requester_id === (int) $user->id;
+        return $this->requesterOwnsTicket($user, $ticket);
     }
 
     /** Solo el solicitante puede subir adjuntos a su ticket. */
     public function attach(User $user, Ticket $ticket): bool
     {
-        return (int) $ticket->requester_id === (int) $user->id;
+        return $this->requesterOwnsTicket($user, $ticket);
     }
 
     /**
@@ -55,7 +55,7 @@ class RequesterTicketPolicy
      */
     public function cancel(User $user, Ticket $ticket): bool
     {
-        if ((int) $ticket->requester_id !== (int) $user->id) {
+        if (! $this->requesterOwnsTicket($user, $ticket)) {
             return false;
         }
         if ($ticket->assigned_user_id) {
@@ -64,5 +64,23 @@ class RequesterTicketPolicy
         $ticket->loadMissing('state');
 
         return ! ($ticket->state && $ticket->state->is_final);
+    }
+
+    /**
+     * Usuario cliente: mismo requester y mismo client_id en el ticket.
+     * Staff (client_id null): solo debe ser el solicitante.
+     */
+    private function requesterOwnsTicket(User $user, Ticket $ticket): bool
+    {
+        if ((int) $ticket->requester_id !== (int) $user->id) {
+            return false;
+        }
+
+        if ($user->client_id !== null) {
+            return $ticket->client_id !== null
+                && (int) $ticket->client_id === (int) $user->client_id;
+        }
+
+        return true;
     }
 }

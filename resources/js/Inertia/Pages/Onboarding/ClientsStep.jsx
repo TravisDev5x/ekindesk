@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Head, Link, useForm, router } from "@inertiajs/react";
+import { useFlash } from "@/hooks/useFlash";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,6 +28,7 @@ function ProgressSteps({ step }) {
 }
 
 export default function ClientsStep({ step = 2, operator_name, existing_clients = 0 }) {
+    useFlash();
     const [sitesOpen, setSitesOpen] = useState(false);
     const [skipping, setSkipping] = useState(false);
 

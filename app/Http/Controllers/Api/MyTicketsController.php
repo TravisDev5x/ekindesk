@@ -43,8 +43,13 @@ class MyTicketsController extends Controller
         Gate::authorize('requester.viewAny.ticket');
 
         $query = Ticket::query()
-            ->requesterOnly($user->id)
-            ->with([
+            ->requesterOnly($user->id);
+
+        if ($user->client_id !== null) {
+            $query->where('tickets.client_id', $user->client_id);
+        }
+
+        $query->with([
                 'areaOrigin:id,name',
                 'areaCurrent:id,name',
                 'sede:id,name',
@@ -71,6 +76,12 @@ class MyTicketsController extends Controller
         $user = Auth::user();
         if (! $user) {
             return response()->json(['message' => 'No autorizado'], 401);
+        }
+
+        if ($user->client_id !== null
+            && $ticket->client_id !== null
+            && (int) $ticket->client_id !== (int) $user->client_id) {
+            abort(403, 'No tienes acceso a este ticket');
         }
 
         Gate::authorize('requester.view.ticket', $ticket);
@@ -118,6 +129,9 @@ class MyTicketsController extends Controller
         $data = $request->validated();
         if ($error = $this->clientScope->stampTicketSiteFromUser($user, $data)) {
             return $error;
+        }
+        if ($user->client_id !== null) {
+            $data['client_id'] = (int) $user->client_id;
         }
         $data['requester_id'] = $user->id;
         $data['requester_position_id'] = $user->position_id ?? null;
