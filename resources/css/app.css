@@ -49,37 +49,7 @@
     --toast-info: 214 95% 96%;
 }
 
-.light {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-}
-
-/* Modo oscuro: Negro moderno (Zinc / Vercel–Linear), sin tonos azulados ni slate */
+/* Modo oscuro: Negro moderno (Zinc / Vercel���Linear), sin tonos azulados ni slate */
 .dark {
     --background: 0 0% 0%;
     --foreground: 0 0% 98%;
@@ -178,7 +148,7 @@ html[data-theme-switching="1"] *::after {
     outline-offset: 2px;
 }
 
-/* ===== Optimización glass (append-only, retrocompatible) ===== */
+/* ===== Optimizaci?n glass (append-only, retrocompatible) ===== */
 :root[data-effect= high],
 [data-effect=high] {
     --glass-blur: var(--glass-blur-high, 12px);
@@ -198,7 +168,7 @@ html[data-theme-switching="1"] *::after {
     --glass-shadow: var(--glass-shadow-low, 0 8px 18px -12px rgba(0, 0, 0, 0.22));
 }
 
-/* Transición suave al cambiar de página (respetar preferencia de movimiento reducido) */
+/* Transici?n suave al cambiar de p?gina (respetar preferencia de movimiento reducido) */
 .page-transition {
     animation: page-fade-in 0.25s ease-out;
 }
@@ -235,7 +205,7 @@ html[data-theme-switching="1"] *::after {
     display: none;
 }
 
-/* Sheet / Drawer móvil: overlay más suave para distinguir el panel lateral */
+/* Sheet / Drawer m?vil: overlay m?s suave para distinguir el panel lateral */
 .sheet-overlay-mobile {
     background-color: rgba(0, 0, 0, 0.45);
 }
@@ -245,7 +215,7 @@ html[data-theme-switching="1"] *::after {
     }
 }
 
-/* Sheet drawer móvil: animación más nativa (más corta y ease-out) */
+/* Sheet drawer m?vil: animaci?n m?s nativa (m?s corta y ease-out) */
 [data-drawer="mobile"][data-state="open"] {
     animation-duration: 280ms;
     animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
@@ -255,7 +225,7 @@ html[data-theme-switching="1"] *::after {
     animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
-/* Padding inferior en móvil para no quedar tapado por barra inferior y/o barra de acciones */
+/* Padding inferior en m?vil para no quedar tapado por barra inferior y/o barra de acciones */
 .pb-content-mobile {
     padding-bottom: 7rem;
 }
@@ -265,7 +235,7 @@ html[data-theme-switching="1"] *::after {
     }
 }
 
-/* Fade + blur superior del área de contenido al hacer scroll (AppLayout) */
+/* Fade + blur superior del ?rea de contenido al hacer scroll (AppLayout) */
 .layout-scroll-fade {
     background: linear-gradient(
         to bottom,
@@ -276,5 +246,19 @@ html[data-theme-switching="1"] *::after {
     backdrop-filter: blur(6px);
     mask-image: linear-gradient(to bottom, black 0%, transparent 85%);
     -webkit-mask-image: linear-gradient(to bottom, black 0%, transparent 85%);
+}
+
+/* Transici?n suave al cambiar tema */
+*, *::before, *::after {
+    transition:
+        background-color 0.2s ease,
+        border-color 0.2s ease,
+        color 0.15s ease;
+}
+
+/* Excluir elementos donde la transici?n es molesta */
+[data-no-transition],
+[data-no-transition] * {
+    transition: none !important;
 }
 

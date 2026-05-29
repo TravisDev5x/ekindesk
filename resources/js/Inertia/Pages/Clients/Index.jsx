@@ -1,10 +1,12 @@
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Head, Link, router } from "@inertiajs/react";
 import { useFlash } from "@/hooks/useFlash";
 import AuthenticatedLayout from "@/Inertia/Layouts/AuthenticatedLayout";
+import InertiaPageShell from "@/Inertia/components/InertiaPageShell";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
     AlertDialog,
@@ -30,7 +32,7 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Building2, Eye, Pencil, Plus, Trash2 } from "lucide-react";
+import { Building2, Eye, Pencil, Plus, Search, Trash2 } from "lucide-react";
 
 function initials(name) {
     const parts = String(name || "").trim().split(/\s+/).filter(Boolean);
@@ -43,61 +45,26 @@ function logoUrl(path) {
     return `/storage/${path.replace(/^\//, "")}`;
 }
 
-const TABLE_HEADERS = (
-    <TableRow>
-        <TableHead>Cliente</TableHead>
-        <TableHead>Industria</TableHead>
-        <TableHead>Sedes</TableHead>
-        <TableHead>Tickets</TableHead>
-        <TableHead>Estado</TableHead>
-        <TableHead className="text-right">Acciones</TableHead>
-    </TableRow>
-);
-
-function TableSkeleton() {
-    return (
-        <Table>
-            <TableHeader>{TABLE_HEADERS}</TableHeader>
-            <TableBody>
-                {[...Array(5)].map((_, i) => (
-                    <TableRow key={i}>
-                        <TableCell>
-                            <div className="flex items-center gap-3">
-                                <Skeleton className="h-9 w-9 rounded-md shrink-0" />
-                                <Skeleton className="h-4 w-48" />
-                            </div>
-                        </TableCell>
-                        <TableCell>
-                            <Skeleton className="h-4 w-24" />
-                        </TableCell>
-                        <TableCell>
-                            <Skeleton className="h-4 w-12" />
-                        </TableCell>
-                        <TableCell>
-                            <Skeleton className="h-4 w-12" />
-                        </TableCell>
-                        <TableCell>
-                            <Skeleton className="h-6 w-16 rounded-full" />
-                        </TableCell>
-                        <TableCell>
-                            <div className="flex justify-end gap-2">
-                                <Skeleton className="h-8 w-8" />
-                                <Skeleton className="h-8 w-8" />
-                                <Skeleton className="h-8 w-8" />
-                            </div>
-                        </TableCell>
-                    </TableRow>
-                ))}
-            </TableBody>
-        </Table>
-    );
+function matchesSearch(client, query) {
+    const q = query.trim().toLowerCase();
+    if (!q) return true;
+    const fields = [
+        client.business_name,
+        client.name,
+        client.contact_name,
+        client.contact_email,
+        client.industry,
+        client.operator_user?.name,
+    ];
+    return fields.some((f) => f && String(f).toLowerCase().includes(q));
 }
 
-export default function Index({ clients, total }) {
+export default function Index({ clients, total, showOperatorColumn = false }) {
     useFlash();
     const rows = clients?.data ?? [];
     const [deleteTarget, setDeleteTarget] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [search, setSearch] = useState("");
 
     useEffect(() => {
         const unsubStart = router.on("start", () => setLoading(true));
@@ -108,6 +75,11 @@ export default function Index({ clients, total }) {
         };
     }, []);
 
+    const filteredRows = useMemo(
+        () => rows.filter((c) => matchesSearch(c, search)),
+        [rows, search]
+    );
+
     const handleDelete = () => {
         if (!deleteTarget) return;
         router.delete(`/clients/${deleteTarget.id}`, {
@@ -115,13 +87,25 @@ export default function Index({ clients, total }) {
         });
     };
 
+    const tableHeaders = (
+        <TableRow>
+            <TableHead>Cliente</TableHead>
+            {showOperatorColumn && <TableHead>Operador</TableHead>}
+            <TableHead>Industria</TableHead>
+            <TableHead>Sedes</TableHead>
+            <TableHead>Tickets</TableHead>
+            <TableHead>Estado</TableHead>
+            <TableHead className="text-right">Acciones</TableHead>
+        </TableRow>
+    );
+
     return (
         <AuthenticatedLayout title="Clientes">
             <Head title="Clientes" />
 
+            <InertiaPageShell className="space-y-0">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                 <div className="flex items-center gap-3">
-                    <h1 className="text-2xl font-bold">Clientes</h1>
                     <Badge variant="secondary">{total} total</Badge>
                 </div>
                 <Button asChild>
@@ -131,6 +115,18 @@ export default function Index({ clients, total }) {
                     </Link>
                 </Button>
             </div>
+
+            {rows.length > 0 && (
+                <div className="relative max-w-sm mb-4">
+                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        className="pl-9"
+                        placeholder="Buscar por nombre, contacto, email…"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                    />
+                </div>
+            )}
 
             {rows.length === 0 && !loading ? (
                 <Card className="border-dashed">
@@ -149,12 +145,27 @@ export default function Index({ clients, total }) {
                 <>
                     <Card>
                         {loading ? (
-                            <TableSkeleton />
+                            <Table>
+                                <TableHeader>{tableHeaders}</TableHeader>
+                                <TableBody>
+                                    {[...Array(5)].map((_, i) => (
+                                        <TableRow key={i}>
+                                            <TableCell colSpan={showOperatorColumn ? 7 : 6}>
+                                                <Skeleton className="h-10 w-full" />
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        ) : filteredRows.length === 0 ? (
+                            <div className="py-12 text-center text-sm text-muted-foreground">
+                                No hay resultados para &quot;{search}&quot;
+                            </div>
                         ) : (
                             <Table>
-                                <TableHeader>{TABLE_HEADERS}</TableHeader>
+                                <TableHeader>{tableHeaders}</TableHeader>
                                 <TableBody>
-                                    {rows.map((client) => (
+                                    {filteredRows.map((client) => (
                                         <TableRow key={client.id}>
                                             <TableCell>
                                                 <div className="flex items-center gap-3">
@@ -176,6 +187,11 @@ export default function Index({ clients, total }) {
                                                     </span>
                                                 </div>
                                             </TableCell>
+                                            {showOperatorColumn && (
+                                                <TableCell className="text-sm text-muted-foreground">
+                                                    {client.operator_user?.name ?? "—"}
+                                                </TableCell>
+                                            )}
                                             <TableCell>
                                                 {client.industry ? (
                                                     client.industry
@@ -294,6 +310,7 @@ export default function Index({ clients, total }) {
                     )}
                 </>
             )}
+            </InertiaPageShell>
 
             <AlertDialog
                 open={deleteTarget !== null}

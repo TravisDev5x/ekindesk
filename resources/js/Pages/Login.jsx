@@ -112,11 +112,6 @@ export default function Login() {
         axios.get("/sanctum/csrf-cookie", { withCredentials: true }).catch(() => {});
     }, []);
 
-    useEffect(() => {
-        document.documentElement.classList.add("dark");
-        document.documentElement.style.colorScheme = "dark";
-    }, []);
-
     const [form, setForm] = useState({ email: "", password: "" });
     const [remember, setRemember] = useState(() => {
         if (typeof localStorage === "undefined") return false;

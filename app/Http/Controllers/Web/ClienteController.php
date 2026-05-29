@@ -21,10 +21,22 @@ class ClienteController extends Controller
         'Gobierno', 'Servicios', 'Otro',
     ];
 
+    private function canViewAllClients(): bool
+    {
+        $user = auth()->user();
+
+        return $user->hasRole('super_admin') || $user->can('clients.view_all');
+    }
+
     private function clientQuery(): Builder
     {
         $user = auth()->user();
-        if ($user->hasRole('admin')) {
+
+        if ($user->hasRole('super_admin')) {
+            return Cliente::query();
+        }
+
+        if ($user->can('clients.view_all')) {
             return Cliente::query();
         }
 
@@ -33,25 +45,34 @@ class ClienteController extends Controller
 
     private function authorizeClient(Cliente $client): void
     {
-        $user = auth()->user();
-        if ($user->hasRole('admin')) {
+        if ($this->canViewAllClients()) {
             return;
         }
-        if ((int) $client->operator_user_id !== (int) $user->id) {
+
+        if ((int) $client->operator_user_id !== (int) auth()->id()) {
             abort(403);
         }
     }
 
     public function index(): Response
     {
-        $clients = $this->clientQuery()
+        $user = auth()->user();
+        $showOperatorColumn = $user->hasRole('super_admin') || $user->can('clients.view_all');
+
+        $query = $this->clientQuery()
             ->withCount(['sedes', 'tickets'])
-            ->orderBy('name')
-            ->paginate(15);
+            ->orderBy('name');
+
+        if ($showOperatorColumn) {
+            $query->with('operatorUser:id,name');
+        }
+
+        $clients = $query->paginate(15);
 
         return Inertia::render('Clients/Index', [
             'clients' => $clients,
             'total' => $this->clientQuery()->count(),
+            'showOperatorColumn' => $showOperatorColumn,
         ]);
     }
 

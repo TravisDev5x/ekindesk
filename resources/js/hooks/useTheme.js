@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import axios from '@/lib/axios';
 import { useAuth } from '@/context/AuthContext';
-import { useTheme as useThemeFromProvider } from '@/components/theme-provider';
+import { useThemeContext } from '@/components/theme-provider';
 
 const STORAGE_LOCALE = 'locale';
 const THEME_VALUES = ['light', 'dark', 'system'];
@@ -20,11 +20,18 @@ const setRootLocale = (locale) => {
     }
 };
 
+function normalizeTheme(value) {
+    if (THEME_VALUES.includes(value)) return value;
+    if (typeof value === 'string' && value.includes('dark')) return 'dark';
+    if (typeof value === 'string' && value.includes('light')) return 'light';
+    return 'system';
+}
+
 /**
- * Hook unificado: tema (light/dark/system) desde ThemeProvider + densidad y locale con persistencia en API.
+ * Hook unificado SPA: tema (ThemeProvider) + densidad + locale con persistencia API.
  */
 export function useTheme() {
-    const { theme, setTheme: setThemeFromContext, resolvedTheme, isDark } = useThemeFromProvider();
+    const ctx = useThemeContext();
     const { user, updateUserTheme, updateUserPrefs } = useAuth();
 
     const [density, setDensityState] = useState(() => {
@@ -36,25 +43,18 @@ export function useTheme() {
         return user?.locale || localStorage.getItem(STORAGE_LOCALE) || DEFAULT_PREFS.locale;
     });
 
-    // Sincronizar tema del backend al cargar usuario; valores antiguos se normalizan a light/dark/system
     useEffect(() => {
         if (!user?.theme) return;
-        const t = user.theme;
-        if (THEME_VALUES.includes(t)) {
-            setThemeFromContext(t);
-            localStorage.setItem('theme', t);
-        } else {
-            const normalized = t.includes('dark') ? 'dark' : t.includes('light') ? 'light' : 'system';
-            setThemeFromContext(normalized);
-            localStorage.setItem('theme', normalized);
+        const normalized = normalizeTheme(user.theme);
+        if (ctx.theme !== normalized) {
+            ctx.setTheme(normalized, { persist: false });
         }
-    }, [user?.theme, setThemeFromContext]);
+    }, [user?.theme, ctx.theme, ctx.setTheme]);
 
-    // Persistir tema en API cuando el usuario está logueado y cambia el tema
     const setTheme = useCallback(
         (next, opts = { persist: true }) => {
             if (!THEME_VALUES.includes(next)) return;
-            setThemeFromContext(next);
+            ctx.setTheme(next, { persist: false });
             if (user && opts.persist !== false) {
                 axios
                     .put('/api/profile/theme', { theme: next })
@@ -62,7 +62,7 @@ export function useTheme() {
                     .catch(() => {});
             }
         },
-        [setThemeFromContext, user, updateUserTheme]
+        [ctx, user, updateUserTheme]
     );
 
     useEffect(() => {
@@ -87,7 +87,9 @@ export function useTheme() {
             try {
                 await axios.put('/api/profile/preferences', payload);
                 updateUserPrefs(payload);
-            } catch (_) {}
+            } catch {
+                // ignore
+            }
         },
         [user, updateUserPrefs]
     );
@@ -120,14 +122,17 @@ export function useTheme() {
     );
 
     const toggleTheme = useCallback(() => {
-        setTheme(isDark ? 'light' : 'dark');
-    }, [isDark, setTheme]);
+        const order = THEME_VALUES;
+        const idx = order.indexOf(ctx.theme);
+        const next = order[(idx + 1) % order.length];
+        setTheme(next);
+    }, [ctx.theme, setTheme]);
 
     return {
-        theme,
+        theme: ctx.theme,
         setTheme,
-        resolvedTheme,
-        isDark,
+        resolvedTheme: ctx.resolvedTheme,
+        isDark: ctx.isDark,
         toggleTheme,
         cycleLight: () => setTheme('light'),
         cycleDark: () => setTheme('dark'),
@@ -139,3 +144,26 @@ export function useTheme() {
         defaults: DEFAULT_PREFS,
     };
 }
+
+export function useAuthTheme() {
+    const ctx = useThemeContext();
+
+    const setThemeAndPersist = useCallback(
+        async (newTheme) => {
+            ctx.setTheme(newTheme);
+            try {
+                await axios.put('/api/profile/theme', { theme: newTheme });
+            } catch (err) {
+                console.warn('Theme persistence failed:', err);
+            }
+        },
+        [ctx]
+    );
+
+    return {
+        ...ctx,
+        setTheme: setThemeAndPersist,
+    };
+}
+
+export default useTheme;

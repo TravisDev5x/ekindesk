@@ -4,9 +4,26 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use App\Http\Controllers\Auth\AcceptInvitationController;
+use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\LandingController;
+use App\Http\Controllers\Inertia\UserController as InertiaUserController;
 use App\Http\Controllers\Onboarding\OperatorOnboardingController;
 use App\Http\Controllers\Web\ClienteController;
+use App\Models\Area;
+use App\Models\Campaign;
+use App\Models\Cliente;
+use App\Models\ImpactLevel;
+use App\Models\Position;
+use App\Models\Priority;
+use App\Models\PriorityMatrix;
+use App\Models\Role;
+use App\Models\Sede;
+use App\Models\TicketMacro;
+use App\Models\TicketState;
+use App\Models\TicketType;
+use App\Models\Ubicacion;
+use App\Models\UrgencyLevel;
+use App\Models\Permission;
 use App\Models\Plan;
 
 /*
@@ -81,6 +98,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/onboarding/skip', [OperatorOnboardingController::class, 'skipClients'])
         ->name('onboarding.skip');
 
+    Route::redirect('/clientes', '/clients');
+
     Route::prefix('clients')->name('clients.')->group(function () {
         Route::get('/', [ClienteController::class, 'index'])->name('index');
         Route::get('/create', [ClienteController::class, 'create'])->name('create');
@@ -90,6 +109,98 @@ Route::middleware('auth')->group(function () {
         Route::put('/{client}', [ClienteController::class, 'update'])->name('update');
         Route::delete('/{client}', [ClienteController::class, 'destroy'])->name('destroy');
     });
+
+    Route::prefix('company')->name('company.')->group(function () {
+        Route::get('/', [CompanyController::class, 'show'])->name('show');
+        Route::get('/edit', [CompanyController::class, 'edit'])->name('edit');
+        Route::put('/', [CompanyController::class, 'update'])->name('update');
+        Route::delete('/logo', [CompanyController::class, 'destroyLogo'])->name('logo.destroy');
+    });
+
+    Route::get('/areas', fn () => Inertia::render('Catalogs/Areas', [
+        'areas' => Area::orderBy('name')->get(),
+    ]))->name('areas.index');
+
+    Route::get('/priorities', fn () => Inertia::render('Catalogs/Prioridades', [
+        'priorities' => Priority::orderBy('level')->orderBy('name')->get(),
+    ]))->name('priorities.index');
+
+    Route::get('/impact-levels', fn () => Inertia::render('Catalogs/ImpactLevels', [
+        'impactLevels' => ImpactLevel::orderBy('weight')->orderBy('name')->get(),
+    ]))->name('impact-levels.index');
+
+    Route::get('/urgency-levels', fn () => Inertia::render('Catalogs/UrgencyLevels', [
+        'urgencyLevels' => UrgencyLevel::orderBy('weight')->orderBy('name')->get(),
+    ]))->name('urgency-levels.index');
+
+    Route::get('/campaigns', fn () => Inertia::render('Catalogs/Campaigns', [
+        'campaigns' => Campaign::orderBy('name')->get(),
+    ]))->name('campaigns.index');
+
+    Route::get('/positions', fn () => Inertia::render('Catalogs/Positions', [
+        'positions' => Position::orderBy('name')->get(),
+    ]))->name('positions.index');
+
+    Route::get('/roles', fn () => Inertia::render('Catalogs/Roles', [
+        'roles' => Role::orderBy('guard_name')->orderBy('name')->get(),
+    ]))->name('roles.index');
+
+    Route::get('/sessions', fn () => Inertia::render('Catalogs/Sessions'))->name('sessions.index');
+
+    Route::get('/resolbeb/estados', fn () => Inertia::render('Catalogs/TicketStates', [
+        'ticketStates' => TicketState::orderBy('is_final')->orderBy('name')->get(),
+    ]))->name('resolbeb.estados');
+
+    Route::get('/resolbeb/tipos', fn () => Inertia::render('Catalogs/TicketTypes', [
+        'ticketTypes' => TicketType::with('areas:id,name')->orderBy('name')->get(),
+        'areas' => Area::where('is_active', true)->orderBy('name')->get(['id', 'name']),
+    ]))->name('resolbeb.tipos');
+
+    Route::get('/sedes', fn () => Inertia::render('Catalogs/Sedes', [
+        'sedes' => Sede::with('cliente:id,name')->orderBy('type')->orderBy('name')->get(),
+        'clientes' => Cliente::where('is_active', true)->orderBy('name')->get(['id', 'name']),
+    ]))->name('sedes.index');
+
+    Route::get('/ubicaciones', fn () => Inertia::render('Catalogs/Ubicaciones', [
+        'ubicaciones' => Ubicacion::with('sede:id,name,type')->orderBy('sede_id')->orderBy('name')->get(),
+        'sedes' => Sede::where('is_active', true)->orderBy('name')->get(['id', 'name']),
+    ]))->name('ubicaciones.index');
+
+    Route::get('/ticket-macros', fn () => Inertia::render('Catalogs/TicketMacros', [
+        'ticketMacros' => TicketMacro::orderBy('category')->orderBy('name')->get(),
+    ]))->name('ticket-macros.index');
+
+    Route::get('/priority-matrix', fn () => Inertia::render('Catalogs/PriorityMatrix', [
+        'matrix' => PriorityMatrix::all(['impact_level_id', 'urgency_level_id', 'priority_id']),
+        'impactLevels' => ImpactLevel::where('is_active', true)->orderBy('weight')->get(['id', 'name', 'weight']),
+        'urgencyLevels' => UrgencyLevel::where('is_active', true)->orderBy('weight')->get(['id', 'name', 'weight']),
+        'priorities' => Priority::where('is_active', true)->orderBy('level')->orderBy('name')->get(['id', 'name', 'level']),
+    ]))->name('priority-matrix.index');
+
+    Route::get('/permissions', fn () => Inertia::render('System/Permissions', [
+        'roles' => Role::with('permissions')->orderBy('name')->get(),
+        'permissions' => Permission::orderBy('name')->get(),
+    ]))->name('permissions.index');
+
+    Route::get('/audit-command', fn () => Inertia::render('System/AuditCommandCenter'))->name('audit.index');
+
+    Route::get('/calendario', fn () => Inertia::render('Calendario'))->name('calendario.index');
+
+    Route::get('/profile', fn () => Inertia::render('Profile', [
+        'user' => auth()->user()->load('roles'),
+    ]))->name('profile.index');
+
+    Route::get('/users', [InertiaUserController::class, 'index'])
+        ->middleware('onboarding')
+        ->name('users.inertia.index');
+
+    Route::get('/users/invitations', fn () => Inertia::render('Users/Invitations'))
+        ->middleware('onboarding')
+        ->name('users.invitations.index');
+
+    Route::get('/settings', fn () => Inertia::render('Settings'))
+        ->middleware('onboarding')
+        ->name('settings.index');
 });
 
 // ==========================

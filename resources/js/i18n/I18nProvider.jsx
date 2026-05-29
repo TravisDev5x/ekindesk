@@ -1,9 +1,9 @@
-import React, { createContext, useContext, useMemo } from 'react';
-import messages from './messages';
-import { useTheme } from '@/hooks/useTheme';
+import React, { createContext, useCallback, useContext, useMemo, useState } from "react";
+import { useTheme } from "@/hooks/useTheme";
+import messages from "./messages";
 
-const I18nContext = createContext({
-    locale: 'es',
+export const I18nContext = createContext({
+    locale: "es",
     setLocale: () => {},
     t: (key) => key,
 });
@@ -11,20 +11,42 @@ const I18nContext = createContext({
 const interpolate = (text, vars = {}) =>
     text.replace(/\{(\w+)\}/g, (_, k) => (vars[k] !== undefined ? vars[k] : `{${k}}`));
 
-export function I18nProvider({ children }) {
-    const { locale, setLocale } = useTheme();
-
-    const value = useMemo(() => ({
+function buildI18nValue(locale, setLocale) {
+    return {
         locale,
         setLocale,
         t: (key, vars) => {
             const entry = messages[locale]?.[key] ?? messages.es?.[key] ?? key;
-            if (typeof entry === 'function') return entry(vars || {});
-            if (typeof entry === 'string' && vars) return interpolate(entry, vars);
+            if (typeof entry === "function") return entry(vars || {});
+            if (typeof entry === "string" && vars) return interpolate(entry, vars);
             return entry;
         },
-    }), [locale, setLocale]);
+    };
+}
 
+/** SPA: locale sincronizado con useTheme / API. */
+export function I18nProvider({ children }) {
+    const { locale, setLocale } = useTheme();
+    const value = useMemo(() => buildI18nValue(locale, setLocale), [locale, setLocale]);
+    return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
+}
+
+/** Inertia: sin ThemeProvider; locale desde localStorage. */
+export function InertiaI18nProvider({ children }) {
+    const [locale, setLocaleState] = useState(() => {
+        if (typeof window === "undefined") return "es";
+        return localStorage.getItem("locale") || "es";
+    });
+
+    const setLocale = useCallback((next) => {
+        setLocaleState(next);
+        if (typeof window !== "undefined") {
+            localStorage.setItem("locale", next);
+            document.documentElement.lang = next;
+        }
+    }, []);
+
+    const value = useMemo(() => buildI18nValue(locale, setLocale), [locale, setLocale]);
     return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
 }
 

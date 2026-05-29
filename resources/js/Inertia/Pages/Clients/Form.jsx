@@ -94,8 +94,6 @@ export default function ClientsForm({ client, industries, sites: initialSites })
         <AuthenticatedLayout title={title}>
             <Head title={title} />
 
-            <h1 className="text-2xl font-bold mb-6">{title}</h1>
-
             <form onSubmit={submit} className="space-y-6">
                 <Card>
                     <CardHeader>

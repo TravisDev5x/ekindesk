@@ -4,11 +4,7 @@
   <script>
     (function () {
       try {
-        var stored = localStorage.getItem('theme');
-        var theme = (stored === 'dark' || stored === 'light' || stored === 'system') ? stored : 'system';
-        var resolved = theme === 'system'
-          ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
-          : theme;
+        var resolved = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
         var root = document.documentElement;
         if (resolved === 'dark') {
           root.classList.add('dark');

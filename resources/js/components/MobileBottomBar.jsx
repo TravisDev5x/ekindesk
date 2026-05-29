@@ -13,9 +13,44 @@ const baseItems = [
   { to: '/resolbeb', labelKey: 'nav.resolbeb', icon: LayoutDashboard, end: true },
 ]
 
-export function MobileBottomBar({ onOpenMenu, forceVisible = false, unreadCount = 0 }) {
+function routeMatches(pathname, to, end) {
+  if (end) return pathname === to
+  return pathname === to || pathname.startsWith(`${to}/`)
+}
+
+function NavItem({ to, end, anchorLinks, pathname, className, children, onClick }) {
+  const isActive = routeMatches(pathname, to, end)
+
+  if (anchorLinks) {
+    return (
+      <a
+        href={to}
+        onClick={onClick}
+        className={className(isActive)}
+        aria-current={isActive ? 'page' : undefined}
+      >
+        {children}
+      </a>
+    )
+  }
+
+  return (
+    <NavLink to={to} end={end} className={({ isActive }) => className(isActive)}>
+      {children}
+    </NavLink>
+  )
+}
+
+export function MobileBottomBar({
+  onOpenMenu,
+  forceVisible = false,
+  unreadCount = 0,
+  pathname: pathnameProp,
+  anchorLinks = false,
+}) {
   const { t } = useI18n()
   const location = useLocation()
+  const pathname = pathnameProp ?? location.pathname
   const { user } = useAuth()
   const can = (p) => Boolean(user?.permissions?.includes(p))
   const canSeeTickets = can('tickets.manage_all') || can('tickets.view_area') || (can('tickets.create') || can('tickets.view_own'))
@@ -26,6 +61,14 @@ export function MobileBottomBar({ onOpenMenu, forceVisible = false, unreadCount 
   if (canSeeIncidents) quickItems.push({ to: '/incidents', label: 'Crear incidencia', icon: AlertTriangle, end: false })
   const items = [...baseItems, ...quickItems]
 
+  const linkClass = (isActive) =>
+    cn(
+      'flex flex-col items-center justify-center gap-0.5 rounded-xl py-2 px-2 min-w-[56px] min-h-[44px] transition-colors shrink-0',
+      isActive
+        ? 'bg-primary text-primary-foreground'
+        : 'text-foreground/85 hover:bg-muted/60 hover:text-foreground'
+    )
+
   return (
     <nav
       className={cn(
@@ -34,7 +77,6 @@ export function MobileBottomBar({ onOpenMenu, forceVisible = false, unreadCount 
       )}
       aria-label="Navegación principal"
     >
-      {/* Barra con efecto Liquid Glass; centrada horizontalmente y sobre safe area iOS */}
       <div
         className={cn(
           'pointer-events-auto flex max-w-lg w-[calc(100%-2rem)] items-center justify-around gap-0.5 overflow-x-auto scrollbar-hide',
@@ -48,28 +90,21 @@ export function MobileBottomBar({ onOpenMenu, forceVisible = false, unreadCount 
         }}
       >
         {items.map(({ to, labelKey, label, icon: Icon, end }) => {
-          const isActive = end
-            ? location.pathname === to
-            : location.pathname === to || location.pathname.startsWith(to + '/')
           const text = label ?? t(labelKey)
           return (
-            <NavLink
+            <NavItem
               key={to}
               to={to}
               end={end}
-              className={cn(
-                'flex flex-col items-center justify-center gap-0.5 rounded-xl py-2 px-2 min-w-[56px] min-h-[44px] transition-colors shrink-0',
-                isActive
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-foreground/85 hover:bg-muted/60 hover:text-foreground'
-              )}
-              aria-current={isActive ? 'page' : undefined}
+              anchorLinks={anchorLinks}
+              pathname={pathname}
+              className={linkClass}
             >
               <Icon size={ICON_SIZE} strokeWidth={2} className="shrink-0" />
               <span className="text-[10px] font-medium leading-tight truncate max-w-[72px] text-center">
                 {text}
               </span>
-            </NavLink>
+            </NavItem>
           )
         })}
         <button

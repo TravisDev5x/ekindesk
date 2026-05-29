@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { NavLink, Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
 import { useSidebarPosition } from '@/context/SidebarPositionContext'
-import { useTheme } from '@/hooks/useTheme'
+import { ThemeToggle } from '@/components/ThemeToggle'
 import { useI18n } from '@/hooks/useI18n'
 import { useSwipeToClose } from '@/hooks/useSwipeToClose'
 import axios from '@/lib/axios'
@@ -43,7 +43,6 @@ import {
 export default function AppLayout() {
     const { pathname } = useLocation()
     const navigate = useNavigate()
-    const themeContext = useTheme()
     const { t } = useI18n()
     const { user, logout, refreshUser } = useAuth()
     const [notifications, setNotifications] = useState([])
@@ -113,9 +112,6 @@ export default function AppLayout() {
         if (typeof user?.sidebar_hover_preview !== 'undefined') setHoverPreviewEnabled(user.sidebar_hover_preview)
     }, [user?.sidebar_state, user?.sidebar_hover_preview])
 
-    const isDark = themeContext?.isDark ?? false
-    const cycleLight = themeContext?.cycleLight ?? (() => { })
-    const cycleDark = themeContext?.cycleDark ?? (() => { })
     const mustChangePassword = Boolean(user?.force_password_change)
 
     useEffect(() => {
@@ -461,19 +457,9 @@ export default function AppLayout() {
 
                             <Separator orientation="vertical" className="hidden md:block h-6 mx-1" />
 
-                            {/* Theme Toggle: área táctil 44px en móvil */}
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-11 w-11 rounded-full flex items-center justify-center md:h-9 md:w-9">
-                                        <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0 text-orange-500" />
-                                        <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100 text-blue-500" />
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                    <DropdownMenuItem onClick={cycleLight} className="gap-2"><Sun className="h-4 w-4"/> Claro</DropdownMenuItem>
-                                    <DropdownMenuItem onClick={cycleDark} className="gap-2"><Moon className="h-4 w-4"/> Oscuro</DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
+                            <div className="flex h-11 w-11 items-center justify-center md:h-9 md:w-9">
+                                <ThemeToggle variant="icon" />
+                            </div>
 
                             {/* Notifications: área táctil 44px en móvil */}
                             <DropdownMenu open={notifOpen} onOpenChange={setNotifOpen}>

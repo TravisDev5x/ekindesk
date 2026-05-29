@@ -122,18 +122,6 @@ export default function Login() {
         axios.get("/sanctum/csrf-cookie", { withCredentials: true }).catch(() => {});
     }, []);
 
-    useEffect(() => {
-        document.documentElement.classList.add("dark");
-        document.documentElement.style.colorScheme = "dark";
-        return () => {
-            const stored = localStorage.getItem("theme");
-            if (stored === "light") {
-                document.documentElement.classList.remove("dark");
-                document.documentElement.style.colorScheme = "light";
-            }
-        };
-    }, []);
-
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError("");
@@ -167,6 +155,10 @@ export default function Login() {
                 localStorage.removeItem("login.remember");
                 localStorage.removeItem("login.email");
                 localStorage.removeItem("login.identifier");
+            }
+            const userTheme = data?.user?.theme;
+            if (userTheme && ["light", "dark", "system"].includes(userTheme)) {
+                localStorage.setItem("ekindesk_theme", userTheme);
             }
             window.location.href = data?.onboarding_redirect || "/";
         } catch (err) {

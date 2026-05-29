@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "@inertiajs/react";
-import { Menu } from "lucide-react";
+import { Menu, Sun, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
     Sheet,
@@ -30,6 +30,41 @@ function BrandLogo() {
     );
 }
 
+function LandingThemeToggle() {
+    const [override, setOverride] = useState(() => sessionStorage.getItem("landing_theme") || null);
+
+    const isDark = override
+        ? override === "dark"
+        : window.matchMedia("(prefers-color-scheme: dark)").matches;
+
+    const toggle = () => {
+        const newTheme = isDark ? "light" : "dark";
+        sessionStorage.setItem("landing_theme", newTheme);
+        setOverride(newTheme);
+
+        const root = document.documentElement;
+        root.classList.remove("light", "dark");
+        if (newTheme === "dark") {
+            root.classList.add("dark");
+            root.style.colorScheme = "dark";
+        } else {
+            root.style.colorScheme = "light";
+        }
+    };
+
+    return (
+        <button
+            type="button"
+            onClick={toggle}
+            className="rounded-lg p-2 text-slate-400 transition-colors hover:bg-slate-800/50 hover:text-slate-200"
+            title={isDark ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
+            aria-label="Cambiar tema de la landing"
+        >
+            {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+        </button>
+    );
+}
+
 export default function Navbar() {
     const [open, setOpen] = useState(false);
 
@@ -51,6 +86,7 @@ export default function Navbar() {
                 </nav>
 
                 <div className="hidden lg:flex items-center gap-3">
+                    <LandingThemeToggle />
                     <Button variant="ghost" className="text-slate-300 hover:text-white" asChild>
                         <Link href="/login">Iniciar sesión</Link>
                     </Button>
@@ -89,6 +125,9 @@ export default function Navbar() {
                             ))}
                         </nav>
                         <div className="mt-8 flex flex-col gap-3">
+                            <div className="flex justify-center pb-2">
+                                <LandingThemeToggle />
+                            </div>
                             <Button variant="outline" className="border-slate-700 text-slate-300" asChild>
                                 <Link href="/login" onClick={() => setOpen(false)}>
                                     Iniciar sesión

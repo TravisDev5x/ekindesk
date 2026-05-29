@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import axios from "@/lib/axios";
 import { useTheme, DEFAULT_PREFS } from "@/hooks/useTheme";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/context/AuthContext";
 import { useSidebarPosition } from "@/context/SidebarPositionContext";
 import { notify } from "@/lib/notify";
@@ -25,12 +26,6 @@ import {
     UserCircle,
     CheckCircle2
 } from "lucide-react";
-
-const OPTIONS_THEME = [
-    { value: "light", label: "Claro", description: "Tema claro", color: "bg-background" },
-    { value: "dark", label: "Oscuro", description: "Tema oscuro", color: "bg-card" },
-    { value: "system", label: "Sistema", description: "Según el sistema operativo", color: "bg-muted" },
-];
 
 const OPTIONS_LOCALE = [
     { value: "es", label: "Español", flag: "🇪🇸" },
@@ -195,24 +190,14 @@ export default function Settings() {
                             </div>
                         </CardHeader>
                         <CardContent className="pt-6 space-y-4">
-                            <Select value={pendingTheme} onValueChange={setPendingTheme}>
-                                <SelectTrigger className="w-full h-12">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {OPTIONS_THEME.map((opt) => (
-                                        <SelectItem key={opt.value} value={opt.value} className="cursor-pointer">
-                                            <div className="flex items-center gap-3 py-1">
-                                                <div className={`h-6 w-6 rounded-full border ${opt.color}`} />
-                                                <div className="flex flex-col text-left">
-                                                    <span className="font-medium text-sm">{opt.label}</span>
-                                                    <span className="text-[10px] text-muted-foreground">{opt.description}</span>
-                                                </div>
-                                            </div>
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                            <ThemeToggle
+                                variant="select"
+                                value={pendingTheme}
+                                onValueChange={(v) => {
+                                    setPendingTheme(v);
+                                    setTheme(v, { persist: false });
+                                }}
+                            />
                         </CardContent>
                     </Card>
 

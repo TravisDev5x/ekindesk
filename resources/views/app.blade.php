@@ -6,13 +6,12 @@
   <script>
     (function () {
       try {
-        var stored = localStorage.getItem('theme');
+        var stored = localStorage.getItem('ekindesk_theme') || localStorage.getItem('theme');
         var theme = (stored === 'dark' || stored === 'light' || stored === 'system') ? stored : 'system';
         var resolved = theme === 'system'
           ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
           : theme;
         var root = document.documentElement;
-        root.dataset.themeInit = '1';
         if (resolved === 'dark') {
           root.classList.add('dark');
           root.style.colorScheme = 'dark';

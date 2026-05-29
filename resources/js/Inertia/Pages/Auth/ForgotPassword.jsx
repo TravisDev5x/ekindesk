@@ -5,17 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { cn } from "@/lib/utils";
-import { Sun, Moon } from "lucide-react";
-
-function getInitialIsDark() {
-    if (typeof window === "undefined") return false;
-    const stored = localStorage.getItem("theme");
-    if (stored === "dark") return true;
-    if (stored === "light") return false;
-    return window.matchMedia("(prefers-color-scheme: dark)").matches;
-}
-
 export default function ForgotPassword() {
     const sitekey = import.meta.env.VITE_HCAPTCHA_SITEKEY;
     const widgetId = useRef(null);
@@ -25,14 +14,6 @@ export default function ForgotPassword() {
     const [message, setMessage] = useState("");
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
-    const [isDark, setIsDark] = useState(getInitialIsDark);
-
-    useEffect(() => {
-        const root = document.documentElement;
-        root.classList.toggle("dark", isDark);
-        root.style.colorScheme = isDark ? "dark" : "light";
-        localStorage.setItem("theme", isDark ? "dark" : "light");
-    }, [isDark]);
 
     useEffect(() => {
         if (!sitekey) return;
@@ -95,29 +76,13 @@ export default function ForgotPassword() {
         <>
             <Head title="Restablecer contraseña" />
             <div className="flex min-h-[100dvh] flex-col items-center justify-center text-foreground relative px-4 py-6 pb-[max(2rem,calc(2rem+env(safe-area-inset-bottom)))] overflow-y-auto md:min-h-screen md:h-screen md:overflow-hidden md:pb-6">
-                <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="absolute top-4 right-4 z-20 h-11 w-11 rounded-full border border-border/50 bg-background/80 backdrop-blur-sm hover:bg-muted/50"
-                    onClick={() => setIsDark((v) => !v)}
-                    aria-label={isDark ? "Cambiar a tema claro" : "Cambiar a tema oscuro"}
-                >
-                    <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0 text-orange-500" />
-                    <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100 text-blue-500" />
-                </Button>
-
                 <div
                     className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat"
                     style={{ backgroundImage: "url(/images/auth-hero.png)" }}
                     aria-hidden
                 />
                 <div
-                    className={cn(
-                        "absolute inset-0 z-[1] pointer-events-none",
-                        "backdrop-blur-[6px] sm:backdrop-blur-[8px]",
-                        "bg-background/40 dark:bg-background/50",
-                    )}
+                    className="absolute inset-0 z-[1] pointer-events-none backdrop-blur-[6px] sm:backdrop-blur-[8px] bg-background/40 dark:bg-background/50"
                     aria-hidden
                 />
 
