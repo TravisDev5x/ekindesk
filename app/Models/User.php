@@ -10,6 +10,7 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Support\Collection;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable implements MustVerifyEmail
@@ -176,6 +177,38 @@ class User extends Authenticatable implements MustVerifyEmail
     public function ubicacion(): BelongsTo
     {
         return $this->belongsTo(Ubicacion::class);
+    }
+
+    public function getCachedRoleNames(): Collection
+    {
+        return cache()->remember(
+            "user.{$this->id}.roles",
+            now()->addMinutes(10),
+            fn () => $this->getRoleNames()
+        );
+    }
+
+    public function getCachedPermissions(): Collection
+    {
+        return cache()->remember(
+            "user.{$this->id}.permissions",
+            now()->addMinutes(10),
+            fn () => $this->getAllPermissions()->pluck('name')
+        );
+    }
+
+    public static function forgetPermissionCache(int|self $user): void
+    {
+        $id = $user instanceof self ? $user->id : $user;
+        cache()->forget("user.{$id}.roles");
+        cache()->forget("user.{$id}.permissions");
+    }
+
+    public static function forgetPermissionCacheForRole(string $roleName): void
+    {
+        static::role($roleName)->pluck('id')->each(
+            fn (int $userId) => static::forgetPermissionCache($userId)
+        );
     }
 
 }

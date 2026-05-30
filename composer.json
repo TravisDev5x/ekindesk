@@ -53,6 +53,18 @@
             "@php artisan config:clear --ansi",
             "@php artisan test"
         ],
+        "optimize": [
+            "@php artisan config:cache",
+            "@php artisan view:cache",
+            "@php artisan event:cache"
+        ],
+        "optimize:clear": [
+            "@php artisan config:clear",
+            "@php artisan route:clear",
+            "@php artisan view:clear",
+            "@php artisan event:clear",
+            "@php artisan cache:clear"
+        ],
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
             "@php artisan package:discover --ansi"

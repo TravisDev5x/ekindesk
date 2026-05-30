@@ -206,6 +206,7 @@ class UserController extends Controller
 
         if ($role) {
             $user->syncRoles([$role]);
+            User::forgetPermissionCache($user);
         }
 
         return response()->json($user, 201);
@@ -289,6 +290,7 @@ class UserController extends Controller
 
         if ($request->filled('role_id')) {
             $user->syncRoles($role ? [$role] : []);
+            User::forgetPermissionCache($user);
         }
 
         // Activar solo si tiene un rol distinto de visitante (visitante es solo lectura hasta que admin asigne rol)

@@ -155,7 +155,9 @@ Acceder a la URL que indique `php artisan serve` (ej. `http://127.0.0.1:8000`). 
 2. **Build del frontend:**  
    `npm run build` (los assets quedan en `public/build`).
 3. **Optimizar Laravel:**  
-   `php artisan config:cache`, `php artisan route:cache`, `php artisan view:cache`.
+   `composer optimize` (equivale a `config:cache`, `view:cache`, `event:cache`).  
+   **Nota:** no usar `route:cache` mientras `routes/web.php` tenga closures (`fn () => …`); fallaría el comando.  
+   En desarrollo, revertir con `composer optimize:clear`.
 4. **Servidor web:**  
    Apuntar el document root al directorio **`public`** del proyecto (Apache/Nginx).
 5. **Cola (opcional):**  

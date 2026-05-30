@@ -6,6 +6,7 @@ use Inertia\Inertia;
 use App\Http\Controllers\Auth\AcceptInvitationController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\LandingController;
+use App\Http\Controllers\Inertia\ResolbebIndexController;
 use App\Http\Controllers\Inertia\UserController as InertiaUserController;
 use App\Http\Controllers\Onboarding\OperatorOnboardingController;
 use App\Http\Controllers\Web\ClienteController;
@@ -23,6 +24,7 @@ use App\Models\TicketState;
 use App\Models\TicketType;
 use App\Models\Ubicacion;
 use App\Models\UrgencyLevel;
+use App\Models\User;
 use App\Models\Permission;
 use App\Models\Plan;
 
@@ -118,7 +120,7 @@ Route::middleware('auth')->group(function () {
     });
 
     Route::get('/areas', fn () => Inertia::render('Catalogs/Areas', [
-        'areas' => Area::orderBy('name')->get(),
+        'areas' => Area::orderBy('name')->get(['id', 'name', 'is_active', 'created_at']),
     ]))->name('areas.index');
 
     Route::get('/priorities', fn () => Inertia::render('Catalogs/Prioridades', [
@@ -134,18 +136,40 @@ Route::middleware('auth')->group(function () {
     ]))->name('urgency-levels.index');
 
     Route::get('/campaigns', fn () => Inertia::render('Catalogs/Campaigns', [
-        'campaigns' => Campaign::orderBy('name')->get(),
+        'campaigns' => Campaign::orderBy('name')->get(['id', 'name', 'is_active', 'created_at']),
     ]))->name('campaigns.index');
 
     Route::get('/positions', fn () => Inertia::render('Catalogs/Positions', [
-        'positions' => Position::orderBy('name')->get(),
+        'positions' => Position::orderBy('name')->get(['id', 'name', 'is_active', 'created_at']),
     ]))->name('positions.index');
 
     Route::get('/roles', fn () => Inertia::render('Catalogs/Roles', [
-        'roles' => Role::orderBy('guard_name')->orderBy('name')->get(),
+        'roles' => Role::orderBy('guard_name')->orderBy('name')->get(['id', 'name', 'slug', 'guard_name', 'created_at']),
     ]))->name('roles.index');
 
     Route::get('/sessions', fn () => Inertia::render('Catalogs/Sessions'))->name('sessions.index');
+
+    Route::get('/resolbeb', fn () => Inertia::render('Resolbeb/Dashboard', [
+        'catalogs' => [
+            'sedes' => Sede::where('is_active', true)->orderBy('name')->get(['id', 'name']),
+            'area_users' => User::where('status', 'active')
+                ->whereNotNull('area_id')
+                ->orderBy('name')
+                ->get(['id', 'name']),
+        ],
+    ]))
+        ->middleware('onboarding')
+        ->name('resolbeb.dashboard');
+
+    Route::get('/tickets/wallboard', fn () => Inertia::render('Resolbeb/Wallboard', [
+        'catalogs' => [
+            'sedes' => Sede::where('is_active', true)->orderBy('name')->get(['id', 'name']),
+            'area_users' => User::where('status', 'active')
+                ->whereNotNull('area_id')
+                ->orderBy('name')
+                ->get(['id', 'name']),
+        ],
+    ]))->name('resolbeb.wallboard');
 
     Route::get('/resolbeb/estados', fn () => Inertia::render('Catalogs/TicketStates', [
         'ticketStates' => TicketState::orderBy('is_final')->orderBy('name')->get(),
@@ -155,6 +179,43 @@ Route::middleware('auth')->group(function () {
         'ticketTypes' => TicketType::with('areas:id,name')->orderBy('name')->get(),
         'areas' => Area::where('is_active', true)->orderBy('name')->get(['id', 'name']),
     ]))->name('resolbeb.tipos');
+
+    Route::get('/resolbeb/tickets/new', fn () => Inertia::render('Resolbeb/Create', [
+        'catalogs' => [
+            'areas' => Area::where('is_active', true)->orderBy('name')->get(['id', 'name']),
+            'ticket_types' => TicketType::where('is_active', true)->orderBy('name')->get(['id', 'name']),
+            'priorities' => Priority::where('is_active', true)->orderBy('level')->orderBy('name')->get(['id', 'name', 'level']),
+            'sedes' => Sede::where('is_active', true)->orderBy('name')->get(['id', 'name']),
+            'impact_levels' => ImpactLevel::where('is_active', true)->orderBy('weight')->orderBy('name')->get(['id', 'name']),
+            'urgency_levels' => UrgencyLevel::where('is_active', true)->orderBy('weight')->orderBy('name')->get(['id', 'name']),
+            'ticket_states' => TicketState::orderBy('name')->get(['id', 'name', 'code', 'is_final']),
+            'priority_matrix' => PriorityMatrix::all(['impact_level_id', 'urgency_level_id', 'priority_id']),
+        ],
+    ]))
+        ->middleware('onboarding')
+        ->name('resolbeb.create');
+
+    Route::get('/resolbeb/tickets', [ResolbebIndexController::class, 'index'])
+        ->middleware('onboarding')
+        ->name('resolbeb.tickets');
+
+    Route::get('/resolbeb/mis-tickets', [ResolbebIndexController::class, 'misTickets'])
+        ->middleware('onboarding')
+        ->name('resolbeb.mis-tickets');
+
+    Route::get('/resolbeb/tickets/{id}', function ($id) {
+        return Inertia::render('Resolbeb/Detalle', [
+            'ticketId' => (int) $id,
+            'catalogs' => [
+                'areas' => Area::where('is_active', true)->orderBy('name')->get(['id', 'name']),
+                'ticket_states' => TicketState::orderBy('name')->get(['id', 'name', 'code', 'is_final']),
+                'priorities' => Priority::where('is_active', true)->orderBy('level')->get(['id', 'name', 'level']),
+                'ticket_types' => TicketType::where('is_active', true)->orderBy('name')->get(['id', 'name']),
+            ],
+        ]);
+    })->where('id', '[0-9]+')
+        ->middleware(['auth', 'onboarding'])
+        ->name('resolbeb.detalle');
 
     Route::get('/sedes', fn () => Inertia::render('Catalogs/Sedes', [
         'sedes' => Sede::with('cliente:id,name')->orderBy('type')->orderBy('name')->get(),
@@ -167,7 +228,7 @@ Route::middleware('auth')->group(function () {
     ]))->name('ubicaciones.index');
 
     Route::get('/ticket-macros', fn () => Inertia::render('Catalogs/TicketMacros', [
-        'ticketMacros' => TicketMacro::orderBy('category')->orderBy('name')->get(),
+        'ticketMacros' => TicketMacro::orderBy('category')->orderBy('name')->get(['id', 'name', 'category', 'is_active', 'created_at']),
     ]))->name('ticket-macros.index');
 
     Route::get('/priority-matrix', fn () => Inertia::render('Catalogs/PriorityMatrix', [
@@ -179,7 +240,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/permissions', fn () => Inertia::render('System/Permissions', [
         'roles' => Role::with('permissions')->orderBy('name')->get(),
-        'permissions' => Permission::orderBy('name')->get(),
+        'permissions' => Permission::orderBy('name')->get(['id', 'name', 'guard_name']),
     ]))->name('permissions.index');
 
     Route::get('/audit-command', fn () => Inertia::render('System/AuditCommandCenter'))->name('audit.index');

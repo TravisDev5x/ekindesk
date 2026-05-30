@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 use Inertia\Middleware;
 
 class HandleInertiaRequests extends Middleware
@@ -35,18 +36,48 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        if ($request->is('check-auth')) {
+            return parent::share($request);
+        }
+
         $user = $request->user();
+
+        if ($user) {
+            $user->loadMissing(['area:id,name', 'sede:id,name']);
+        }
 
         return [
             ...parent::share($request),
             'auth' => [
                 'user' => $user ? [
-                    ...$user->toArray(),
-                    'roles' => $user->getRoleNames(),
-                    'permissions' => $user->getAllPermissions()->pluck('name'),
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'first_name' => $user->first_name,
+                    'paternal_last_name' => $user->paternal_last_name,
+                    'maternal_last_name' => $user->maternal_last_name,
+                    'email' => $user->email,
+                    'phone' => $user->phone,
+                    'avatar_url' => $user->avatar_url,
+                    'status' => $user->status,
+                    'theme' => $user->theme,
+                    'locale' => $user->locale,
+                    'ui_density' => $user->ui_density,
+                    'sidebar_state' => $user->sidebar_state,
+                    'sidebar_position' => $user->sidebar_position,
+                    'sidebar_hover_preview' => $user->sidebar_hover_preview,
+                    'is_operator' => $user->is_operator,
+                    'client_id' => $user->client_id,
+                    'onboarding_completed' => $user->onboarding_completed,
+                    'is_blacklisted' => $user->is_blacklisted,
+                    'force_password_change' => $user->force_password_change ?? false,
+                    'area' => $user->area?->name,
+                    'sede' => $user->sede?->name,
+                    'availability' => $user->availability,
+                    'roles' => $user->getCachedRoleNames()->values()->all(),
+                    'permissions' => $user->getCachedPermissions()->values()->all(),
                 ] : null,
             ],
-            'notifications' => fn () => $user
+            'notifications' => Inertia::defer(fn () => $user
                 ? $user->notifications()
                     ->orderByDesc('created_at')
                     ->limit(20)
@@ -59,10 +90,10 @@ class HandleInertiaRequests extends Middleware
                     ])
                     ->values()
                     ->all()
-                : [],
-            'unread_notifications_count' => fn () => $user
+                : []),
+            'unread_notifications_count' => Inertia::defer(fn () => $user
                 ? $user->unreadNotifications()->count()
-                : 0,
+                : 0),
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),

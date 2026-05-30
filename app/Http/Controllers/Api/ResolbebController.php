@@ -11,9 +11,12 @@ use App\Models\TicketType;
 use App\Models\User;
 use App\Policies\TicketPolicy;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 
@@ -23,22 +26,6 @@ use Illuminate\Support\Facades\Gate;
  */
 class ResolbebController extends Controller
 {
-    /** Estados considerados "abiertos/en proceso" (no finales). */
-    private function openStateIds(): \Illuminate\Support\Collection
-    {
-        return TicketState::where('is_final', false)->pluck('id');
-    }
-
-    /** IDs de estados "Esperando Proveedor" o "Pausado" (por nombre). */
-    private function frozenStateIds(): \Illuminate\Support\Collection
-    {
-        return TicketState::where(function ($q) {
-            $q->where('name', 'like', '%Esperando Proveedor%')
-                ->orWhere('name', 'like', '%Pausado%')
-                ->orWhereIn('code', ['esperando_proveedor', 'pausado', 'en_espera']);
-        })->pluck('id');
-    }
-
     /**
      * Dashboard operativo: KPIs, balance de carga, tendencia, top incidentes y top 5 críticos.
      * Filtros opcionales: sede_id, assigned_user_id.
@@ -60,10 +47,30 @@ class ResolbebController extends Controller
         $base = $policy->scopeFor($user, Ticket::query());
         $this->applyFilters($request, $user, $base);
 
-        $finalStateIds = TicketState::where('is_final', true)->pluck('id');
-        $openIds = $this->openStateIds();
-        $frozenIds = $this->frozenStateIds();
+        $cacheKey = 'dashboard.'.$user->id.'.'.md5(json_encode($request->query()));
+
+        $result = Cache::remember($cacheKey, now()->addMinutes(2), function () use ($base) {
+            return $this->buildDashboardPayload($base);
+        });
+
+        return response()->json($result);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function buildDashboardPayload(Builder $base): array
+    {
+        $stateIds = $this->cachedTicketStateIds();
+        $openIds = $stateIds['open'];
+        $finalStateIds = $stateIds['final'];
+        $frozenIds = $stateIds['frozen'];
+        $resueltoCerradoIds = $stateIds['resuelto_cerrado'];
+        $abiertoId = $stateIds['abierto'];
+
         $baseNoFinal = (clone $base)->whereNotIn('ticket_state_id', $finalStateIds);
+        $ticketSubquery = (clone $base)->select('id');
+        $hasScopedTickets = (clone $base)->exists();
 
         // --- KPIs ---
         $vencidosHoy = (clone $baseNoFinal)
@@ -107,23 +114,35 @@ class ResolbebController extends Controller
         $userNames = $userIds ? User::whereIn('id', $userIds)->pluck('name', 'id')->all() : [];
         $balanceCargaData = $balanceCarga->map(function ($row) use ($userNames) {
             $name = $row->assigned_user_id ? ($userNames[$row->assigned_user_id] ?? 'Usuario #'.$row->assigned_user_id) : 'Sin asignar';
+
             return ['agente' => $name, 'total' => (int) $row->total];
         })->values()->all();
 
-        // --- Tendencia: últimos 15 días ---
-        $desde = Carbon::today()->subDays(14)->startOfDay();
+        // --- Tendencia: últimos 15 días (2 queries agrupadas) ---
+        $hace15Dias = now()->subDays(14)->startOfDay();
+
+        $creadosPorDia = (clone $base)
+            ->where('created_at', '>=', $hace15Dias)
+            ->selectRaw('DATE(created_at) as dia, COUNT(*) as total')
+            ->groupBy('dia')
+            ->pluck('total', 'dia');
+
+        $cerradosPorDia = (clone $base)
+            ->whereNotNull('resolved_at')
+            ->where('resolved_at', '>=', $hace15Dias)
+            ->selectRaw('DATE(resolved_at) as dia, COUNT(*) as total')
+            ->groupBy('dia')
+            ->pluck('total', 'dia');
+
         $tendencia = [];
-        for ($i = 0; $i < 15; $i++) {
-            $dia = $desde->copy()->addDays($i);
-            $diaInicio = $dia->copy()->startOfDay();
-            $diaFin = $dia->copy()->endOfDay();
-            $creados = (clone $base)->whereBetween('created_at', [$diaInicio, $diaFin])->count();
-            $cerrados = (clone $base)->whereNotNull('resolved_at')->whereBetween('resolved_at', [$diaInicio, $diaFin])->count();
+        for ($i = 14; $i >= 0; $i--) {
+            $dia = Carbon::today()->subDays($i);
+            $fecha = $dia->format('Y-m-d');
             $tendencia[] = [
-                'fecha' => $dia->format('Y-m-d'),
+                'fecha' => $fecha,
                 'etiqueta' => $dia->locale('es')->dayName.' '.$dia->format('d/m'),
-                'creados' => $creados,
-                'cerrados' => $cerrados,
+                'creados' => (int) ($creadosPorDia[$fecha] ?? 0),
+                'cerrados' => (int) ($cerradosPorDia[$fecha] ?? 0),
             ];
         }
 
@@ -175,12 +194,10 @@ class ResolbebController extends Controller
         })->values()->all();
 
         // --- Top 3 resolvers: agentes que más cerraron tickets en los últimos 30 días ---
-        $ticketIds = (clone $base)->pluck('id');
-        $resueltoCerradoIds = TicketState::whereIn('code', ['resuelto', 'cerrado'])->pluck('id');
         $topResolvers = [];
-        if ($ticketIds->isNotEmpty() && $resueltoCerradoIds->isNotEmpty()) {
+        if ($hasScopedTickets && $resueltoCerradoIds->isNotEmpty()) {
             $resolversRaw = TicketHistory::query()
-                ->whereIn('ticket_id', $ticketIds)
+                ->whereIn('ticket_id', $ticketSubquery)
                 ->whereIn('ticket_state_id', $resueltoCerradoIds)
                 ->where('created_at', '>=', now()->subDays(30))
                 ->select('actor_id', DB::raw('count(*) as tickets_cerrados'))
@@ -234,13 +251,12 @@ class ResolbebController extends Controller
         })->values()->all();
 
         // --- KPI reaperturas: tickets que pasaron de Resuelto/Cerrado a Abierto ---
-        $abiertoId = TicketState::where('code', 'abierto')->value('id');
         $reaperturas = 0;
         $totalResueltos = 0;
         $porcentajeReapertura = 0;
-        if ($abiertoId && $ticketIds->isNotEmpty() && $resueltoCerradoIds->isNotEmpty()) {
-            $ticketsReabiertosIds = TicketHistory::query()
-                ->whereIn('ticket_id', $ticketIds)
+        if ($abiertoId && $hasScopedTickets && $resueltoCerradoIds->isNotEmpty()) {
+            $reaperturas = TicketHistory::query()
+                ->whereIn('ticket_id', $ticketSubquery)
                 ->where('ticket_state_id', $abiertoId)
                 ->whereExists(function ($q) use ($resueltoCerradoIds) {
                     $q->select(DB::raw(1))
@@ -249,32 +265,32 @@ class ResolbebController extends Controller
                         ->whereIn('h2.ticket_state_id', $resueltoCerradoIds)
                         ->whereColumn('h2.created_at', '<', 'ticket_histories.created_at');
                 })
-                ->select('ticket_id')
-                ->distinct()
-                ->pluck('ticket_id');
-            $reaperturas = $ticketsReabiertosIds->count();
-            $totalResueltos = TicketHistory::query()
-                ->whereIn('ticket_id', $ticketIds)
-                ->whereIn('ticket_state_id', $resueltoCerradoIds)
-                ->select('ticket_id')
                 ->distinct()
                 ->count('ticket_id');
-            $porcentajeReapertura = $totalResueltos > 0 ? round((float) ($reaperturas / $totalResueltos) * 100, 1) : 0;
-        }
-        $kpiReaperturas = [
-            'cantidad_reaperturas' => $reaperturas,
-            'total_resueltos' => $totalResueltos,
-            'porcentaje' => $porcentajeReapertura,
-        ];
 
-        return response()->json([
+            $totalResueltos = TicketHistory::query()
+                ->whereIn('ticket_id', $ticketSubquery)
+                ->whereIn('ticket_state_id', $resueltoCerradoIds)
+                ->distinct()
+                ->count('ticket_id');
+
+            $porcentajeReapertura = $totalResueltos > 0
+                ? round((float) ($reaperturas / $totalResueltos) * 100, 1)
+                : 0;
+        }
+
+        return [
             'kpis' => [
                 'vencidos_hoy' => $vencidosHoy,
                 'sin_asignar' => $sinAsignar,
                 'congelados' => $congelados,
                 'mttr_semanal' => $mttrSemanal,
             ],
-            'kpi_reaperturas' => $kpiReaperturas,
+            'kpi_reaperturas' => [
+                'cantidad_reaperturas' => $reaperturas,
+                'total_resueltos' => $totalResueltos,
+                'porcentaje' => $porcentajeReapertura,
+            ],
             'balance_carga' => $balanceCargaData,
             'tendencia' => $tendencia,
             'top_incidentes' => $topIncidentes,
@@ -282,7 +298,33 @@ class ResolbebController extends Controller
             'top_resolvers' => $topResolvers,
             'top_sedes' => $topSedes,
             'top_fallas' => $topFallas,
-        ]);
+        ];
+    }
+
+    /**
+     * @return array{
+     *     open: Collection,
+     *     final: Collection,
+     *     frozen: Collection,
+     *     resuelto_cerrado: Collection,
+     *     abierto: int|null
+     * }
+     */
+    private function cachedTicketStateIds(): array
+    {
+        return Cache::remember('ticket_state_ids', now()->addMinutes(5), function () {
+            return [
+                'open' => TicketState::where('is_final', false)->pluck('id'),
+                'final' => TicketState::where('is_final', true)->pluck('id'),
+                'frozen' => TicketState::where(function ($q) {
+                    $q->where('name', 'like', '%Esperando Proveedor%')
+                        ->orWhere('name', 'like', '%Pausado%')
+                        ->orWhereIn('code', ['esperando_proveedor', 'pausado', 'en_espera']);
+                })->pluck('id'),
+                'resuelto_cerrado' => TicketState::whereIn('code', ['resuelto', 'cerrado'])->pluck('id'),
+                'abierto' => TicketState::where('code', 'abierto')->value('id'),
+            ];
+        });
     }
 
     protected function applyFilters(Request $request, $user, $query): void

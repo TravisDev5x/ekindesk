@@ -5,16 +5,13 @@ import CatalogDialog from "@/Inertia/components/CatalogDialog";
 import useCatalog from "@/Inertia/hooks/useCatalog";
 import { Badge } from "@/components/ui/badge";
 
-function truncate(text, max = 80) {
-    if (!text) return "—";
-    return text.length > max ? `${text.slice(0, max)}…` : text;
-}
-
 export default function TicketMacros() {
     const { ticketMacros } = usePage().props;
 
-    const catalog = useCatalog("/api/ticket-macros", () =>
-        router.reload({ only: ["ticketMacros"] })
+    const catalog = useCatalog(
+        "/api/ticket-macros",
+        () => router.reload({ only: ["ticketMacros"] }),
+        { lazyLoadOnEdit: true }
     );
 
     const columns = [
@@ -32,8 +29,10 @@ export default function TicketMacros() {
         {
             key: "content",
             label: "Contenido",
-            render: (row) => (
-                <span className="text-sm text-muted-foreground">{truncate(row.content)}</span>
+            render: () => (
+                <span className="text-sm text-muted-foreground italic">
+                    Ver al editar
+                </span>
             ),
         },
         {

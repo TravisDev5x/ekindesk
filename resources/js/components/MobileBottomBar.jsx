@@ -1,8 +1,10 @@
 import React from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
+import { Link as InertiaLink } from '@inertiajs/react'
 import { useI18n } from '@/hooks/useI18n'
 import { useAuth } from '@/context/AuthContext'
 import { cn } from '@/lib/utils'
+import { resolveNavClassName, shouldUseInertiaLink } from '@/lib/inertiaNavigation'
 import { Home, Ticket, LayoutDashboard, Menu, Layers, AlertTriangle } from 'lucide-react'
 
 const ICON_SIZE = 22
@@ -18,15 +20,29 @@ function routeMatches(pathname, to, end) {
   return pathname === to || pathname.startsWith(`${to}/`)
 }
 
-function NavItem({ to, end, anchorLinks, pathname, className, children, onClick }) {
+function NavItem({ to, end, anchorLinks, pathname, getLinkClassName, children, onClick }) {
   const isActive = routeMatches(pathname, to, end)
+
+  if (shouldUseInertiaLink(to, anchorLinks)) {
+    return (
+      <InertiaLink
+        href={to}
+        preserveScroll
+        onClick={onClick}
+        className={resolveNavClassName(getLinkClassName, isActive)}
+        aria-current={isActive ? 'page' : undefined}
+      >
+        {children}
+      </InertiaLink>
+    )
+  }
 
   if (anchorLinks) {
     return (
       <a
         href={to}
         onClick={onClick}
-        className={className(isActive)}
+        className={resolveNavClassName(getLinkClassName, isActive)}
         aria-current={isActive ? 'page' : undefined}
       >
         {children}
@@ -35,7 +51,11 @@ function NavItem({ to, end, anchorLinks, pathname, className, children, onClick 
   }
 
   return (
-    <NavLink to={to} end={end} className={({ isActive }) => className(isActive)}>
+    <NavLink
+      to={to}
+      end={end}
+      className={({ isActive: navActive }) => resolveNavClassName(getLinkClassName, navActive)}
+    >
       {children}
     </NavLink>
   )
@@ -98,7 +118,7 @@ export function MobileBottomBar({
               end={end}
               anchorLinks={anchorLinks}
               pathname={pathname}
-              className={linkClass}
+              getLinkClassName={linkClass}
             >
               <Icon size={ICON_SIZE} strokeWidth={2} className="shrink-0" />
               <span className="text-[10px] font-medium leading-tight truncate max-w-[72px] text-center">

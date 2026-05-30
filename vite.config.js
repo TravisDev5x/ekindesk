@@ -43,6 +43,46 @@ export default defineConfig({
                 chunkFileNames: "js/[name]-[hash].js",
                 entryFileNames: "js/[name]-[hash].js",
                 assetFileNames: "assets/[name]-[hash][extname]",
+                manualChunks(id) {
+                    if (id.includes("node_modules")) {
+                        if (id.includes("react-dom") || id.includes("/react/")) {
+                            return "vendor-react";
+                        }
+                        if (id.includes("@inertiajs")) {
+                            return "vendor-inertia";
+                        }
+                        if (id.includes("@radix-ui")) {
+                            return "vendor-radix";
+                        }
+                        if (id.includes("lucide-react")) {
+                            return "vendor-lucide";
+                        }
+                        if (id.includes("recharts") || id.includes("d3-")) {
+                            return "vendor-charts";
+                        }
+                        if (id.includes("date-fns")) {
+                            return "vendor-date";
+                        }
+                        if (id.includes("intl") || id.includes("/i18n/")) {
+                            return "vendor-i18n";
+                        }
+                        return;
+                    }
+
+                    if (id.includes("/resources/js/i18n/messages")) {
+                        return "vendor-i18n";
+                    }
+
+                    if (id.includes("/Inertia/Pages/Catalogs/")) {
+                        return "pages-catalogs";
+                    }
+                    if (id.includes("/Inertia/Pages/System/")) {
+                        return "pages-system";
+                    }
+                    if (id.includes("/Inertia/Pages/Auth/")) {
+                        return "pages-auth";
+                    }
+                },
             },
         },
         chunkSizeWarningLimit: 600,

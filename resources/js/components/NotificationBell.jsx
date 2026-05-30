@@ -39,8 +39,21 @@ export function NotificationBell({
     onUnreadCountChange,
 }) {
     const [open, setOpen] = useState(false);
-    const [notifications, setNotifications] = useState(initialNotifications);
-    const [unreadCount, setUnreadCount] = useState(initialUnreadCount);
+    const [notifications, setNotifications] = useState(initialNotifications ?? []);
+    const [unreadCount, setUnreadCount] = useState(initialUnreadCount ?? 0);
+
+    useEffect(() => {
+        if (initialNotifications != null) {
+            setNotifications(initialNotifications);
+        }
+    }, [initialNotifications]);
+
+    useEffect(() => {
+        if (initialUnreadCount != null) {
+            setUnreadCount(initialUnreadCount);
+            onUnreadCountChange?.(initialUnreadCount);
+        }
+    }, [initialUnreadCount, onUnreadCountChange]);
 
     const loadNotifs = useCallback(async () => {
         try {

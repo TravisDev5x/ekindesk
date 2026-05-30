@@ -8,8 +8,10 @@ import { getApiErrorMessage, handleAuthError } from "@/lib/apiErrors";
  * Hook CRUD para catálogos simples (API JSON + recarga Inertia).
  * @param {string} apiEndpoint - ej. '/api/areas'
  * @param {() => void} [onSuccess] - ej. () => router.reload({ only: ['areas'] })
+ * @param {{ lazyLoadOnEdit?: boolean }} [options]
  */
-export default function useCatalog(apiEndpoint, onSuccess) {
+export default function useCatalog(apiEndpoint, onSuccess, options = {}) {
+    const { lazyLoadOnEdit = false } = options;
     const [loading, setLoading] = useState(false);
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editTarget, setEditTarget] = useState(null);
@@ -21,9 +23,23 @@ export default function useCatalog(apiEndpoint, onSuccess) {
         setDialogOpen(true);
     };
 
-    const openEdit = (row) => {
-        setEditTarget(row);
+    const openEdit = async (row) => {
         setDialogErrors({});
+        if (lazyLoadOnEdit && row?.id) {
+            setLoading(true);
+            try {
+                const { data } = await axios.get(`${apiEndpoint}/${row.id}`);
+                setEditTarget(data?.data ?? data);
+                setDialogOpen(true);
+            } catch (err) {
+                if (handleAuthError(err)) return;
+                notify.error(getApiErrorMessage(err, "No se pudo cargar el registro"));
+            } finally {
+                setLoading(false);
+            }
+            return;
+        }
+        setEditTarget(row);
         setDialogOpen(true);
     };
 

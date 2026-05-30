@@ -59,8 +59,13 @@ class ClienteController extends Controller
         $user = auth()->user();
         $showOperatorColumn = $user->hasRole('super_admin') || $user->can('clients.view_all');
 
+        $counts = ['sedes'];
+        if (\App\Models\Ticket::query()->exists()) {
+            $counts[] = 'tickets';
+        }
+
         $query = $this->clientQuery()
-            ->withCount(['sedes', 'tickets'])
+            ->withCount($counts)
             ->orderBy('name');
 
         if ($showOperatorColumn) {
@@ -71,7 +76,7 @@ class ClienteController extends Controller
 
         return Inertia::render('Clients/Index', [
             'clients' => $clients,
-            'total' => $this->clientQuery()->count(),
+            'total' => $clients->total(),
             'showOperatorColumn' => $showOperatorColumn,
         ]);
     }

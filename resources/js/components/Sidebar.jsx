@@ -1,10 +1,12 @@
 import React, { useState, useMemo, useEffect } from 'react'
 import { NavLink, useNavigate, useLocation } from 'react-router-dom'
+import { Link as InertiaLink } from '@inertiajs/react'
 import { useAuth } from '@/context/AuthContext'
 import axios from '@/lib/axios'
 import { useSidebarPosition } from '@/context/SidebarPositionContext'
 import { useI18n } from '@/hooks/useI18n'
 import { cn } from '@/lib/utils'
+import { isExternalUrl, shouldUseInertiaLink } from '@/lib/inertiaNavigation'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -85,6 +87,49 @@ function navItemPath(item) {
     return item?.href ?? item?.to
 }
 
+function renderNavAnchor({
+    href,
+    anchorLinks,
+    onNavigate,
+    className,
+    children,
+}) {
+    const handleClick = () => onNavigate?.()
+
+    if (isExternalUrl(href)) {
+        return (
+            <a
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={handleClick}
+                className={className}
+            >
+                {children}
+            </a>
+        )
+    }
+
+    if (shouldUseInertiaLink(href, anchorLinks)) {
+        return (
+            <InertiaLink
+                href={href}
+                preserveScroll
+                onClick={handleClick}
+                className={className}
+            >
+                {children}
+            </InertiaLink>
+        )
+    }
+
+    return (
+        <a href={href} onClick={handleClick} className={className}>
+            {children}
+        </a>
+    )
+}
+
 // ----------------------------------------------------------------------
 // SUB-COMPONENTE: SidebarItem (link con tooltip en modo colapsado)
 // ----------------------------------------------------------------------
@@ -112,12 +157,20 @@ const SidebarItem = ({
         )
 
     const linkEl = anchorLinks ? (
-        <a href={to} onClick={() => onNavigate?.()} className={linkClass(active)}>
-            <Icon size={ICON_SIZE} strokeWidth={ICON_STROKE} className="shrink-0 flex-shrink-0" />
-            {!isCollapsed && (
-                <span className="truncate whitespace-nowrap text-sm font-medium">{label}</span>
-            )}
-        </a>
+        renderNavAnchor({
+            href: to,
+            anchorLinks,
+            onNavigate,
+            className: linkClass(active),
+            children: (
+                <>
+                    <Icon size={ICON_SIZE} strokeWidth={ICON_STROKE} className="shrink-0 flex-shrink-0" />
+                    {!isCollapsed && (
+                        <span className="truncate whitespace-nowrap text-sm font-medium">{label}</span>
+                    )}
+                </>
+            ),
+        })
     ) : (
         <NavLink
             to={to}
@@ -159,26 +212,29 @@ const SidebarExternalItem = ({
     tooltipSide = 'right',
     onNavigate,
     currentPath = '',
+    anchorLinks = false,
 }) => {
     const isActive = currentPath ? routeMatchesPath(currentPath, href) : false
-    const linkEl = (
-        <a
-            href={href}
-            onClick={() => onNavigate?.()}
-            className={cn(
-                'flex items-center rounded-md transition-colors min-w-0',
-                isCollapsed ? 'justify-center h-10 w-10 p-0 shrink-0' : 'gap-3 px-3 py-2 justify-start w-full',
-                isActive
-                    ? 'bg-accent text-accent-foreground'
-                    : 'text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground'
-            )}
-        >
-            <Icon size={ICON_SIZE} strokeWidth={ICON_STROKE} className="shrink-0 flex-shrink-0" />
-            {!isCollapsed && (
-                <span className="truncate whitespace-nowrap text-sm font-medium">{label}</span>
-            )}
-        </a>
-    )
+    const linkEl = renderNavAnchor({
+        href,
+        anchorLinks,
+        onNavigate,
+        className: cn(
+            'flex items-center rounded-md transition-colors min-w-0',
+            isCollapsed ? 'justify-center h-10 w-10 p-0 shrink-0' : 'gap-3 px-3 py-2 justify-start w-full',
+            isActive
+                ? 'bg-accent text-accent-foreground'
+                : 'text-muted-foreground hover:bg-accent/50 hover:text-accent-foreground'
+        ),
+        children: (
+            <>
+                <Icon size={ICON_SIZE} strokeWidth={ICON_STROKE} className="shrink-0 flex-shrink-0" />
+                {!isCollapsed && (
+                    <span className="truncate whitespace-nowrap text-sm font-medium">{label}</span>
+                )}
+            </>
+        ),
+    })
 
     if (isCollapsed) {
         return (
@@ -342,8 +398,8 @@ export function Sidebar({ collapsed, onToggle, onNavigate, anchorLinks = false, 
                 ? [{ href: '/company', label: 'Mi empresa', icon: Building2, external: true }]
                 : []),
             inertiaNav('/calendario', { label: t('nav.calendar'), icon: CalendarDays, emphasis: true }),
-            { to: '/resolbeb/mis-tickets', label: t('nav.myTickets'), icon: Ticket, emphasis: true },
-            { to: '/resolbeb/tickets/new', label: t('nav.createTicket'), icon: Layers, emphasis: true },
+            inertiaNav('/resolbeb/mis-tickets', { label: t('nav.myTickets'), icon: Ticket, emphasis: true }),
+            inertiaNav('/resolbeb/tickets/new', { label: t('nav.createTicket'), icon: Layers, emphasis: true }),
         ]
         sections.push({ sectionId: 'general', label: t('section.general'), items: generalItems })
 
@@ -354,11 +410,11 @@ export function Sidebar({ collapsed, onToggle, onNavigate, anchorLinks = false, 
         const resolbebChildren = []
         if (canSeeResolbeb) {
             // — Tickets
-            resolbebChildren.push({ to: '/resolbeb', label: t('nav.dashboard'), icon: LayoutDashboard })
-            if (canSeeMyTickets) resolbebChildren.push({ to: '/resolbeb/mis-tickets', label: t('nav.myTickets'), icon: Ticket })
-            if (canSeeTicketsModule) resolbebChildren.push({ to: '/resolbeb/tickets', label: t('nav.tickets'), icon: Ticket })
+            resolbebChildren.push(inertiaNav('/resolbeb', { label: t('nav.dashboard'), icon: LayoutDashboard }))
+            if (canSeeMyTickets) resolbebChildren.push(inertiaNav('/resolbeb/mis-tickets', { label: t('nav.myTickets'), icon: Ticket }))
+            if (canSeeTicketsModule) resolbebChildren.push(inertiaNav('/resolbeb/tickets', { label: t('nav.tickets'), icon: Ticket }))
             if (can('tickets.create') || can('tickets.manage_all'))
-                resolbebChildren.push({ to: '/resolbeb/tickets/new', label: t('nav.newTicket'), icon: Layers })
+                resolbebChildren.push(inertiaNav('/resolbeb/tickets/new', { label: t('nav.newTicket'), icon: Layers }))
             // Catálogos de tickets (separador para no mezclar con incidencias)
             if (canSeeCatalogs) {
                 resolbebChildren.push({ type: 'separator', label: t('nav.catalogsTickets') })
@@ -566,23 +622,31 @@ export function Sidebar({ collapsed, onToggle, onNavigate, anchorLinks = false, 
                                                                     className="cursor-pointer focus:bg-accent/50"
                                                                 >
                                                                     {child.external && child.href ? (
-                                                                        <a
-                                                                            href={child.href}
-                                                                            className={childLinkClass}
-                                                                            onClick={() => onNavigate?.()}
-                                                                        >
-                                                                            <ChildIcon size={ICON_SIZE} strokeWidth={ICON_STROKE} className="shrink-0 opacity-70" />
-                                                                            <span className="truncate whitespace-nowrap text-sm">{child.label}</span>
-                                                                        </a>
+                                                                        renderNavAnchor({
+                                                                            href: child.href,
+                                                                            anchorLinks,
+                                                                            onNavigate,
+                                                                            className: childLinkClass,
+                                                                            children: (
+                                                                                <>
+                                                                                    <ChildIcon size={ICON_SIZE} strokeWidth={ICON_STROKE} className="shrink-0 opacity-70" />
+                                                                                    <span className="truncate whitespace-nowrap text-sm">{child.label}</span>
+                                                                                </>
+                                                                            ),
+                                                                        })
                                                                     ) : anchorLinks ? (
-                                                                        <a
-                                                                            href={childPath}
-                                                                            className={childLinkClass}
-                                                                            onClick={() => onNavigate?.()}
-                                                                        >
-                                                                            <ChildIcon size={ICON_SIZE} strokeWidth={ICON_STROKE} className="shrink-0 opacity-70" />
-                                                                            <span className="truncate whitespace-nowrap text-sm">{child.label}</span>
-                                                                        </a>
+                                                                        renderNavAnchor({
+                                                                            href: childPath,
+                                                                            anchorLinks,
+                                                                            onNavigate,
+                                                                            className: childLinkClass,
+                                                                            children: (
+                                                                                <>
+                                                                                    <ChildIcon size={ICON_SIZE} strokeWidth={ICON_STROKE} className="shrink-0 opacity-70" />
+                                                                                    <span className="truncate whitespace-nowrap text-sm">{child.label}</span>
+                                                                                </>
+                                                                            ),
+                                                                        })
                                                                     ) : (
                                                                         <NavLink to={childPath} className={childLinkClass} onClick={() => onNavigate?.()}>
                                                                             <ChildIcon size={ICON_SIZE} strokeWidth={ICON_STROKE} className="shrink-0 opacity-70" />
@@ -627,6 +691,7 @@ export function Sidebar({ collapsed, onToggle, onNavigate, anchorLinks = false, 
                                                                     tooltipSide={tooltipSide}
                                                                     onNavigate={onNavigate}
                                                                     currentPath={pathname}
+                                                                    anchorLinks={anchorLinks}
                                                                 />
                                                             )
                                                         }
@@ -659,6 +724,7 @@ export function Sidebar({ collapsed, onToggle, onNavigate, anchorLinks = false, 
                                                     tooltipSide={tooltipSide}
                                                     onNavigate={onNavigate}
                                                     currentPath={pathname}
+                                                    anchorLinks={anchorLinks}
                                                 />
                                             )
                                         }
@@ -767,18 +833,22 @@ export function Sidebar({ collapsed, onToggle, onNavigate, anchorLinks = false, 
                                 )
                             })}
                             <DropdownMenuSeparator className="bg-border/50" />
-                            <DropdownMenuItem
-                                onClick={() => {
-                                    if (anchorLinks) {
-                                        window.location.href = '/profile'
-                                        return
-                                    }
-                                    navigate('/profile')
-                                }}
-                                className="cursor-pointer gap-2"
-                            >
-                                <UserCircle className="h-4 w-4 shrink-0" />
-                                <span>{t('layout.profile')}</span>
+                            <DropdownMenuItem asChild className="cursor-pointer gap-2">
+                                {anchorLinks ? (
+                                    <InertiaLink href="/profile" preserveScroll className="flex items-center gap-2">
+                                        <UserCircle className="h-4 w-4 shrink-0" />
+                                        <span>{t('layout.profile')}</span>
+                                    </InertiaLink>
+                                ) : (
+                                    <button
+                                        type="button"
+                                        onClick={() => navigate('/profile')}
+                                        className="flex w-full items-center gap-2"
+                                    >
+                                        <UserCircle className="h-4 w-4 shrink-0" />
+                                        <span>{t('layout.profile')}</span>
+                                    </button>
+                                )}
                             </DropdownMenuItem>
                             <DropdownMenuSeparator className="bg-border/50" />
                             <DropdownMenuItem

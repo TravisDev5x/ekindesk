@@ -15,10 +15,6 @@ const Dashboard = lazy(() => import("@/Pages/Dashboard"));
 const TicketDetalle = lazy(() => import("@/Pages/TicketDetalle"));
 const TicketCreate = lazy(() => import("@/Pages/TicketCreate"));
 const Tickets = lazy(() => import("@/Pages/Tickets"));
-const ResolbebDashboard = lazy(() => import("@/Pages/Resolbeb/Dashboard"));
-const ResolbebIndex = lazy(() => import("@/Pages/Resolbeb/Index"));
-const ResolbebCreate = lazy(() => import("@/Pages/Resolbeb/Create"));
-const ResolbebDetalle = lazy(() => import("@/Pages/Resolbeb/Detalle"));
 const Incidents = lazy(() => import("@/Pages/Incidents"));
 const IncidentDetalle = lazy(() => import("@/Pages/IncidentDetalle"));
 const IncidentTipos = lazy(() => import("@/Pages/IncidentTipos"));
@@ -117,8 +113,6 @@ export default function Main() {
 
                             {/* ZONA PRIVADA */}
                             <Route element={<ProtectedRoute />}>
-                                {/* Wallboard RESOLBEB: sin sidebar/navbar, para segundo monitor */}
-                                <Route path="/tickets/wallboard" element={<ResolbebDashboard isStandalone />} />
                                 <Route element={<AppLayout />}>
                                     <Route path="/" element={<Dashboard />} />
                                     {/* Legacy tickets (fuera de Resolbeb) */}
@@ -128,12 +122,6 @@ export default function Main() {
                                     <Route path="/tickets/:id" element={<TicketDetalle />} />
                                     <Route path="/ticket-states" element={<Navigate to="/resolbeb/estados" replace />} />
                                     <Route path="/ticket-types" element={<Navigate to="/resolbeb/tipos" replace />} />
-                                    {/* Resolbeb: ticketera en módulo (rutas principales — solo SPA) */}
-                                    <Route path="/resolbeb" element={<ResolbebDashboard />} />
-                                    <Route path="/resolbeb/mis-tickets" element={<ResolbebIndex />} />
-                                    <Route path="/resolbeb/tickets" element={<ResolbebIndex />} />
-                                    <Route path="/resolbeb/tickets/new" element={<ResolbebCreate />} />
-                                    <Route path="/resolbeb/tickets/:id" element={<ResolbebDetalle />} />
                                     <Route path="/incidents" element={<Incidents />} />
                                     <Route path="/incidents/:id" element={<IncidentDetalle />} />
                                     <Route path="/incident-types" element={<IncidentTipos />} />

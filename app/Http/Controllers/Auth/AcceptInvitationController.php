@@ -114,6 +114,7 @@ class AcceptInvitationController extends Controller
                 $user->forceFill(['email_verified_at' => now()])->save();
 
                 $user->syncRoles([$role]);
+                User::forgetPermissionCache($user);
                 $invitation->markAccepted();
 
                 return $user;

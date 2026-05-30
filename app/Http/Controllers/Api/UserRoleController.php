@@ -42,6 +42,7 @@ class UserRoleController extends Controller
         }
 
         $user->syncRoles($normalized->unique('id'));
+        User::forgetPermissionCache($user);
 
         // Activar solo si tiene un rol distinto de visitante (visitante es solo lectura hasta que admin asigne rol)
         if ($user->status === 'pending_admin' && $user->roles()->count() > 0 && !($user->roles()->count() === 1 && $user->hasRole('visitante'))) {

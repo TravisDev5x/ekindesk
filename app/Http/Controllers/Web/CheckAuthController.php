@@ -25,24 +25,50 @@ class CheckAuthController extends Controller
             return response()->json(['authenticated' => false, 'user' => null], 401);
         }
 
-        $user->load([
-            'roles:id,name,guard_name',
+        $user->loadMissing([
+            'area:id,name',
             'sede:id,name,client_id',
             'sede.cliente:id,name',
             'operatorProfile:id,user_id',
         ]);
-        $permissions = $user->getAllPermissions()->pluck('name')->values();
 
-        $userPayload = $user->toArray();
-        $userPayload['client_id'] = $user->sede?->client_id;
-        $userPayload['client_name'] = $user->sede?->cliente?->name;
+        $roles = $user->getCachedRoleNames()->values()->all();
+        $permissions = $user->getCachedPermissions()->values()->all();
+
+        $userPayload = [
+            'id' => $user->id,
+            'name' => $user->name,
+            'first_name' => $user->first_name,
+            'paternal_last_name' => $user->paternal_last_name,
+            'maternal_last_name' => $user->maternal_last_name,
+            'email' => $user->email,
+            'phone' => $user->phone,
+            'avatar_url' => $user->avatar_url,
+            'status' => $user->status,
+            'theme' => $user->theme,
+            'locale' => $user->locale,
+            'ui_density' => $user->ui_density,
+            'sidebar_state' => $user->sidebar_state,
+            'sidebar_position' => $user->sidebar_position,
+            'sidebar_hover_preview' => $user->sidebar_hover_preview,
+            'is_operator' => $user->is_operator,
+            'client_id' => $user->sede?->client_id ?? $user->client_id,
+            'onboarding_completed' => $user->onboarding_completed,
+            'is_blacklisted' => $user->is_blacklisted,
+            'force_password_change' => $user->force_password_change ?? false,
+            'availability' => $user->availability,
+            'area' => $user->area?->name,
+            'sede' => $user->sede?->name,
+            'employee_number' => $user->employee_number,
+            'client_name' => $user->sede?->cliente?->name,
+        ];
 
         $onboarding = app(OnboardingRedirectService::class);
 
         return response()->json([
             'authenticated' => true,
             'user' => $userPayload,
-            'roles' => $user->roles->pluck('name'),
+            'roles' => $roles,
             'permissions' => $permissions,
             'onboarding_redirect' => $onboarding->redirectPath($user),
             'flash' => [

@@ -42,6 +42,7 @@ const TITLE_MAP = {
     "/resolbeb": "Dashboard operativo",
     "/resolbeb/tickets": "Tickets",
     "/resolbeb/mis-tickets": "Mis tickets",
+    "/resolbeb/tickets/new": "Nuevo ticket",
     "/users": "Usuarios",
     "/users/invitations": "Invitaciones",
     "/settings": "Configuración",
@@ -68,8 +69,12 @@ export default function AuthenticatedLayout({ children, title: titleProp }) {
     const { position: sidebarPosition } = useSidebarPosition();
     const currentPath = url.split("?")[0];
 
-    const initialNotifications = pageProps.notifications ?? [];
-    const initialUnreadCount = pageProps.unread_notifications_count ?? 0;
+    const initialNotifications =
+        pageProps.notifications != null ? pageProps.notifications : [];
+    const initialUnreadCount =
+        pageProps.unread_notifications_count != null
+            ? pageProps.unread_notifications_count
+            : 0;
     const inertiaUser = pageProps.auth?.user;
 
     const [collapsed, setCollapsed] = useState(() => {
@@ -97,14 +102,23 @@ export default function AuthenticatedLayout({ children, title: titleProp }) {
         () => inertiaUser?.sidebar_hover_preview ?? user?.sidebar_hover_preview ?? true
     );
     const hoverTempExpandRef = useRef(false);
+    const isHydrated = useRef(false);
+    const prevCollapsed = useRef(null);
+    const prevHoverPreview = useRef(null);
 
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [mobileMenuMounted, setMobileMenuMounted] = useState(false);
     const [notifUnreadCount, setNotifUnreadCount] = useState(initialUnreadCount);
     const mobileSheetRef = useRef(null);
     const mainScrollRef = useRef(null);
     const [scrollFadeOpacity, setScrollFadeOpacity] = useState(0);
 
-    useSwipeToClose(mobileSheetRef, () => setMobileMenuOpen(false), mobileMenuOpen, {
+    const handleMobileMenuOpenChange = useCallback((open) => {
+        setMobileMenuOpen(open);
+        if (open) setMobileMenuMounted(true);
+    }, []);
+
+    useSwipeToClose(mobileSheetRef, () => handleMobileMenuOpenChange(false), mobileMenuOpen, {
         side: "left",
         threshold: 72,
         velocityThreshold: 0.35,
@@ -117,9 +131,9 @@ export default function AuthenticatedLayout({ children, title: titleProp }) {
 
     const handleSidebarNavigate = useCallback(() => {
         hoverTempExpandRef.current = false;
-        setMobileMenuOpen(false);
+        handleMobileMenuOpenChange(false);
         if (!focused) setCollapsed(false);
-    }, [focused]);
+    }, [focused, handleMobileMenuOpenChange]);
 
     const handleSidebarToggle = useCallback(() => {
         hoverTempExpandRef.current = false;
@@ -142,21 +156,50 @@ export default function AuthenticatedLayout({ children, title: titleProp }) {
     }, [pageProps.auth?.user?.sidebar_hover_preview, user?.sidebar_hover_preview]);
 
     useEffect(() => {
-        if (hoverTempExpandRef.current) return;
         if (typeof window !== "undefined") {
             localStorage.setItem("sidebar-collapsed", collapsed ? "1" : "0");
             localStorage.setItem("layout-focused", focused ? "1" : "0");
             localStorage.setItem("layout-force-device-view", forceDeviceView ? "1" : "0");
         }
-        if (user) {
-            axios
-                .put("/api/profile/sidebar", {
-                    sidebar_state: collapsed ? "collapsed" : "expanded",
-                    sidebar_hover_preview: hoverPreviewEnabled,
-                })
-                .catch(() => {});
-        }
-    }, [collapsed, hoverPreviewEnabled, user, focused, forceDeviceView]);
+    }, [collapsed, focused, forceDeviceView]);
+
+    useEffect(() => {
+        if (!user || isHydrated.current) return;
+
+        const id = window.setTimeout(() => {
+            if (isHydrated.current) return;
+            prevCollapsed.current = collapsed;
+            prevHoverPreview.current = hoverPreviewEnabled;
+            isHydrated.current = true;
+        }, 0);
+
+        return () => window.clearTimeout(id);
+    }, [user, collapsed, hoverPreviewEnabled]);
+
+    useEffect(() => {
+        if (!isHydrated.current) return;
+        if (!user) return;
+        if (hoverTempExpandRef.current) return;
+
+        const collapsedChanged =
+            prevCollapsed.current !== null &&
+            prevCollapsed.current !== collapsed;
+        const hoverChanged =
+            prevHoverPreview.current !== null &&
+            prevHoverPreview.current !== hoverPreviewEnabled;
+
+        if (!collapsedChanged && !hoverChanged) return;
+
+        prevCollapsed.current = collapsed;
+        prevHoverPreview.current = hoverPreviewEnabled;
+
+        axios
+            .put("/api/profile/sidebar", {
+                sidebar_state: collapsed ? "collapsed" : "expanded",
+                sidebar_hover_preview: hoverPreviewEnabled,
+            })
+            .catch(() => {});
+    }, [collapsed, hoverPreviewEnabled, user]);
 
     useEffect(() => {
         const el = mainScrollRef.current;
@@ -171,8 +214,8 @@ export default function AuthenticatedLayout({ children, title: titleProp }) {
     }, [currentPath]);
 
     useEffect(() => {
-        setMobileMenuOpen(false);
-    }, [currentPath]);
+        handleMobileMenuOpenChange(false);
+    }, [currentPath, handleMobileMenuOpenChange]);
 
     useEffect(() => {
         if (!pendingAdmin) return;
@@ -278,7 +321,7 @@ export default function AuthenticatedLayout({ children, title: titleProp }) {
                         data-sidebar-position={sidebarPosition}
                     >
                         <div className={cn("order-0", forceDeviceView ? "flex" : "md:hidden")}>
-                            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+                            <Sheet open={mobileMenuOpen} onOpenChange={handleMobileMenuOpenChange}>
                                 <SheetTrigger asChild>
                                     <Button
                                         variant="ghost"
@@ -309,13 +352,15 @@ export default function AuthenticatedLayout({ children, title: titleProp }) {
                                         </SheetClose>
                                     </div>
                                     <div className="flex-1 min-h-0 flex flex-col pb-[env(safe-area-inset-bottom)]">
-                                        <Sidebar
-                                            collapsed={false}
-                                            onToggle={() => setMobileMenuOpen(false)}
-                                            onNavigate={handleSidebarNavigate}
-                                            anchorLinks
-                                            currentPath={currentPath}
-                                        />
+                                        {mobileMenuMounted && (
+                                            <Sidebar
+                                                collapsed={false}
+                                                onToggle={() => handleMobileMenuOpenChange(false)}
+                                                onNavigate={handleSidebarNavigate}
+                                                anchorLinks
+                                                currentPath={currentPath}
+                                            />
+                                        )}
                                     </div>
                                 </SheetContent>
                             </Sheet>
@@ -456,7 +501,7 @@ export default function AuthenticatedLayout({ children, title: titleProp }) {
                 </div>
 
                 <MobileBottomBar
-                    onOpenMenu={setMobileMenuOpen}
+                    onOpenMenu={handleMobileMenuOpenChange}
                     forceVisible={forceDeviceView}
                     unreadCount={notifUnreadCount}
                     pathname={currentPath}

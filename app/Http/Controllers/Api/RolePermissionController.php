@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Role;
+use App\Models\User;
 use App\Models\Permission;
 use Illuminate\Http\Request;
 
@@ -26,6 +27,8 @@ class RolePermissionController extends Controller
             ? Permission::whereIn('id', $permissionIds)->where('guard_name', $role->guard_name)->get()
             : [];
         $role->syncPermissions($permissions);
+
+        User::forgetPermissionCacheForRole($role->name);
 
         return response()->noContent();
     }
