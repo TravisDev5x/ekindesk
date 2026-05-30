@@ -15,11 +15,6 @@ const Dashboard = lazy(() => import("@/Pages/Dashboard"));
 const TicketDetalle = lazy(() => import("@/Pages/TicketDetalle"));
 const TicketCreate = lazy(() => import("@/Pages/TicketCreate"));
 const Tickets = lazy(() => import("@/Pages/Tickets"));
-const Incidents = lazy(() => import("@/Pages/Incidents"));
-const IncidentDetalle = lazy(() => import("@/Pages/IncidentDetalle"));
-const IncidentTipos = lazy(() => import("@/Pages/IncidentTipos"));
-const IncidentSeveridades = lazy(() => import("@/Pages/IncidentSeveridades"));
-const IncidentEstados = lazy(() => import("@/Pages/IncidentEstados"));
 // Público (lazy) — auth guest la sirve Inertia vía web.php
 const Manual = lazy(() => import("@/Pages/Manual"));
 
@@ -122,11 +117,6 @@ export default function Main() {
                                     <Route path="/tickets/:id" element={<TicketDetalle />} />
                                     <Route path="/ticket-states" element={<Navigate to="/resolbeb/estados" replace />} />
                                     <Route path="/ticket-types" element={<Navigate to="/resolbeb/tipos" replace />} />
-                                    <Route path="/incidents" element={<Incidents />} />
-                                    <Route path="/incidents/:id" element={<IncidentDetalle />} />
-                                    <Route path="/incident-types" element={<IncidentTipos />} />
-                                    <Route path="/incident-severities" element={<IncidentSeveridades />} />
-                                    <Route path="/incident-statuses" element={<IncidentEstados />} />
                                     <Route path="*" element={<NotFound />} />
                                 </Route>
                             </Route>

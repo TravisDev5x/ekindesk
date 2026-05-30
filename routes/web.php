@@ -245,6 +245,45 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/audit-command', fn () => Inertia::render('System/AuditCommandCenter'))->name('audit.index');
 
+    Route::get('/incident-types', fn () => Inertia::render('Incidents/Types', [
+        'incidentTypes' => \App\Models\IncidentType::orderBy('name')->get(['id', 'name', 'code', 'is_active', 'created_at']),
+    ]))->middleware('onboarding')->name('incident-types.index');
+
+    Route::get('/incident-severities', fn () => Inertia::render('Incidents/Severities', [
+        'incidentSeverities' => \App\Models\IncidentSeverity::orderBy('level')->orderBy('name')->get(['id', 'name', 'code', 'level', 'is_active', 'created_at']),
+    ]))->middleware('onboarding')->name('incident-severities.index');
+
+    Route::get('/incident-statuses', fn () => Inertia::render('Incidents/Statuses', [
+        'incidentStatuses' => \App\Models\IncidentStatus::orderBy('name')->get(['id', 'name', 'code', 'is_final', 'is_active', 'created_at']),
+    ]))->middleware('onboarding')->name('incident-statuses.index');
+
+    Route::get('/incidents', function () {
+        return Inertia::render('Incidents/Index', [
+            'catalogs' => [
+                'areas' => Area::where('is_active', true)->orderBy('name')->get(['id', 'name']),
+                'sedes' => Sede::where('is_active', true)->orderBy('name')->get(['id', 'name']),
+                'incident_types' => \App\Models\IncidentType::where('is_active', true)->orderBy('name')->get(['id', 'name']),
+                'incident_severities' => \App\Models\IncidentSeverity::where('is_active', true)->orderBy('level')->get(['id', 'name', 'level', 'code']),
+                'incident_statuses' => \App\Models\IncidentStatus::where('is_active', true)->orderBy('name')->get(['id', 'name', 'code', 'is_final']),
+                'area_users' => User::where('status', 'active')->whereNotNull('area_id')->orderBy('name')->get(['id', 'name']),
+            ],
+        ]);
+    })->middleware('onboarding')->name('incidents.index');
+
+    Route::get('/incidents/{id}', function ($id) {
+        return Inertia::render('Incidents/Detalle', [
+            'incidentId' => (int) $id,
+            'catalogs' => [
+                'areas' => Area::where('is_active', true)->orderBy('name')->get(['id', 'name']),
+                'sedes' => Sede::where('is_active', true)->orderBy('name')->get(['id', 'name']),
+                'incident_types' => \App\Models\IncidentType::where('is_active', true)->orderBy('name')->get(['id', 'name']),
+                'incident_severities' => \App\Models\IncidentSeverity::where('is_active', true)->orderBy('level')->get(['id', 'name', 'level', 'code']),
+                'incident_statuses' => \App\Models\IncidentStatus::where('is_active', true)->orderBy('name')->get(['id', 'name', 'code', 'is_final']),
+                'area_users' => User::where('status', 'active')->whereNotNull('area_id')->orderBy('name')->get(['id', 'name']),
+            ],
+        ]);
+    })->where('id', '[0-9]+')->middleware('onboarding')->name('incidents.detalle');
+
     Route::get('/calendario', fn () => Inertia::render('Calendario'))->name('calendario.index');
 
     Route::get('/profile', fn () => Inertia::render('Profile', [
