@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link } from "@inertiajs/react";
 import axios from "@/lib/axios";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -35,7 +35,6 @@ function notificationTime(n) {
 export function NotificationBell({
     initialNotifications = [],
     initialUnreadCount = 0,
-    ticketLinksAsAnchor = false,
     onUnreadCountChange,
 }) {
     const [open, setOpen] = useState(false);
@@ -117,16 +116,8 @@ export function NotificationBell({
             setOpen(false);
         };
 
-        if (ticketLinksAsAnchor) {
-            return (
-                <a key={key} href={href} onClick={onClick} className="block">
-                    {content}
-                </a>
-            );
-        }
-
         return (
-            <Link key={key} to={href} onClick={onClick} className="block">
+            <Link key={key} href={href} onClick={onClick} className="block">
                 {content}
             </Link>
         );

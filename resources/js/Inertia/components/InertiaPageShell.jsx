@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 
 /**
  * Contenedor de página Inertia: animación y padding móvil.
- * El ancho lo controla AuthenticatedLayout (max-w-7xl), igual que AppLayout en SPA.
+ * El ancho lo controla AuthenticatedLayout (max-w-7xl).
  */
 export default function InertiaPageShell({ children, className }) {
     return (

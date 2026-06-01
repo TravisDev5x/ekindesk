@@ -225,7 +225,7 @@ class AuthController extends Controller
         ]);
 
         $onboarding = app(OnboardingRedirectService::class);
-        $redirect = $onboarding->redirectPath($user) ?? '/';
+        $redirect = $onboarding->redirectPath($user) ?? '/home';
 
         Auth::login($user);
         if ($request->hasSession()) {

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import NavLink from "@/components/NavLink";
 import axios from "@/lib/axios";
 import { useAuth } from "@/context/AuthContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -89,13 +89,13 @@ export function DashboardOperativo({ variant = "soporte" }) {
                         Actualizar
                     </Button>
                     <Button asChild variant="secondary" size="sm">
-                        <Link to="/resolbeb/tickets">Ver listado completo</Link>
+                        <NavLink href="/resolbeb/tickets">Ver listado completo</NavLink>
                     </Button>
                     <Button asChild variant="outline" size="sm">
-                        <Link to="/calendario">
+                        <NavLink href="/calendario">
                             <CalendarDays className="h-4 w-4 mr-2" />
                             Calendario
-                        </Link>
+                        </NavLink>
                     </Button>
                 </div>
             </div>
@@ -163,8 +163,8 @@ export function DashboardOperativo({ variant = "soporte" }) {
                                     t.user;
                                 return (
                                     <li key={t.id} className="py-3 first:pt-0">
-                                        <Link
-                                            to={`${LIST_BASE}/${t.id}`}
+                                        <NavLink
+                                            href={`${LIST_BASE}/${t.id}`}
                                             className="block rounded-md hover:bg-muted/40 -mx-1 px-2 py-1 transition-colors"
                                         >
                                             <div className="flex flex-wrap items-center justify-between gap-2">
@@ -201,7 +201,7 @@ export function DashboardOperativo({ variant = "soporte" }) {
                                                     <span>Prioridad: {t.priority.name}</span>
                                                 )}
                                             </div>
-                                        </Link>
+                                        </NavLink>
                                     </li>
                                 );
                             })}

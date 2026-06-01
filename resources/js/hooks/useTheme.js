@@ -28,7 +28,7 @@ function normalizeTheme(value) {
 }
 
 /**
- * Hook unificado SPA: tema (ThemeProvider) + densidad + locale con persistencia API.
+ * Tema (ThemeProvider) + densidad + locale con persistencia API.
  */
 export function useTheme() {
     const ctx = useThemeContext();

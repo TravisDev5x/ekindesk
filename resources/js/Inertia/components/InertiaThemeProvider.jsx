@@ -37,7 +37,7 @@ function readStoredTheme() {
     return "system";
 }
 
-/** Provee el mismo ThemeContext que la SPA para páginas Inertia. */
+/** ThemeContext para páginas Inertia. */
 export function InertiaThemeProvider({ children }) {
     const [theme, setThemeState] = useState(readStoredTheme);
     const mediaRef = useRef(null);

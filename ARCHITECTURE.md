@@ -15,7 +15,7 @@ La plataforma es un **sistema multi-módulo** que convive bajo una misma base de
 - **SIGUA**: módulo independiente para gestión de cuentas genéricas, sistemas, empleados RH, CA-01, bitácora, incidentes SIGUA, importaciones, cruces y reportes; con comandos programados (alertas, verificación CA-01, bitácora, cruces, resumen semanal).
 - **Resolbeb**: ticketera expuesta en el frontend como submódulo (rutas `/resolbeb/*`), reutilizando la misma API de tickets y catálogos.
 
-La aplicación se sirve como **SPA (Single Page Application)** en React; el backend expone una **API REST** consumida por el frontend. La autenticación unificada se basa en **Laravel Sanctum** en modo stateful (cookies) para la SPA, con verificación de sesión vía ruta web `/check-auth` y uso de tokens/cookies en las peticiones API.
+La aplicación usa **Inertia.js + React** como frontend principal; el backend expone una **API REST** consumida por el cliente vía Axios. La autenticación unificada se basa en **Laravel Sanctum** en modo stateful (cookies), con verificación de sesión vía ruta web `/check-auth` y uso de cookies en las peticiones API.
 
 ---
 
@@ -61,9 +61,9 @@ La aplicación se sirve como **SPA (Single Page Application)** en React; el back
 
 ### Comunicación Frontend — Backend
 
-- **Modelo**: API REST pura consumida por una SPA React. No se usa Inertia.js; el frontend es 100% React con React Router y llamadas HTTP vía Axios.
+- **Modelo**: **Inertia.js** para vistas autenticadas y públicas (login, catálogos, Resolbeb, incidencias, etc.); **API REST** (`/api/*`) para datos, mutaciones y catálogos en JSON. El cliente usa Axios con cookies Sanctum.
 - **Rutas backend**:
-  - **Web** (`routes/web.php`): solo lógica de frontend y sesión: `GET /check-auth` (verificación de autenticación por sesión), `GET /login` y catch-all `GET /{any}` que sirve la vista `app` (SPA). No se mezcla lógica de API en web.
+  - **Web** (`routes/web.php`): `Inertia::render(...)` por ruta explícita (`/home`, `/resolbeb/*`, `/incidents`, auth, onboarding, etc.), `GET /check-auth`, landing `/`, redirects legacy (`/tickets` → `/resolbeb/tickets`). Plantilla raíz: `resources/views/inertia.blade.php`; entrada Vite: `resources/js/inertia.jsx`.
   - **API** (`routes/api.php`): prefijo `/api`, middleware `api` (Sanctum stateful + `EnsureSessionForAuth`, `EnsureFrontendRequestsAreStateful`). Rutas de login/logout/register en API; el resto de endpoints requieren `auth:sanctum` y en muchos casos el middleware `perm:...` (permisos).
   - **SIGUA** (`routes/sigua.php`): registrado bajo prefijo `api` en `bootstrap/app.php`, por tanto todas las rutas SIGUA están bajo `/api/sigua/*`.
 
@@ -74,11 +74,12 @@ La aplicación se sirve como **SPA (Single Page Application)** en React; el back
 - **Principio documentado en código**: “Sesión y API no se cruzan”; la API no valida sesión para “verificar login”, solo usa `auth:sanctum` (token/cookie). Los 401 en API se traducen en redirección a login desde el interceptor de Axios (`navigate-to-login`).
 - **Axios**: `resources/js/lib/axios.js` — `baseURL: "/"`, `withCredentials: true`, uso de cookie XSRF; interceptor para métodos no-GET asegura CSRF; en 401/419 dispara evento para ir a login.
 
-### Flujo de la SPA
+### Flujo del frontend (Inertia)
 
-- Entrada: `resources/js/app.jsx` → `Main.jsx`.
-- `Main.jsx`: `AuthProvider` → `SidebarPositionProvider` → `I18nProvider` → `Toaster` (Sileo) → `BrowserRouter` con `Routes`. Rutas públicas (login, register, forgot/reset password, verify-email, manual); rutas protegidas con `ProtectedRoute` (Outlet); dentro, `AppLayout` con menú lateral y rutas hijas.
-- Rutas privadas definidas en un único archivo (`Main.jsx`): lazy loading de páginas; rutas para dashboard, usuarios, catálogos, tickets, mis-tickets, resolbeb, incidencias, TimeDesk (envueltas en `TimeDeskGuard`), SIGUA, auditoría, perfil, etc.
+- Entrada: `resources/js/inertia.jsx` → `createInertiaApp` con `import.meta.glob('./Inertia/Pages/**/*.jsx')`.
+- Providers globales: `InertiaThemeProvider` → `AuthProvider` → `InertiaI18nProvider` → `SidebarPositionProvider` → `Toaster` (Sileo). Navegación interna con `Link` / `router` de `@inertiajs/react`.
+- Páginas en `resources/js/Inertia/Pages/**`; layout habitual: `AuthenticatedLayout` (sidebar, cabecera, notificaciones). Componentes compartidos en `resources/js/components/` (p. ej. `components/dashboard/HomeDashboard.jsx` para `/home`).
+- Rutas definidas en `routes/web.php` (no en un router React central). Redirects post-login/onboarding hacia `/home` o flujos de onboarding.
 
 ---
 
@@ -170,7 +171,7 @@ Los hallazgos se agrupan por dominio según controladores, modelos, rutas y serv
 - **Servicios**: `ImportacionService`, `AlertaService`, `CA01Service`, `BitacoraService`, `CruceService`, `ReporteService`.
 - **Form Requests**: `ImportarArchivoRequest`, `StoreCA01Request`, `StoreIncidenteRequest`, `StoreBitacoraRequest`, `StoreBitacoraBulkRequest`, `StoreCuentaGenericaRequest`, `UpdateCuentaGenericaRequest`.
 - **Comandos** (`routes/console.php`): `sigua:generar-alertas`, `sigua:verificar-ca01`, `sigua:verificar-bitacora`, `sigua:cruce`, `sigua:resumen-semanal`.
-- **Frontend**: Páginas bajo `Pages/Sigua/` (Dashboard, Cuentas, CuentaDetalle, Empleados, EmpleadoDetalle, Sistemas, Alertas, Configuracion, CA01, CA01Nuevo, CA01Detalle, Bitacora, BitacoraSede, Incidentes, IncidenteDetalle, Importar, Cruces, Reportes); hooks y API en `hooks/sigua/`, `services/siguaApi.ts`, `types/sigua.ts`; parte en TypeScript.
+- **Frontend SIGUA**: API en `/api/sigua/*`; integración UI según módulo desplegado (controladores en `app/Http/Controllers/Sigua/`).
 
 ### 4.8 Resolbeb (Ticketera en Frontend)
 
@@ -225,11 +226,11 @@ Los hallazgos se agrupan por dominio según controladores, modelos, rutas y serv
 - **Servicios**: Lógica de negocio aislada por módulo: `RequesterTicketService` (Helpdesk); SIGUA: `ImportacionService`, `AlertaService`, `CA01Service`, `BitacoraService`, `CruceService`, `ReporteService`.
 - **Rutas API**: Agrupación por dominio y middleware `auth:sanctum`, `locale`, `perm:...`; SIGUA en archivo aparte bajo prefijo `api`.
 - **Frontend**:  
-  - Rutas centralizadas en `Main.jsx` con lazy loading; layout único `AppLayout` con sidebar condicional por permisos.  
-  - Contextos: `AuthContext` (user, login, logout, can, hasRole), `SidebarPositionContext`, `I18nProvider`.  
-  - Componentes UI reutilizables en `components/ui/` (Radix + Tailwind); guards por módulo (ej. `TimeDeskGuard`).  
-  - SIGUA: capa de hooks (`hooks/sigua/`), servicio API (`services/siguaApi.ts`), tipos TypeScript; páginas en `Pages/Sigua/`.  
-  - Catálogos: consumo vía `GET /api/catalogs` y caché en cliente (`lib/catalogCache.js`).
+  - Rutas Inertia en `routes/web.php`; páginas en `resources/js/Inertia/Pages/`; layout `Inertia/Layouts/AuthenticatedLayout.jsx`.  
+  - Contextos: `AuthContext`, `SidebarPositionContext`, `I18nProvider` / `InertiaI18nProvider`.  
+  - Componentes UI en `components/ui/`; navegación híbrida con `lib/inertiaNavigation.js` (`InertiaLink` vs `<a>`).  
+  - SIGUA: API bajo `/api/sigua/*` (controladores PHP); frontend SIGUA según despliegue del módulo.  
+  - Catálogos: `GET /api/catalogs` y caché (`lib/catalogCache.js`).
 - **Eventos/Listeners**: `TicketCreated` y `TicketUpdated` con `SendTicketNotification` (registrados en `AppServiceProvider`).
 - **Internacionalización**: middleware `locale` en API; en frontend, `I18nProvider` y mensajes en `i18n/messages.js`.
 
@@ -237,7 +238,7 @@ Los hallazgos se agrupan por dominio según controladores, modelos, rutas y serv
 
 ## 7. Deuda Técnica Global y Áreas de Mejora
 
-- **Resolbeb**: Nombre de carpeta con typo (`Resolbeb`); conviene alinear nombre con producto y evitar duplicación de vistas (Resolbeb vs Resolvev1) si ambas conviven de forma permanente.
+- **Resolbeb**: Nombre de carpeta con typo (`Resolbeb`); alinear naming de producto si se expone en UI pública.
 - **Policies**: `RequesterTicketPolicy` no está registrada en Gate; el controlador la resuelve manualmente. Valorar registrar una policy “por contexto” o mantener explícito para no mezclar con `TicketPolicy`.
 - **Catálogos**: El endpoint único `GET /api/catalogs` crece con cada módulo; valorar dividir por dominio o versionado para no sobrecargar respuesta y caché.
 - **Frontend**: Mezcla de JSX y TypeScript (SIGUA en TS); unificar criterio de tipado (migrar a TS o mantener JS con JSDoc) mejora mantenibilidad.

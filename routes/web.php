@@ -34,7 +34,7 @@ use App\Models\Plan;
 |--------------------------------------------------------------------------
 | AQUÍ SOLO VIVE LÓGICA DE FRONTEND AUTENTICADO POR COOKIES (SESIÓN).
 | - Verificación de sesión: /check-auth (guard web, middleware auth).
-| - Vistas SPA y login visual.
+| - Vistas Inertia (login, app autenticada) y sesión por cookies.
 | NO mezclar con API: la API no valida sesiones; solo tokens.
 */
 
@@ -57,15 +57,8 @@ Route::get('/test-disco', function () {
     return 'OK';
 });
 
-// Cabeceras para la SPA: no almacenar en caché (evita versión antigua en Brave/Chromium)
-$spaHeaders = [
-    'Cache-Control' => 'no-store, no-cache, must-revalidate',
-    'Pragma' => 'no-cache',
-    'Expires' => '0',
-];
-
 // ==========================
-// AUTH (Inertia) — antes del catch-all SPA
+// AUTH (Inertia) — rutas públicas
 // ==========================
 Route::get('/login', fn () => Inertia::render('Auth/Login'))->middleware('guest')->name('login');
 Route::get('/register', function () {
@@ -86,7 +79,9 @@ Route::get('/reset-password', fn () => Inertia::render('Auth/ResetPassword'))->m
 Route::get('/verify-email', fn () => Inertia::render('Auth/VerifyEmail'))->middleware('guest')->name('verification.verify');
 Route::get('/force-change-password', fn () => Inertia::render('Auth/ForceChangePassword'))->middleware('auth')->name('password.force-change');
 
-// Landing pública (antes del catch-all SPA)
+Route::get('/manual', fn () => Inertia::render('Manual'))->name('manual');
+
+// Landing pública
 Route::get('/', [LandingController::class, 'index'])->name('landing');
 
 // Onboarding operador (auth sin middleware onboarding — evita bucle)
@@ -148,6 +143,12 @@ Route::middleware('auth')->group(function () {
     ]))->name('roles.index');
 
     Route::get('/sessions', fn () => Inertia::render('Catalogs/Sessions'))->name('sessions.index');
+
+    Route::get('/home', fn () => Inertia::render('Home/Dashboard'))
+        ->middleware('onboarding')
+        ->name('home');
+
+    Route::redirect('/dashboard', '/home');
 
     Route::get('/resolbeb', fn () => Inertia::render('Resolbeb/Dashboard', [
         'catalogs' => [
@@ -301,10 +302,13 @@ Route::middleware('auth')->group(function () {
     Route::get('/settings', fn () => Inertia::render('Settings'))
         ->middleware('onboarding')
         ->name('settings.index');
-});
 
-// ==========================
-// SPA (React)
-// ==========================
-// SIEMPRE AL FINAL
-Route::get('/{any}', fn () => response()->view('app')->withHeaders($spaHeaders))->where('any', '^(?!api).*');
+    // URLs legacy → Resolbeb (redirects)
+    Route::redirect('/tickets', '/resolbeb/tickets');
+    Route::redirect('/mis-tickets', '/resolbeb/mis-tickets');
+    Route::redirect('/tickets/new', '/resolbeb/tickets/new');
+    Route::get('/tickets/{id}', fn (string $id) => redirect("/resolbeb/tickets/{$id}"))
+        ->where('id', '[0-9]+');
+    Route::redirect('/ticket-states', '/resolbeb/estados');
+    Route::redirect('/ticket-types', '/resolbeb/tipos');
+});

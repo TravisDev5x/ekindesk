@@ -31,6 +31,7 @@ import { MobileBottomBar } from "@/components/MobileBottomBar";
 
 const TITLE_MAP = {
     "/": "Inicio",
+    "/home": "Inicio",
     "/calendario": "Calendario",
     "/profile": "Mi perfil",
     "/company": "Mi empresa",
@@ -300,7 +301,6 @@ export default function AuthenticatedLayout({ children, title: titleProp }) {
                         collapsed={sidebarCollapsed}
                         onToggle={handleSidebarToggle}
                         onNavigate={handleSidebarNavigate}
-                        anchorLinks
                         currentPath={currentPath}
                     />
                 </aside>
@@ -357,7 +357,6 @@ export default function AuthenticatedLayout({ children, title: titleProp }) {
                                                 collapsed={false}
                                                 onToggle={() => handleMobileMenuOpenChange(false)}
                                                 onNavigate={handleSidebarNavigate}
-                                                anchorLinks
                                                 currentPath={currentPath}
                                             />
                                         )}
@@ -466,7 +465,6 @@ export default function AuthenticatedLayout({ children, title: titleProp }) {
                             <NotificationBell
                                 initialNotifications={initialNotifications}
                                 initialUnreadCount={initialUnreadCount}
-                                ticketLinksAsAnchor
                                 onUnreadCountChange={setNotifUnreadCount}
                             />
                         </div>
@@ -505,7 +503,6 @@ export default function AuthenticatedLayout({ children, title: titleProp }) {
                     forceVisible={forceDeviceView}
                     unreadCount={notifUnreadCount}
                     pathname={currentPath}
-                    anchorLinks
                 />
             </div>
         </TooltipProvider>

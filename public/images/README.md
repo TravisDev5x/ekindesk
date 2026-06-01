@@ -8,4 +8,4 @@ Coloca aquí la imagen que se muestra en **Login** y **Registro** con estilo aer
 Recomendaciones:
 - Formato: PNG o JPG
 - Proporción: horizontal (ej. 1200×400 px) para que se vea bien en el marco
-- Si usas otro nombre, edita en `resources/js/Pages/Login.jsx` y `Register.jsx` la línea `src="/images/auth-hero.png"` y cámbiala por tu archivo (ej. `src="/images/mi-logo.png"`).
+- Si usas otro nombre, edita en `resources/js/Inertia/Pages/Auth/Login.jsx` y `Auth/Register.jsx` la ruta de imagen (ej. `src="/images/mi-logo.png"`).

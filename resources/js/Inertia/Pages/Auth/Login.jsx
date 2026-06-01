@@ -160,7 +160,7 @@ export default function Login() {
             if (userTheme && ["light", "dark", "system"].includes(userTheme)) {
                 localStorage.setItem("ekindesk_theme", userTheme);
             }
-            window.location.href = data?.onboarding_redirect || "/";
+            window.location.href = data?.onboarding_redirect || "/home";
         } catch (err) {
             const status = err?.response?.status;
             const serverMessage = err?.response?.data?.errors?.root;

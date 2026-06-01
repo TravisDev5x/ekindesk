@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**EkinDesk** is a multi-module CRM/Ticketing System for IT support teams. It uses a **Laravel 12 REST API backend** with a **React 19 SPA frontend** (not Inertia—that's deprecated). Authentication is via Laravel Sanctum (stateful cookies).
+**EkinDesk** is a multi-module CRM/Ticketing System for IT support teams. It uses a **Laravel 12 REST API backend** with a **React 19 + Inertia.js frontend**. Authentication is via Laravel Sanctum (stateful cookies).
 
 ---
 
@@ -51,18 +51,16 @@ php artisan test --filter=TicketTest   # Single test class
 ### High-Level Stack
 
 - **Backend**: Laravel 12, PHP 8.2+, MySQL/SQLite, Sanctum (auth), Spatie Permission (RBAC)
-- **Frontend**: React 19, React Router 7, Vite 7, Tailwind CSS 4, Radix UI, Zod + React Hook Form, Recharts, TanStack Table
-- **No Inertia in active use**: Legacy Inertia controllers/pages exist under `app/Http/Controllers/Inertia/` and `resources/js/Inertia/`—new work goes into the React SPA and `app/Http/Controllers/Api/`
+- **Frontend**: React 19, Inertia.js, Vite 7, Tailwind CSS 4, Radix UI, Zod + React Hook Form, Recharts, TanStack Table
+- **Pages**: `resources/js/Inertia/Pages/` (rutas en `web.php`); UI compartida en `resources/js/components/`. API en `app/Http/Controllers/Api/`.
 
 ### Request Flow
 
 ```
-React SPA (port 5173 dev / /build/ prod)
-  → Axios (with CSRF + cookie)
-  → Laravel API routes (/api/*)
-    → auth:sanctum middleware
-    → perm:permission.name middleware
-    → Controller → Model / Service / Policy
+Inertia (Vite → inertia.jsx → páginas en Inertia/Pages/)
+  → Datos: Axios (CSRF + cookie) → /api/*
+  → Navegación: visitas Inertia (routes/web.php)
+    → auth:sanctum + perm:* en API
 ```
 
 **Session handshake**: Frontend calls `GET /check-auth` (a web route) to verify session on load. All `/api/*` routes use `auth:sanctum` and work via cookie, not Bearer tokens.
@@ -79,13 +77,14 @@ React SPA (port 5173 dev / /build/ prod)
 | `app/Policies/` | Gate-registered authorization policies |
 | `app/Http/Requests/` | Form validation classes |
 | `app/Http/Middleware/` | Custom middleware |
-| `resources/js/Pages/` | Lazy-loaded React page components |
+| `resources/js/Inertia/Pages/` | Inertia page components (rutas en `web.php`) |
+| `resources/js/components/` | UI compartida, dashboards, formularios |
 | `resources/js/components/ui/` | Radix-based reusable UI |
 | `resources/js/context/` | Auth, Sidebar, I18n, Theme providers |
 | `resources/js/lib/` | Axios config, catalog cache utility |
 | `resources/js/services/` | API service wrappers |
 | `routes/api.php` | All REST endpoints |
-| `routes/web.php` | SPA entry, `/check-auth`, legacy Inertia |
+| `routes/web.php` | Inertia routes, `/check-auth`, landing, redirects legacy |
 | `routes/sigua.php` | SIGUA module routes (auto-registered in bootstrap/app.php) |
 
 ---
@@ -135,7 +134,7 @@ React SPA (port 5173 dev / /build/ prod)
 - **State management**: React Context + hooks only (no Redux/Zustand/TanStack Query)
 - **HTTP**: Axios (`resources/js/lib/axios.js`) — already configured with CSRF, interceptors, and base URL
 - **Forms**: React Hook Form + Zod schemas
-- **Routing**: React Router `BrowserRouter` with lazy-loaded pages; wrap new routes in `ProtectedRoute`
+- **Routing**: Add routes in `routes/web.php` with `Inertia::render('Module/Page')`; create page under `resources/js/Inertia/Pages/` with optional `.layout = AuthenticatedLayout`
 - **Catalog data**: Always read from `lib/catalogCache.js` (TTL 600s client-side cache), not raw API calls
 - **Styling**: Tailwind CSS + `class-variance-authority` for component variants; use `cn()` (from `lib/utils`) for conditional classes
 - **TypeScript**: SIGUA pages use `.ts`/`.tsx`; rest of app is `.jsx`. New code in new SIGUA files should be TypeScript; new Helpdesk/Users/etc. files can remain JSX

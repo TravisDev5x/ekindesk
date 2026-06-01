@@ -1,6 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react'
-import { NavLink, useNavigate, useLocation } from 'react-router-dom'
-import { Link as InertiaLink } from '@inertiajs/react'
+import { Link as InertiaLink, usePage } from '@inertiajs/react'
 import { useAuth } from '@/context/AuthContext'
 import axios from '@/lib/axios'
 import { useSidebarPosition } from '@/context/SidebarPositionContext'
@@ -78,7 +77,7 @@ function routeMatchesPath(pathname, to) {
     return pathname === to || pathname.startsWith(`${to}/`)
 }
 
-/** Rutas con Inertia::render en web.php — navegación full page desde SPA. */
+/** Ítem de menú con href servido por Inertia (routes/web.php). */
 function inertiaNav(href, props = {}) {
     return { href, external: true, ...props }
 }
@@ -87,13 +86,7 @@ function navItemPath(item) {
     return item?.href ?? item?.to
 }
 
-function renderNavAnchor({
-    href,
-    anchorLinks,
-    onNavigate,
-    className,
-    children,
-}) {
+function renderNavAnchor({ href, onNavigate, className, children }) {
     const handleClick = () => onNavigate?.()
 
     if (isExternalUrl(href)) {
@@ -110,7 +103,7 @@ function renderNavAnchor({
         )
     }
 
-    if (shouldUseInertiaLink(href, anchorLinks)) {
+    if (shouldUseInertiaLink(href)) {
         return (
             <InertiaLink
                 href={href}
@@ -141,10 +134,10 @@ const SidebarItem = ({
     isChild = false,
     tooltipSide = 'right',
     onNavigate,
-    anchorLinks = false,
     currentPath = '',
 }) => {
-    const active = anchorLinks && routeMatchesPath(currentPath, to)
+    const href = to
+    const active = routeMatchesPath(currentPath, href)
 
     const linkClass = (isActive) =>
         cn(
@@ -156,36 +149,19 @@ const SidebarItem = ({
             isChild && !isCollapsed && 'ml-4 pl-3 border-l border-border/40'
         )
 
-    const linkEl = anchorLinks ? (
-        renderNavAnchor({
-            href: to,
-            anchorLinks,
-            onNavigate,
-            className: linkClass(active),
-            children: (
-                <>
-                    <Icon size={ICON_SIZE} strokeWidth={ICON_STROKE} className="shrink-0 flex-shrink-0" />
-                    {!isCollapsed && (
-                        <span className="truncate whitespace-nowrap text-sm font-medium">{label}</span>
-                    )}
-                </>
-            ),
-        })
-    ) : (
-        <NavLink
-            to={to}
-            end={to === '/'}
-            onClick={() => onNavigate?.()}
-            className={({ isActive }) => linkClass(isActive)}
-        >
+    const linkEl = renderNavAnchor({
+        href,
+        onNavigate,
+        className: linkClass(active),
+        children: (
             <>
                 <Icon size={ICON_SIZE} strokeWidth={ICON_STROKE} className="shrink-0 flex-shrink-0" />
                 {!isCollapsed && (
                     <span className="truncate whitespace-nowrap text-sm font-medium">{label}</span>
                 )}
             </>
-        </NavLink>
-    )
+        ),
+    })
 
     if (isCollapsed) {
         return (
@@ -203,7 +179,7 @@ const SidebarItem = ({
     return <div className="py-0.5">{linkEl}</div>
 }
 
-/** Enlace fuera del SPA (rutas Inertia servidas por web.php). */
+/** Enlace interno (Inertia) o externo según href. */
 const SidebarExternalItem = ({
     icon: Icon,
     label,
@@ -212,12 +188,10 @@ const SidebarExternalItem = ({
     tooltipSide = 'right',
     onNavigate,
     currentPath = '',
-    anchorLinks = false,
 }) => {
     const isActive = currentPath ? routeMatchesPath(currentPath, href) : false
     const linkEl = renderNavAnchor({
         href,
-        anchorLinks,
         onNavigate,
         className: cn(
             'flex items-center rounded-md transition-colors min-w-0',
@@ -355,12 +329,11 @@ const SectionTitle = ({ children, collapsed, showSeparatorWhenCollapsed }) => {
 // ----------------------------------------------------------------------
 // COMPONENTE: Sidebar
 // ----------------------------------------------------------------------
-export function Sidebar({ collapsed, onToggle, onNavigate, anchorLinks = false, currentPath = '' }) {
+export function Sidebar({ collapsed, onToggle, onNavigate, currentPath: currentPathProp = '' }) {
     const { user, logout, updateUserPrefs, hasRole, can } = useAuth()
     const { t } = useI18n()
-    const navigate = useNavigate()
-    const { pathname: routerPathname } = useLocation()
-    const pathname = anchorLinks && currentPath ? currentPath : routerPathname
+    const { url } = usePage()
+    const pathname = currentPathProp || url.split('?')[0]
     const { position: sidebarPosition } = useSidebarPosition()
     const tooltipSide = sidebarPosition === 'right' ? 'left' : 'right'
     const dropdownSide = sidebarPosition === 'right' ? 'left' : 'right'
@@ -388,9 +361,7 @@ export function Sidebar({ collapsed, onToggle, onNavigate, anchorLinks = false, 
 
         // BLOQUE 1: GENERAL (todos pueden crear ticket y ver sus tickets)
         const generalItems = [
-            anchorLinks
-                ? inertiaNav('/resolbeb', { label: t('nav.home'), icon: Home, emphasis: true })
-                : { to: '/', label: t('nav.home'), icon: Home, emphasis: true },
+            inertiaNav('/home', { label: t('nav.home'), icon: Home, emphasis: true }),
             ...(canSeeClientsModule
                 ? [{ href: '/clients', label: t('nav.clientes'), icon: Building2, external: true }]
                 : []),
@@ -429,11 +400,11 @@ export function Sidebar({ collapsed, onToggle, onNavigate, anchorLinks = false, 
             // — Incidencias (dentro de Resolbeb) y sus catálogos
             if (canSeeIncidents) {
                 resolbebChildren.push({ type: 'separator', label: t('nav.incidents') })
-                resolbebChildren.push({ to: '/incidents', label: t('nav.incidents'), icon: AlertTriangle })
+                resolbebChildren.push(inertiaNav('/incidents', { label: t('nav.incidents'), icon: AlertTriangle }))
                 resolbebChildren.push({ type: 'separator', label: t('nav.catalogsIncidents') })
-                resolbebChildren.push({ to: '/incident-types', label: t('nav.incidentTypes'), icon: Tags })
-                resolbebChildren.push({ to: '/incident-severities', label: t('nav.severities'), icon: SignalHigh })
-                resolbebChildren.push({ to: '/incident-statuses', label: t('nav.incidentStates'), icon: Workflow })
+                resolbebChildren.push(inertiaNav('/incident-types', { label: t('nav.incidentTypes'), icon: Tags }))
+                resolbebChildren.push(inertiaNav('/incident-severities', { label: t('nav.severities'), icon: SignalHigh }))
+                resolbebChildren.push(inertiaNav('/incident-statuses', { label: t('nav.incidentStates'), icon: Workflow }))
             }
         }
         if (canSeeResolbeb && resolbebChildren.length > 0) {
@@ -621,38 +592,17 @@ export function Sidebar({ collapsed, onToggle, onNavigate, anchorLinks = false, 
                                                                     asChild
                                                                     className="cursor-pointer focus:bg-accent/50"
                                                                 >
-                                                                    {child.external && child.href ? (
-                                                                        renderNavAnchor({
-                                                                            href: child.href,
-                                                                            anchorLinks,
-                                                                            onNavigate,
-                                                                            className: childLinkClass,
-                                                                            children: (
-                                                                                <>
-                                                                                    <ChildIcon size={ICON_SIZE} strokeWidth={ICON_STROKE} className="shrink-0 opacity-70" />
-                                                                                    <span className="truncate whitespace-nowrap text-sm">{child.label}</span>
-                                                                                </>
-                                                                            ),
-                                                                        })
-                                                                    ) : anchorLinks ? (
-                                                                        renderNavAnchor({
-                                                                            href: childPath,
-                                                                            anchorLinks,
-                                                                            onNavigate,
-                                                                            className: childLinkClass,
-                                                                            children: (
-                                                                                <>
-                                                                                    <ChildIcon size={ICON_SIZE} strokeWidth={ICON_STROKE} className="shrink-0 opacity-70" />
-                                                                                    <span className="truncate whitespace-nowrap text-sm">{child.label}</span>
-                                                                                </>
-                                                                            ),
-                                                                        })
-                                                                    ) : (
-                                                                        <NavLink to={childPath} className={childLinkClass} onClick={() => onNavigate?.()}>
-                                                                            <ChildIcon size={ICON_SIZE} strokeWidth={ICON_STROKE} className="shrink-0 opacity-70" />
-                                                                            <span className="truncate whitespace-nowrap text-sm">{child.label}</span>
-                                                                        </NavLink>
-                                                                    )}
+                                                                    {renderNavAnchor({
+                                                                        href: child.href ?? childPath,
+                                                                        onNavigate,
+                                                                        className: childLinkClass,
+                                                                        children: (
+                                                                            <>
+                                                                                <ChildIcon size={ICON_SIZE} strokeWidth={ICON_STROKE} className="shrink-0 opacity-70" />
+                                                                                <span className="truncate whitespace-nowrap text-sm">{child.label}</span>
+                                                                            </>
+                                                                        ),
+                                                                    })}
                                                                 </DropdownMenuItem>
                                                             )
                                                         })}
@@ -691,21 +641,19 @@ export function Sidebar({ collapsed, onToggle, onNavigate, anchorLinks = false, 
                                                                     tooltipSide={tooltipSide}
                                                                     onNavigate={onNavigate}
                                                                     currentPath={pathname}
-                                                                    anchorLinks={anchorLinks}
                                                                 />
                                                             )
                                                         }
                                                         return (
                                                             <SidebarItem
-                                                                key={child.to}
+                                                                key={child.to ?? child.href}
                                                                 icon={child.icon}
                                                                 label={child.label}
-                                                                to={child.to}
+                                                                to={child.to ?? child.href}
                                                                 isCollapsed={false}
                                                                 isChild
                                                                 tooltipSide={tooltipSide}
                                                                 onNavigate={onNavigate}
-                                                                anchorLinks={anchorLinks}
                                                                 currentPath={pathname}
                                                             />
                                                         )
@@ -724,20 +672,18 @@ export function Sidebar({ collapsed, onToggle, onNavigate, anchorLinks = false, 
                                                     tooltipSide={tooltipSide}
                                                     onNavigate={onNavigate}
                                                     currentPath={pathname}
-                                                    anchorLinks={anchorLinks}
                                                 />
                                             )
                                         }
                                         return (
                                             <SidebarItem
-                                                key={item.to}
+                                                key={item.to ?? item.href}
                                                 icon={item.icon}
                                                 label={item.label}
-                                                to={item.to}
+                                                to={item.to ?? item.href}
                                                 isCollapsed={collapsed}
                                                 tooltipSide={tooltipSide}
                                                 onNavigate={onNavigate}
-                                                anchorLinks={anchorLinks}
                                                 currentPath={pathname}
                                             />
                                         )
@@ -834,21 +780,10 @@ export function Sidebar({ collapsed, onToggle, onNavigate, anchorLinks = false, 
                             })}
                             <DropdownMenuSeparator className="bg-border/50" />
                             <DropdownMenuItem asChild className="cursor-pointer gap-2">
-                                {anchorLinks ? (
-                                    <InertiaLink href="/profile" preserveScroll className="flex items-center gap-2">
-                                        <UserCircle className="h-4 w-4 shrink-0" />
-                                        <span>{t('layout.profile')}</span>
-                                    </InertiaLink>
-                                ) : (
-                                    <button
-                                        type="button"
-                                        onClick={() => navigate('/profile')}
-                                        className="flex w-full items-center gap-2"
-                                    >
-                                        <UserCircle className="h-4 w-4 shrink-0" />
-                                        <span>{t('layout.profile')}</span>
-                                    </button>
-                                )}
+                                <InertiaLink href="/profile" preserveScroll className="flex items-center gap-2">
+                                    <UserCircle className="h-4 w-4 shrink-0" />
+                                    <span>{t('layout.profile')}</span>
+                                </InertiaLink>
                             </DropdownMenuItem>
                             <DropdownMenuSeparator className="bg-border/50" />
                             <DropdownMenuItem

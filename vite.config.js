@@ -6,7 +6,7 @@ import path from "path";
 export default defineConfig({
     plugins: [
         laravel({
-            input: ["resources/css/app.css", "resources/js/app.jsx", "resources/js/inertia.jsx"],
+            input: ["resources/css/app.css", "resources/js/inertia.jsx"],
             refresh: true,
         }),
         react(),
@@ -31,7 +31,7 @@ export default defineConfig({
         alias: {
             "@": path.resolve(__dirname, "resources/js"),
         },
-        // Una sola copia de React para SPA + Inertia (evita createContext undefined).
+        // Una sola copia de React (evita createContext undefined con Inertia).
         dedupe: ["react", "react-dom"],
     },
     build: {

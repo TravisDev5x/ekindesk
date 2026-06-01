@@ -24,7 +24,7 @@ function buildI18nValue(locale, setLocale) {
     };
 }
 
-/** SPA: locale sincronizado con useTheme / API. */
+/** Locale sincronizado con useTheme / API (legacy export). */
 export function I18nProvider({ children }) {
     const { locale, setLocale } = useTheme();
     const value = useMemo(() => buildI18nValue(locale, setLocale), [locale, setLocale]);

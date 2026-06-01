@@ -3,7 +3,6 @@ import "sileo/styles.css";
 import React, { Suspense } from "react";
 import { createRoot } from "react-dom/client";
 import { createInertiaApp } from "@inertiajs/react";
-import { BrowserRouter } from "react-router-dom";
 import { Toaster } from "sileo";
 import { AuthProvider } from "@/context/AuthContext";
 import { InertiaI18nProvider } from "@/i18n/I18nProvider";
@@ -31,28 +30,26 @@ createInertiaApp({
                 }
             >
                 <InertiaThemeProvider>
-                    <BrowserRouter>
-                        <AuthProvider>
-                            <InertiaI18nProvider>
-                                <SidebarPositionProvider>
-                                    <Toaster
-                                        position="top-center"
-                                        options={{
-                                            fill: "hsl(var(--card))",
-                                            roundness: 12,
-                                            styles: {
-                                                title: "!text-foreground !font-semibold",
-                                                description: "!text-foreground/90",
-                                                badge: "!bg-primary/15 !text-primary !border !border-primary/30",
-                                                button: "!bg-muted hover:!bg-accent !text-foreground",
-                                            },
-                                        }}
-                                    />
-                                    <App {...props} />
-                                </SidebarPositionProvider>
-                            </InertiaI18nProvider>
-                        </AuthProvider>
-                    </BrowserRouter>
+                    <AuthProvider>
+                        <InertiaI18nProvider>
+                            <SidebarPositionProvider>
+                                <Toaster
+                                    position="top-center"
+                                    options={{
+                                        fill: "hsl(var(--card))",
+                                        roundness: 12,
+                                        styles: {
+                                            title: "!text-foreground !font-semibold",
+                                            description: "!text-foreground/90",
+                                            badge: "!bg-primary/15 !text-primary !border !border-primary/30",
+                                            button: "!bg-muted hover:!bg-accent !text-foreground",
+                                        },
+                                    }}
+                                />
+                                <App {...props} />
+                            </SidebarPositionProvider>
+                        </InertiaI18nProvider>
+                    </AuthProvider>
                 </InertiaThemeProvider>
             </Suspense>
         );

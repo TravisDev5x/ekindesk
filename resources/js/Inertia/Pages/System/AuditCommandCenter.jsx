@@ -4,7 +4,7 @@ import { es } from "date-fns/locale";
 import axios from "@/lib/axios";
 import AuthenticatedLayout from "@/Inertia/Layouts/AuthenticatedLayout";
 import InertiaPageShell from "@/Inertia/components/InertiaPageShell";
-import AuditTimeline from "@/Pages/AuditTimeline";
+import AuditTimeline from "@/components/audit/AuditTimeline";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";

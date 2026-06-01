@@ -1,5 +1,7 @@
-/** Rutas explícitas con Inertia::render en web.php (no catch-all SPA). */
+/** Rutas con Inertia::render en routes/web.php. */
 const INERTIA_PATH_PREFIXES = [
+    "/home",
+    "/manual",
     "/areas",
     "/priorities",
     "/impact-levels",
@@ -51,14 +53,14 @@ export function isExternalUrl(url) {
     );
 }
 
-export function shouldUseInertiaLink(url, anchorLinks) {
-    if (!anchorLinks || !url || isExternalUrl(url)) return false;
+export function shouldUseInertiaLink(url) {
+    if (!url || isExternalUrl(url)) return false;
     return INERTIA_PATH_PREFIXES.some(
         (prefix) => url === prefix || url.startsWith(`${prefix}/`)
     );
 }
 
-/** className puede ser string (Sidebar) o función isActive => string (NavLink). */
+/** className puede ser string o función isActive => string. */
 export function resolveNavClassName(className, isActive) {
     if (typeof className === "function") return className(isActive);
     return className ?? "";

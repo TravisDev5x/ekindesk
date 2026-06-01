@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import NavLink from "@/components/NavLink";
 import { es as dateFnsEs, enUS as dateFnsEn } from "date-fns/locale";
 import axios from "@/lib/axios";
 import { useTheme } from "@/hooks/useTheme";
@@ -70,7 +70,7 @@ export function TicketCalendarPreview({ ticketLinkBase = "/resolbeb/tickets" }) 
                         </CardDescription>
                     </div>
                     <Button asChild variant="outline" size="sm" className="h-8 text-xs shrink-0">
-                        <Link to="/calendario">Ver calendario completo</Link>
+                        <NavLink href="/calendario">Ver calendario completo</NavLink>
                     </Button>
                 </div>
             </CardHeader>
@@ -109,8 +109,8 @@ export function TicketCalendarPreview({ ticketLinkBase = "/resolbeb/tickets" }) 
                             <ul className="space-y-1.5">
                                 {dayTickets.map((t) => (
                                     <li key={t.id}>
-                                        <Link
-                                            to={`${ticketLinkBase}/${t.id}`}
+                                        <NavLink
+                                            href={`${ticketLinkBase}/${t.id}`}
                                             className={cn(
                                                 "flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-sm",
                                                 "hover:bg-background transition-colors"
@@ -122,7 +122,7 @@ export function TicketCalendarPreview({ ticketLinkBase = "/resolbeb/tickets" }) 
                                             <Badge variant="secondary" className="text-[10px] shrink-0">
                                                 {t.state?.name ?? "—"}
                                             </Badge>
-                                        </Link>
+                                        </NavLink>
                                     </li>
                                 ))}
                             </ul>

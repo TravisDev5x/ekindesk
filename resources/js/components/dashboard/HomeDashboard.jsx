@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import NavLink from "@/components/NavLink";
 import axios from "@/lib/axios";
 import { useAuth } from "@/context/AuthContext";
 import { loadCatalogs, clearCatalogCache } from "@/lib/catalogCache";
@@ -50,7 +50,8 @@ import {
     Bell,
     BellOff,
     Maximize2,
-    Info
+    Info,
+    Loader2,
 } from "lucide-react";
 
 // --- CONSTANTES ---
@@ -643,9 +644,9 @@ function DashboardSolicitante() {
                                 );
                                 return ticketId ? (
                                     <li key={n.id}>
-                                        <Link to={`/resolbeb/tickets/${ticketId}`} className="block">
+                                        <NavLink href={`/resolbeb/tickets/${ticketId}`} className="block">
                                             {content}
-                                        </Link>
+                                        </NavLink>
                                     </li>
                                 ) : (
                                     <li key={n.id}>{content}</li>
@@ -743,9 +744,9 @@ function DashboardSolicitante() {
                         </CardTitle>
                         <CardDescription>
                             Listado de incidencias que has reportado. Por fechas:{" "}
-                            <Link to="/calendario" className="text-primary underline underline-offset-2 hover:no-underline">
+                            <NavLink href="/calendario" className="text-primary underline underline-offset-2 hover:no-underline">
                                 Calendario
-                            </Link>.
+                            </NavLink>.
                         </CardDescription>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
@@ -819,7 +820,7 @@ function DashboardSolicitante() {
                                 const lastAt = t.updated_at || t.created_at;
                                 return (
                                     <li key={t.id} className={cn("py-3 first:pt-0", (unassigned || overdue) && "border-l-2 border-l-transparent", unassigned && "border-l-amber-500/50", overdue && "border-l-destructive/50")}>
-                                        <Link to={`/resolbeb/tickets/${t.id}`} className="flex flex-wrap items-center justify-between gap-2 hover:bg-muted/30 -mx-2 px-2 py-1.5 rounded transition-colors block">
+                                        <NavLink href={`/resolbeb/tickets/${t.id}`} className="flex flex-wrap items-center justify-between gap-2 hover:bg-muted/30 -mx-2 px-2 py-1.5 rounded transition-colors block">
                                             <span className="font-medium text-foreground">#{String(t.id).padStart(5, "0")} — {t.subject}</span>
                                             <div className="flex items-center gap-2 flex-wrap">
                                                 {unassigned && (
@@ -837,7 +838,7 @@ function DashboardSolicitante() {
                                                     {assigned ? `Atendido por: ${assigned.name}` : ""}
                                                 </span>
                                             </div>
-                                        </Link>
+                                        </NavLink>
                                         <p className="text-xs text-muted-foreground mt-1 pl-0">
                                             Creado {new Date(t.created_at).toLocaleDateString()}
                                             {lastAt && (
@@ -878,9 +879,9 @@ function DashboardSolicitante() {
                             </DialogHeader>
                             <div className="p-5 flex flex-wrap items-center gap-2">
                                 <Button asChild size="sm">
-                                    <Link to={`/tickets/${createSuccessTicketId}`} onClick={() => { setCreateModalOpen(false); setCreateSuccessTicketId(null); setCreateForm(CREATE_FORM_INITIAL); }}>
+                                    <NavLink href={`/resolbeb/tickets/${createSuccessTicketId}`} onClick={() => { setCreateModalOpen(false); setCreateSuccessTicketId(null); setCreateForm(CREATE_FORM_INITIAL); }}>
                                         Ver solicitud
-                                    </Link>
+                                    </NavLink>
                                 </Button>
                                 <Button type="button" variant="outline" size="sm" onClick={() => { setCreateModalOpen(false); setCreateSuccessTicketId(null); setCreateForm(CREATE_FORM_INITIAL); }}>
                                     Cerrar
@@ -1102,10 +1103,10 @@ function DashboardIntermedio() {
                         </div>
                         <div className="flex items-center gap-2">
                             <Button asChild variant="secondary" size="sm" className="h-8 text-xs">
-                                <Link to="/tickets?assignment=me">Ver listado</Link>
+                                <NavLink href="/resolbeb/tickets?assignment=me">Ver listado</NavLink>
                             </Button>
                             <Button asChild variant="outline" size="sm" className="h-8 text-xs">
-                                <Link to="/calendario">Calendario</Link>
+                                <NavLink href="/calendario">Calendario</NavLink>
                             </Button>
                         </div>
                     </div>
@@ -1595,7 +1596,7 @@ function DashboardAdmin() {
     );
 }
 
-export default function Dashboard() {
+export default function HomeDashboard() {
     const { user, can } = useAuth();
     const profile = useMemo(() => getDashboardProfile(user, can), [user, can]);
 

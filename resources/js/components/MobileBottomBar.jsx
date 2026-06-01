@@ -1,16 +1,15 @@
 import React from 'react'
-import { NavLink, useLocation } from 'react-router-dom'
-import { Link as InertiaLink } from '@inertiajs/react'
+import { Link as InertiaLink, usePage } from '@inertiajs/react'
 import { useI18n } from '@/hooks/useI18n'
 import { useAuth } from '@/context/AuthContext'
 import { cn } from '@/lib/utils'
-import { resolveNavClassName, shouldUseInertiaLink } from '@/lib/inertiaNavigation'
+import { shouldUseInertiaLink } from '@/lib/inertiaNavigation'
 import { Home, Ticket, LayoutDashboard, Menu, Layers, AlertTriangle } from 'lucide-react'
 
 const ICON_SIZE = 22
 
 const baseItems = [
-  { to: '/', labelKey: 'nav.home', icon: Home, end: true },
+  { to: '/home', labelKey: 'nav.home', icon: Home, end: true },
   { to: '/resolbeb/mis-tickets', labelKey: 'nav.myTickets', icon: Ticket, end: false },
   { to: '/resolbeb', labelKey: 'nav.resolbeb', icon: LayoutDashboard, end: true },
 ]
@@ -20,16 +19,17 @@ function routeMatches(pathname, to, end) {
   return pathname === to || pathname.startsWith(`${to}/`)
 }
 
-function NavItem({ to, end, anchorLinks, pathname, getLinkClassName, children, onClick }) {
+function NavItem({ to, end, pathname, getLinkClassName, children, onClick }) {
   const isActive = routeMatches(pathname, to, end)
+  const className = getLinkClassName(isActive)
 
-  if (shouldUseInertiaLink(to, anchorLinks)) {
+  if (shouldUseInertiaLink(to)) {
     return (
       <InertiaLink
         href={to}
         preserveScroll
         onClick={onClick}
-        className={resolveNavClassName(getLinkClassName, isActive)}
+        className={className}
         aria-current={isActive ? 'page' : undefined}
       >
         {children}
@@ -37,27 +37,15 @@ function NavItem({ to, end, anchorLinks, pathname, getLinkClassName, children, o
     )
   }
 
-  if (anchorLinks) {
-    return (
-      <a
-        href={to}
-        onClick={onClick}
-        className={resolveNavClassName(getLinkClassName, isActive)}
-        aria-current={isActive ? 'page' : undefined}
-      >
-        {children}
-      </a>
-    )
-  }
-
   return (
-    <NavLink
-      to={to}
-      end={end}
-      className={({ isActive: navActive }) => resolveNavClassName(getLinkClassName, navActive)}
+    <a
+      href={to}
+      onClick={onClick}
+      className={className}
+      aria-current={isActive ? 'page' : undefined}
     >
       {children}
-    </NavLink>
+    </a>
   )
 }
 
@@ -66,11 +54,10 @@ export function MobileBottomBar({
   forceVisible = false,
   unreadCount = 0,
   pathname: pathnameProp,
-  anchorLinks = false,
 }) {
   const { t } = useI18n()
-  const location = useLocation()
-  const pathname = pathnameProp ?? location.pathname
+  const { url } = usePage()
+  const pathname = pathnameProp ?? url.split('?')[0]
   const { user } = useAuth()
   const can = (p) => Boolean(user?.permissions?.includes(p))
   const canSeeTickets = can('tickets.manage_all') || can('tickets.view_area') || (can('tickets.create') || can('tickets.view_own'))
@@ -116,7 +103,6 @@ export function MobileBottomBar({
               key={to}
               to={to}
               end={end}
-              anchorLinks={anchorLinks}
               pathname={pathname}
               getLinkClassName={linkClass}
             >

@@ -81,7 +81,7 @@ export const AuthProvider = ({ children }) => {
         });
         window.__auth_user_id = data.user?.id;
         syncUserThemeToStorage(data.user);
-        window.location.href = data.onboarding_redirect || "/";
+        window.location.href = data.onboarding_redirect || "/home";
     }, []);
 
     const logout = useCallback(async () => {

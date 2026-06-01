@@ -19,7 +19,7 @@ class LandingController extends Controller
                 return redirect($redirect);
             }
 
-            return redirect('/resolbeb');
+            return redirect('/home');
         }
 
         return Inertia::render('Landing/Index', [

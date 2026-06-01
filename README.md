@@ -99,8 +99,6 @@ php artisan migrate:fresh --seed
 Incluye catálogos, usuarios demo y tickets de ejemplo.
 
 > 📄 Credenciales de prueba: ver [`USUARIOS_DEMO.md`](USUARIOS_DEMO.md)
->
-> 🔑 Password común: `Password123!`
 
 ### 4. Frontend (React + Vite)
 
@@ -132,7 +130,7 @@ Acceso: [http://127.0.0.1:8000](http://127.0.0.1:8000)
 
 ```
 ├── app/                  # Backend Laravel (Models, Controllers, Services)
-├── resources/js/         # Frontend React (Components, Pages, Hooks)
+├── resources/js/         # Frontend React + Inertia (Inertia/Pages, components, hooks)
 ├── database/             # Migraciones y seeders
 ├── routes/               # API y rutas web
 ├── docs/                 # Documentación y screenshots
