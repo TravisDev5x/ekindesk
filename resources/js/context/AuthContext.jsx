@@ -11,15 +11,6 @@ function showSessionFlash(flash) {
     if (flash.warning) notify.warning(flash.warning);
 }
 
-const THEME_VALUES = ['light', 'dark', 'system'];
-
-function syncUserThemeToStorage(user) {
-    const userTheme = user?.theme;
-    if (userTheme && THEME_VALUES.includes(userTheme)) {
-        localStorage.setItem('ekindesk_theme', userTheme);
-    }
-}
-
 const AuthContext = createContext(null);
 
 /** Rutas donde NUNCA se debe llamar /check-auth (siempre 401; no es un bug). */
@@ -59,7 +50,6 @@ export const AuthProvider = ({ children }) => {
                         onboarding_redirect: payload.onboarding_redirect ?? null,
                     });
                     window.__auth_user_id = payload.user.id;
-                    syncUserThemeToStorage(payload.user);
                     showSessionFlash(payload.flash);
                 } else {
                     setUser(null);
@@ -80,7 +70,6 @@ export const AuthProvider = ({ children }) => {
             onboarding_redirect: data.onboarding_redirect ?? null,
         });
         window.__auth_user_id = data.user?.id;
-        syncUserThemeToStorage(data.user);
         window.location.href = data.onboarding_redirect || "/home";
     }, []);
 

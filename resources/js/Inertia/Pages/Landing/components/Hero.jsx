@@ -1,58 +1,48 @@
 import { Link } from "@inertiajs/react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+    brandBadge,
+    brandGradientText,
+    btnBrand,
+    btnBrandOutline,
+    heroSectionClass,
+    mockAvatarRing,
+    mockTicketRow,
+} from "@/lib/marketingTheme";
 
 export default function Hero() {
     return (
-        <section
-            id="mission"
-            className="relative min-h-screen flex items-center pt-24 pb-16 px-6 bg-slate-950"
-            style={{
-                backgroundImage:
-                    "radial-gradient(circle, rgba(6,182,212,0.06) 1px, transparent 1px)",
-                backgroundSize: "32px 32px",
-            }}
-        >
+        <section id="mission" className={heroSectionClass}>
             <div className="mx-auto grid w-full max-w-7xl gap-12 lg:grid-cols-2 lg:gap-16 items-center">
                 <div>
-                    <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-4 py-1.5 text-sm text-cyan-400 mb-8">
-                        <span className="h-2 w-2 rounded-full bg-cyan-400 animate-pulse" />
+                    <div className={`${brandBadge} mb-8`}>
+                        <span className="h-2 w-2 rounded-full bg-brand animate-pulse" />
                         Listo para operar en tu empresa
                     </div>
 
-                    <h1 className="text-5xl lg:text-6xl font-black text-white leading-[1.1] tracking-tight">
+                    <h1 className="text-5xl lg:text-6xl font-black text-foreground leading-[1.1] tracking-tight">
                         Gestiona el soporte IT
                         <br />
-                        <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
-                            de tus clientes
-                        </span>
+                        <span className={brandGradientText}>de tus clientes</span>
                     </h1>
 
-                    <p className="mt-6 text-lg text-slate-400 max-w-lg leading-relaxed">
+                    <p className="mt-6 text-lg text-muted-foreground max-w-lg leading-relaxed">
                         EkinDesk reúne en un solo lugar todo lo que necesita tu empresa de soporte:
                         tickets, clientes, técnicos y SLAs. Pensado para empresas MSP que quieren menos
                         caos y más control.
                     </p>
 
                     <div className="mt-10 flex flex-col sm:flex-row gap-4">
-                        <Button
-                            size="lg"
-                            className="bg-gradient-to-r from-cyan-500 to-blue-600 font-semibold text-white hover:from-cyan-400 hover:to-blue-500 border-0"
-                            asChild
-                        >
+                        <Button size="lg" className={btnBrand} asChild>
                             <Link href="/register">Crear cuenta gratis</Link>
                         </Button>
-                        <Button
-                            size="lg"
-                            variant="outline"
-                            className="border-slate-600 text-slate-300 hover:border-cyan-500 hover:text-cyan-400 bg-transparent"
-                            asChild
-                        >
+                        <Button size="lg" variant="outline" className={btnBrandOutline} asChild>
                             <Link href="/login">Ya tengo cuenta</Link>
                         </Button>
                     </div>
 
-                    <p className="mt-6 text-sm text-slate-500 flex flex-wrap gap-x-4 gap-y-1">
+                    <p className="mt-6 text-sm text-muted-foreground flex flex-wrap gap-x-4 gap-y-1">
                         <span>Registro en 3 minutos</span>
                         <span>·</span>
                         <span>Sin tarjeta de crédito</span>
@@ -62,56 +52,62 @@ export default function Hero() {
                 </div>
 
                 <div className="relative hidden lg:block">
-                    <div className="absolute inset-0 -z-10 blur-3xl bg-cyan-500/10 rounded-full scale-110" />
-                    <div className="relative w-full max-w-lg ml-auto lg:rotate-1 shadow-2xl shadow-cyan-500/10 rounded-2xl border border-slate-700/50 bg-slate-900 p-4">
+                    <div className="absolute inset-0 -z-10 blur-3xl bg-brand/10 rounded-full scale-110" />
+                    <div className="relative w-full max-w-lg ml-auto lg:rotate-1 mkt-elevated rounded-2xl p-4">
                         <div className="flex items-center gap-2 mb-4">
-                            <span className="h-2 w-2 rounded-full bg-cyan-400 animate-pulse" />
-                            <span className="text-slate-300 text-sm">Panel de soporte</span>
-                            <Badge className="ml-auto bg-cyan-500/20 text-cyan-400 border-0 text-xs">
+                            <span className="h-2 w-2 rounded-full bg-brand animate-pulse" />
+                            <span className="text-muted-foreground text-sm">Panel de soporte</span>
+                            <Badge className="ml-auto bg-brand/15 text-brand-muted border border-brand/20 text-xs">
                                 En línea
                             </Badge>
                         </div>
 
-                        <div className="rounded-lg bg-slate-800/60 p-3 mb-2 border-l-2 border-l-red-500">
+                        <div className={`${mockTicketRow} border-l-2 border-l-red-500`}>
                             <div className="flex justify-between gap-2">
                                 <div>
-                                    <p className="text-slate-200 text-sm">Servidor caído — Soffa CDMX</p>
-                                    <p className="text-slate-500 text-xs mt-0.5">Hace 5 min · Crítico</p>
+                                    <p className="text-foreground text-sm">Servidor caído — Alfa Retail CDMX</p>
+                                    <p className="text-muted-foreground text-xs mt-0.5">Hace 5 min · Crítico</p>
                                 </div>
-                                <Badge className="bg-red-500/20 text-red-400 border-0 shrink-0">Abierto</Badge>
+                                <Badge className="bg-red-500/15 text-red-700 dark:text-red-400 border-0 shrink-0">
+                                    Abierto
+                                </Badge>
                             </div>
                         </div>
 
-                        <div className="rounded-lg bg-slate-800/60 p-3 mb-2 border-l-2 border-l-yellow-500">
+                        <div className={`${mockTicketRow} border-l-2 border-l-yellow-500`}>
                             <div className="flex justify-between gap-2">
                                 <div>
-                                    <p className="text-slate-200 text-sm">VPN sin acceso — CentralW MTY</p>
-                                    <p className="text-slate-500 text-xs mt-0.5">Hace 23 min · Alto</p>
+                                    <p className="text-foreground text-sm">VPN sin acceso — Beta Logística MTY</p>
+                                    <p className="text-muted-foreground text-xs mt-0.5">Hace 23 min · Alto</p>
                                 </div>
-                                <Badge className="bg-yellow-500/20 text-yellow-400 border-0 shrink-0">
+                                <Badge className="bg-yellow-500/15 text-yellow-800 dark:text-yellow-400 border-0 shrink-0">
                                     En proceso
                                 </Badge>
                             </div>
                         </div>
 
-                        <div className="rounded-lg bg-slate-800/60 p-3 mb-2 border-l-2 border-l-green-500">
+                        <div className={`${mockTicketRow} border-l-2 border-l-green-500`}>
                             <div className="flex justify-between gap-2">
                                 <div>
-                                    <p className="text-slate-200 text-sm">Impresora offline — Soffa GDL</p>
-                                    <p className="text-slate-500 text-xs mt-0.5">Hace 1 hr · Medio</p>
+                                    <p className="text-foreground text-sm">Impresora offline — Gamma Servicios GDL</p>
+                                    <p className="text-muted-foreground text-xs mt-0.5">Hace 1 hr · Medio</p>
                                 </div>
-                                <Badge className="bg-green-500/20 text-green-400 border-0 shrink-0">
+                                <Badge className="bg-green-500/15 text-green-800 dark:text-green-400 border-0 shrink-0">
                                     Resuelto
                                 </Badge>
                             </div>
                         </div>
 
-                        <div className="flex justify-between items-center mt-3 pt-3 border-t border-slate-700/50">
-                            <span className="text-slate-500 text-xs">3 tickets activos hoy</span>
+                        <div className="flex justify-between items-center mt-3 pt-3 border-t border-border/80">
+                            <span className="text-muted-foreground text-xs">3 tickets activos hoy</span>
                             <div className="flex -space-x-2">
-                                <div className="h-6 w-6 rounded-full bg-cyan-600 border-2 border-slate-900" />
-                                <div className="h-6 w-6 rounded-full bg-blue-600 border-2 border-slate-900" />
-                                <div className="h-6 w-6 rounded-full bg-slate-600 border-2 border-slate-900" />
+                                <div
+                                    className={`h-6 w-6 rounded-full bg-[hsl(var(--brand))] ${mockAvatarRing}`}
+                                />
+                                <div className={`h-6 w-6 rounded-full bg-blue-600 ${mockAvatarRing}`} />
+                                <div
+                                    className={`h-6 w-6 rounded-full bg-muted-foreground ${mockAvatarRing}`}
+                                />
                             </div>
                         </div>
                     </div>

@@ -7,6 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { PlanTypeBadge } from "@/components/badges/EntityBadges";
+import { AuthHeroShell } from "@/components/auth/AuthHeroShell";
+import { authHeroCard, authMessageError, authMessageSuccess, passwordStrengthClass } from "@/lib/marketingTheme";
+import { cn } from "@/lib/utils";
 import { Eye, EyeOff, Check, X } from "lucide-react";
 
 const emptyForm = {
@@ -23,31 +27,6 @@ function formatPlanPrice(value) {
     const n = Number(value);
     if (!n) return "A medida";
     return new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(n);
-}
-
-function PlanTypeBadge({ type }) {
-    if (type === "msp") {
-        return (
-            <Badge className="border border-blue-500/30 bg-blue-500/20 text-xs text-blue-400">
-                MSP
-            </Badge>
-        );
-    }
-    if (type === "inhouse") {
-        return (
-            <Badge className="border border-cyan-500/30 bg-cyan-500/20 text-xs text-cyan-400">
-                In-House
-            </Badge>
-        );
-    }
-    if (type === "both") {
-        return (
-            <Badge className="border border-slate-500/30 bg-slate-500/20 text-xs text-slate-400">
-                Flexible
-            </Badge>
-        );
-    }
-    return null;
 }
 
 export default function Register() {
@@ -171,17 +150,10 @@ export default function Register() {
     return (
         <>
             <Head title="Registro de usuario" />
-            <div className="flex min-h-[100dvh] items-center justify-center text-foreground p-6 pb-[max(2rem,calc(2rem+env(safe-area-inset-bottom)))] overflow-y-auto relative md:min-h-screen md:overflow-hidden md:pb-6">
-                <div
-                    className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat"
-                    style={{ backgroundImage: "url(/images/auth-hero.png)" }}
-                    aria-hidden
-                />
-                <div
-                    className="absolute inset-0 z-[1] pointer-events-none backdrop-blur-[6px] sm:backdrop-blur-[8px] bg-background/40 dark:bg-background/50"
-                    aria-hidden
-                />
-                <Card className="relative z-10 w-full max-w-[460px] max-h-[90dvh] flex flex-col shadow-2xl border-border/80 bg-card/80 dark:bg-card/70 backdrop-blur-md overflow-hidden">
+            <AuthHeroShell contentClassName="max-w-[460px]">
+                <Card
+                    className={`${authHeroCard} max-h-[90dvh] flex flex-col overflow-hidden`}
+                >
                     <CardHeader className="shrink-0">
                         <CardTitle className="text-center">Registro de operador</CardTitle>
                     </CardHeader>
@@ -362,11 +334,12 @@ export default function Register() {
                                 </div>
                                 {form.password_confirmation.length > 0 && (
                                     <p
-                                        className={
+                                        className={cn(
+                                            "text-xs",
                                             passwordsMatch
-                                                ? "text-emerald-600 dark:text-emerald-400 text-xs"
-                                                : "text-amber-600 dark:text-amber-400 text-xs"
-                                        }
+                                                ? passwordStrengthClass(3)
+                                                : passwordStrengthClass(1)
+                                        )}
                                     >
                                         {passwordsMatch
                                             ? "Las contraseñas coinciden"
@@ -381,11 +354,11 @@ export default function Register() {
                             </p>
 
                             {error ? (
-                                <p className="text-red-500 text-sm" role="alert">
+                                <p className={authMessageError} role="alert">
                                     {error}
                                 </p>
                             ) : null}
-                            {success ? <p className="text-emerald-500 text-sm">{success}</p> : null}
+                            {success ? <p className={authMessageSuccess}>{success}</p> : null}
 
                             <Button type="submit" className="w-full min-h-[44px]" disabled={loading}>
                                 {loading ? "Registrando..." : "Crear cuenta"}
@@ -399,7 +372,7 @@ export default function Register() {
                         </form>
                     </CardContent>
                 </Card>
-            </div>
+            </AuthHeroShell>
         </>
     );
 }

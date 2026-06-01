@@ -4,15 +4,22 @@
   <script>
     (function () {
       try {
-        var resolved = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        var VALID = ['light', 'dark', 'system'];
+        var stored = localStorage.getItem('ekindesk_theme') || localStorage.getItem('theme');
+        var pref = VALID.indexOf(stored) >= 0 ? stored : 'system';
+        var resolved = pref === 'system'
+          ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+          : pref;
         var root = document.documentElement;
+        root.classList.remove('light', 'dark');
         if (resolved === 'dark') {
           root.classList.add('dark');
           root.style.colorScheme = 'dark';
         } else {
-          root.classList.remove('dark');
+          root.classList.add('light');
           root.style.colorScheme = 'light';
         }
+        root.dataset.themeInit = '1';
       } catch (e) {}
     })();
   </script>

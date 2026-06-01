@@ -6,26 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { ChevronDown, ChevronUp, Loader2 } from "lucide-react";
-
-function ProgressSteps({ step }) {
-    return (
-        <div className="flex items-center justify-center gap-3 mb-8">
-            <div className="flex items-center gap-2 opacity-60">
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-600 text-white text-sm">
-                    ✓
-                </span>
-                <span className="text-sm">Perfil de negocio</span>
-            </div>
-            <div className="h-px w-12 bg-border" />
-            <div className="flex items-center gap-2">
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-semibold">
-                    {step}
-                </span>
-                <span className="text-sm font-medium">Primer cliente</span>
-            </div>
-        </div>
-    );
-}
+import { OnboardingShell } from "@/components/onboarding/OnboardingShell";
+import { OnboardingStepIndicator } from "@/components/onboarding/OnboardingStepIndicator";
+import { linkBrand } from "@/lib/marketingTheme";
 
 export default function ClientsStep({ step = 2, operator_name, existing_clients = 0 }) {
     useFlash();
@@ -56,10 +39,9 @@ export default function ClientsStep({ step = 2, operator_name, existing_clients 
     };
 
     return (
-        <div className="min-h-[100dvh] bg-background py-10 px-4">
+        <OnboardingShell>
             <Head title="Agregar primer cliente" />
-            <div className="mx-auto max-w-2xl space-y-6">
-                <ProgressSteps step={step} />
+            <OnboardingStepIndicator currentStep={step} />
 
                 <div className="text-center space-y-2">
                     <h1 className="text-2xl font-bold tracking-tight">Agrega tu primer cliente</h1>
@@ -90,7 +72,7 @@ export default function ClientsStep({ step = 2, operator_name, existing_clients 
                                     id="business_name"
                                     value={data.business_name}
                                     onChange={(e) => setData("business_name", e.target.value)}
-                                    placeholder="Soffa S.A. de C.V."
+                                    placeholder="Ejemplo S.A. de C.V."
                                     required
                                 />
                                 {errors.business_name && (
@@ -122,7 +104,7 @@ export default function ClientsStep({ step = 2, operator_name, existing_clients 
                                         type="email"
                                         value={data.contact_email}
                                         onChange={(e) => setData("contact_email", e.target.value)}
-                                        placeholder="contacto@soffa.com"
+                                        placeholder="contacto@ejemplo.com"
                                     />
                                     {errors.contact_email && (
                                         <p className="text-xs text-destructive">{errors.contact_email}</p>
@@ -216,11 +198,10 @@ export default function ClientsStep({ step = 2, operator_name, existing_clients 
 
                 <p className="text-center text-sm text-muted-foreground">
                     ¿Ya tienes cuenta?{" "}
-                    <Link href="/login" className="text-primary hover:underline">
+                    <Link href="/login" className={linkBrand}>
                         Inicia sesión
                     </Link>
                 </p>
-            </div>
-        </div>
+        </OnboardingShell>
     );
 }

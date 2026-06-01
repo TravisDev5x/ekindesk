@@ -1,89 +1,50 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
-
-const STORAGE_KEY = 'ekindesk_theme';
-const LEGACY_STORAGE_KEY = 'theme';
-const VALID_THEMES = ['light', 'dark', 'system'];
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import {
+    applyTheme,
+    readStoredTheme,
+    resolveTheme,
+    THEME_VALUES,
+    writeStoredTheme,
+} from "@/lib/theme";
 
 const ThemeContext = createContext(null);
 
 export { ThemeContext };
 
-function getSystemTheme() {
-    if (typeof window === 'undefined') return 'light';
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-}
-
-function resolveTheme(theme) {
-    if (theme === 'system') return getSystemTheme();
-    if (VALID_THEMES.includes(theme)) return theme;
-    return getSystemTheme();
-}
-
-function applyTheme(resolved) {
-    const root = document.documentElement;
-    root.classList.remove('light', 'dark');
-    if (resolved === 'dark') {
-        root.classList.add('dark');
-        root.style.colorScheme = 'dark';
-    } else {
-        root.style.colorScheme = 'light';
-    }
-}
-
-function readStoredTheme(storageKey) {
-    try {
-        const stored = localStorage.getItem(storageKey) ?? localStorage.getItem(LEGACY_STORAGE_KEY);
-        if (stored && VALID_THEMES.includes(stored)) {
-            if (storageKey !== LEGACY_STORAGE_KEY && localStorage.getItem(LEGACY_STORAGE_KEY)) {
-                localStorage.setItem(storageKey, stored);
-                localStorage.removeItem(LEGACY_STORAGE_KEY);
-            }
-            return stored;
-        }
-    } catch {
-        // ignore
-    }
-    return null;
-}
-
+/** @deprecated En Inertia usar InertiaThemeProvider. Mantenido para tests/herramientas. */
 export function ThemeProvider({
     children,
-    defaultTheme = 'system',
-    storageKey = STORAGE_KEY,
+    defaultTheme = "system",
+    storageKey,
     onThemeChange = null,
 }) {
-    const [theme, setThemeState] = useState(() => readStoredTheme(storageKey) ?? defaultTheme);
+    const [theme, setThemeState] = useState(() => readStoredTheme() ?? defaultTheme);
 
     useEffect(() => {
-        applyTheme(resolveTheme(theme));
+        applyTheme(theme);
     }, [theme]);
 
     useEffect(() => {
-        if (theme !== 'system') return undefined;
+        if (theme !== "system") return undefined;
 
-        const media = window.matchMedia('(prefers-color-scheme: dark)');
-        const handler = () => applyTheme(resolveTheme('system'));
-        media.addEventListener('change', handler);
-        return () => media.removeEventListener('change', handler);
+        const media = window.matchMedia("(prefers-color-scheme: dark)");
+        const handler = () => applyTheme("system");
+        media.addEventListener("change", handler);
+        return () => media.removeEventListener("change", handler);
     }, [theme]);
 
     const setTheme = useCallback(
         (newTheme, options = { persist: true }) => {
-            if (!VALID_THEMES.includes(newTheme)) return;
+            if (!THEME_VALUES.includes(newTheme)) return;
 
-            try {
-                localStorage.setItem(storageKey, newTheme);
-            } catch {
-                // ignore
-            }
-
+            writeStoredTheme(newTheme);
             setThemeState(newTheme);
 
             if (options.persist !== false && onThemeChange) {
                 onThemeChange(newTheme);
             }
         },
-        [storageKey, onThemeChange]
+        [onThemeChange]
     );
 
     const resolvedTheme = useMemo(() => resolveTheme(theme), [theme]);
@@ -93,8 +54,8 @@ export function ThemeProvider({
             theme,
             resolvedTheme,
             setTheme,
-            themes: VALID_THEMES,
-            isDark: resolvedTheme === 'dark',
+            themes: THEME_VALUES,
+            isDark: resolvedTheme === "dark",
         }),
         [theme, resolvedTheme, setTheme]
     );
@@ -105,7 +66,7 @@ export function ThemeProvider({
 export function useThemeContext() {
     const ctx = useContext(ThemeContext);
     if (!ctx) {
-        throw new Error('useThemeContext must be used within ThemeProvider');
+        throw new Error("useThemeContext must be used within a ThemeProvider");
     }
     return ctx;
 }

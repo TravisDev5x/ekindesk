@@ -1,4 +1,6 @@
 import { AccordionSimple } from "@/components/ui/accordion";
+import { badgeNeutral } from "@/lib/badgeStyles";
+import { sectionDefault } from "@/lib/marketingTheme";
 
 const FAQ_ITEMS = [
     {
@@ -53,16 +55,16 @@ const FAQ_ITEMS = [
 
 export default function FAQ() {
     return (
-        <section id="faq" className="py-24 px-6 bg-slate-950">
+        <section id="faq" className={sectionDefault}>
             <div className="mx-auto max-w-7xl">
                 <div className="text-center">
-                    <span className="inline-block rounded-full border border-slate-700 bg-slate-800/50 px-4 py-1 text-sm text-slate-400 mb-4">
+                    <span className={`inline-block rounded-full px-4 py-1 text-sm mb-4 ${badgeNeutral}`}>
                         Preguntas
                     </span>
-                    <h2 className="text-4xl font-bold text-white">Preguntas frecuentes</h2>
+                    <h2 className="text-4xl font-bold text-foreground">Preguntas frecuentes</h2>
                 </div>
 
-                <div className="mt-12 max-w-3xl mx-auto [&_details]:border-slate-800 [&_details]:bg-slate-900 [&_summary]:text-white [&_div]:text-slate-400">
+                <div className="mt-12 max-w-3xl mx-auto [&_details]:mkt-elevated [&_details]:rounded-lg [&_summary]:text-foreground [&_div]:text-muted-foreground">
                     <AccordionSimple items={FAQ_ITEMS} defaultOpen="1" />
                 </div>
             </div>

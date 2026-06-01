@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { kpiCardSurface, hintWarning } from "@/lib/badgeStyles";
 import {
     AlertCircle,
     CalendarDays,
@@ -114,8 +115,8 @@ export function DashboardOperativo({ variant = "soporte" }) {
                 </Card>
                 <Card>
                     <CardContent className="p-4 flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-lg bg-amber-500/10 flex items-center justify-center">
-                            <AlertCircle className="h-5 w-5 text-amber-600" />
+                        <div className={cn("h-10 w-10 rounded-lg flex items-center justify-center", kpiCardSurface.warning.icon)}>
+                            <AlertCircle className="h-5 w-5" />
                         </div>
                         <div>
                             <p className="text-xs text-muted-foreground">Abiertos</p>
@@ -191,7 +192,7 @@ export function DashboardOperativo({ variant = "soporte" }) {
                                                             "font-medium",
                                                             assigned
                                                                 ? "text-foreground/90"
-                                                                : "text-amber-600 dark:text-amber-400"
+                                                                : hintWarning
                                                         )}
                                                     >
                                                         {assigned?.name ?? "Sin asignar"}

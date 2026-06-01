@@ -5,6 +5,7 @@ import axios from '@/lib/axios'
 import { useSidebarPosition } from '@/context/SidebarPositionContext'
 import { useI18n } from '@/hooks/useI18n'
 import { cn } from '@/lib/utils'
+import { menuItemDestructive } from '@/lib/badgeStyles'
 import { isExternalUrl, shouldUseInertiaLink } from '@/lib/inertiaNavigation'
 
 import { Button } from '@/components/ui/button'
@@ -788,7 +789,7 @@ export function Sidebar({ collapsed, onToggle, onNavigate, currentPath: currentP
                             <DropdownMenuSeparator className="bg-border/50" />
                             <DropdownMenuItem
                                 onClick={logout}
-                                className="cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/20 gap-2"
+                                className={menuItemDestructive}
                             >
                                 <LogOut className="h-4 w-4 shrink-0" />
                                 <span>{t('layout.logout')}</span>

@@ -20,6 +20,7 @@ import { useSidebarPosition } from "@/context/SidebarPositionContext";
 import { useI18n } from "@/hooks/useI18n";
 import { useSwipeToClose } from "@/hooks/useSwipeToClose";
 import { cn } from "@/lib/utils";
+import { noticeWarningBanner, noticeWarningBtnOutline } from "@/lib/badgeStyles";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Sheet, SheetClose, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -307,10 +308,10 @@ export default function AuthenticatedLayout({ children, title: titleProp }) {
 
                 <div className="flex flex-1 flex-col min-w-0 relative transition-[margin] duration-350 ease-[cubic-bezier(0.32,0.72,0,1)]">
                     {mustChangePassword && (
-                        <div className="w-full bg-amber-500/10 text-amber-600 dark:text-amber-500 text-sm px-6 py-2 flex items-center justify-center gap-3 border-b border-amber-500/20 z-50">
+                        <div className={noticeWarningBanner}>
                             <AlertTriangle className="h-4 w-4" />
                             <span className="font-semibold">Seguridad: Cambio de contraseña requerido.</span>
-                            <Button variant="outline" size="sm" asChild className="h-7 text-xs border-amber-500/50 hover:bg-amber-500/10">
+                            <Button variant="outline" size="sm" asChild className={cn("h-7 text-xs", noticeWarningBtnOutline)}>
                                 <Link href="/force-change-password">Cambiar</Link>
                             </Button>
                         </div>
@@ -483,7 +484,10 @@ export default function AuthenticatedLayout({ children, title: titleProp }) {
                             className="layout-scroll-fade pointer-events-none sticky top-0 left-0 right-0 z-20 h-14 transition-opacity duration-200 ease-out"
                             style={{ opacity: scrollFadeOpacity }}
                         />
-                        <div className="absolute inset-0 -z-10 h-full w-full bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:32px_32px]" />
+                        <div
+                            className="absolute inset-0 -z-10 h-full w-full bg-[size:32px_32px] bg-[linear-gradient(to_right,hsl(var(--border)/0.35)_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border)/0.35)_1px,transparent_1px)]"
+                            aria-hidden
+                        />
 
                         <div
                             className={cn(

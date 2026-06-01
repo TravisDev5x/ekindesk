@@ -7,6 +7,9 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { AuthSimpleShell } from "@/components/auth/AuthSimpleShell";
+import { authSimpleCard, btnBrand, passwordStrengthClass } from "@/lib/marketingTheme";
+import { cn } from "@/lib/utils";
 
 function passwordStrength(password) {
     if (!password) return { label: "", score: 0 };
@@ -31,6 +34,18 @@ function formatExpiry(iso) {
     } catch {
         return iso;
     }
+}
+
+function InvitationCard({ children, title, description }) {
+    return (
+        <Card className={cn(authSimpleCard, "max-w-lg")}>
+            <CardHeader className="space-y-2">
+                <CardTitle className="text-2xl">{title}</CardTitle>
+                {description ? <CardDescription>{description}</CardDescription> : null}
+            </CardHeader>
+            <CardContent>{children}</CardContent>
+        </Card>
+    );
 }
 
 export default function AcceptInvitation({
@@ -61,13 +76,6 @@ export default function AcceptInvitation({
 
     const strength = useMemo(() => passwordStrength(data.password), [data.password]);
 
-    const strengthClass =
-        strength.score === 3
-            ? "text-emerald-600 dark:text-emerald-400"
-            : strength.score === 2
-              ? "text-amber-600 dark:text-amber-400"
-              : "text-destructive";
-
     const handleSubmit = (e) => {
         e.preventDefault();
         post("/register/accept", {
@@ -77,41 +85,36 @@ export default function AcceptInvitation({
 
     if (isInvalid) {
         return (
-            <div className="flex min-h-[100dvh] items-center justify-center bg-background p-6">
+            <>
                 <Head title="Invitación no válida" />
-                <Card className="w-full max-w-md border-border shadow-lg">
-                    <CardHeader>
-                        <CardTitle>Invitación no válida</CardTitle>
-                        <CardDescription>{pageError}</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <p className="text-sm text-muted-foreground">
+                <AuthSimpleShell maxWidth="max-w-md">
+                    <InvitationCard title="Invitación no válida" description={pageError}>
+                        <p className="text-sm text-muted-foreground mb-4">
                             Solicita una nueva invitación al administrador de tu organización.
                         </p>
                         <div className="flex flex-col gap-2 sm:flex-row">
                             <Button asChild variant="outline" className="flex-1">
                                 <a href="mailto:soporte@helpdesk.local">Contactar soporte</a>
                             </Button>
-                            <Button asChild className="flex-1">
+                            <Button asChild className={cn("flex-1", btnBrand)}>
                                 <Link href="/login">Ir al inicio de sesión</Link>
                             </Button>
                         </div>
-                    </CardContent>
-                </Card>
-            </div>
+                    </InvitationCard>
+                </AuthSimpleShell>
+            </>
         );
     }
 
     return (
-        <div className="flex min-h-[100dvh] items-center justify-center bg-background p-6">
+        <>
             <Head title="Configura tu cuenta" />
-            <Card className="w-full max-w-lg border-border shadow-lg">
-                <CardHeader className="space-y-2">
-                    <CardTitle className="text-2xl">Configura tu cuenta</CardTitle>
-                    <CardDescription>
-                        Completa tus datos para activar el acceso a HelpDesk.
-                    </CardDescription>
-                    <div className="rounded-lg border border-border/60 bg-muted/40 p-3 text-sm space-y-1">
+            <AuthSimpleShell maxWidth="max-w-lg">
+                <InvitationCard
+                    title="Configura tu cuenta"
+                    description="Completa tus datos para activar el acceso a HelpDesk."
+                >
+                    <div className="rounded-lg border border-border/60 bg-muted/40 p-3 text-sm space-y-1 mb-4">
                         <p>
                             Fuiste invitado como <strong>{role_name}</strong>
                             {client_name ? (
@@ -128,8 +131,7 @@ export default function AcceptInvitation({
                             </Badge>
                         )}
                     </div>
-                </CardHeader>
-                <CardContent>
+
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <input type="hidden" name="token" value={data.token} readOnly />
 
@@ -190,7 +192,7 @@ export default function AcceptInvitation({
                                 />
                                 <button
                                     type="button"
-                                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground"
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                                     onClick={() => setShowPassword((v) => !v)}
                                     tabIndex={-1}
                                 >
@@ -198,7 +200,7 @@ export default function AcceptInvitation({
                                 </button>
                             </div>
                             {data.password && (
-                                <p className={`text-xs ${strengthClass}`}>
+                                <p className={cn("text-xs", passwordStrengthClass(strength.score))}>
                                     Seguridad: {strength.label}
                                 </p>
                             )}
@@ -221,7 +223,7 @@ export default function AcceptInvitation({
                                 />
                                 <button
                                     type="button"
-                                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground"
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                                     onClick={() => setShowConfirm((v) => !v)}
                                     tabIndex={-1}
                                 >
@@ -234,13 +236,13 @@ export default function AcceptInvitation({
                             <p className="text-sm text-destructive">{errors.token || errors.root}</p>
                         )}
 
-                        <Button type="submit" className="w-full" disabled={processing}>
+                        <Button type="submit" className={cn("w-full", btnBrand)} disabled={processing}>
                             {processing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Crear mi cuenta
                         </Button>
                     </form>
-                </CardContent>
-            </Card>
-        </div>
+                </InvitationCard>
+            </AuthSimpleShell>
+        </>
     );
 }

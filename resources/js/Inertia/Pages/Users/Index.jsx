@@ -33,6 +33,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { notify } from "@/lib/notify";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { strongPasswordSchema } from "@/lib/passwordSchema";
+import { tableActionIcon, userStatusClass } from "@/lib/badgeStyles";
+import { cn } from "@/lib/utils";
 import {
     AlertTriangle,
     Ban,
@@ -81,12 +83,6 @@ function StatusBadge({ status, isBlacklisted }) {
             </Badge>
         );
     }
-    const styles = {
-        active: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 dark:border-emerald-500/30 hover:bg-emerald-500/25 dark:hover:bg-emerald-500/20",
-        pending_admin: "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/20 dark:border-amber-500/30 hover:bg-amber-500/25 dark:hover:bg-amber-500/20",
-        pending_email: "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/20 dark:border-blue-500/30 hover:bg-blue-500/25 dark:hover:bg-blue-500/20",
-        blocked: "bg-slate-500/15 text-slate-600 dark:text-slate-400 border-slate-500/20 dark:border-slate-500/30 hover:bg-slate-500/25 dark:hover:bg-slate-500/20",
-    };
     const labels = {
         active: "Activo",
         pending_admin: "Pendiente Aprobación",
@@ -96,7 +92,10 @@ function StatusBadge({ status, isBlacklisted }) {
     return (
         <Badge
             variant="outline"
-            className={`uppercase text-[10px] font-bold tracking-wider ${styles[status] || styles.blocked}`}
+            className={cn(
+                "uppercase text-[10px] font-bold tracking-wider",
+                userStatusClass(status)
+            )}
         >
             {labels[status] || status}
         </Badge>
@@ -477,7 +476,7 @@ export default function Index({ users, catalogs, filters: serverFilters = {} }) 
                         <Button
                             size="icon"
                             variant="ghost"
-                            className="h-8 w-8 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                            className={cn(tableActionIcon.base, tableActionIcon.restore)}
                             onClick={() => restoreUser(u.id)}
                             title="Restaurar"
                         >
@@ -500,7 +499,7 @@ export default function Index({ users, catalogs, filters: serverFilters = {} }) 
                         <Button
                             size="icon"
                             variant="ghost"
-                            className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-950/20"
+                            className={cn(tableActionIcon.base, tableActionIcon.view)}
                             onClick={() => {
                                 setViewUser(u);
                                 setViewOpen(true);
@@ -513,7 +512,7 @@ export default function Index({ users, catalogs, filters: serverFilters = {} }) 
                             <Button
                                 size="icon"
                                 variant="ghost"
-                                className="h-8 w-8 text-emerald-600 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/40"
+                                className={cn(tableActionIcon.base, tableActionIcon.approve)}
                                 onClick={() => openEdit(u, true)}
                                 title="Aprobar"
                             >
@@ -523,7 +522,7 @@ export default function Index({ users, catalogs, filters: serverFilters = {} }) 
                         <Button
                             size="icon"
                             variant="ghost"
-                            className="h-8 w-8 text-slate-500 hover:text-foreground hover:bg-muted"
+                            className={cn(tableActionIcon.base, tableActionIcon.edit)}
                             onClick={() => openEdit(u)}
                             title="Editar"
                         >
@@ -532,11 +531,12 @@ export default function Index({ users, catalogs, filters: serverFilters = {} }) 
                         <Button
                             size="icon"
                             variant="ghost"
-                            className={
+                            className={cn(
+                                tableActionIcon.base,
                                 u.is_blacklisted
-                                    ? "h-8 w-8 text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/40"
-                                    : "h-8 w-8 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
-                            }
+                                    ? tableActionIcon.blacklistOn
+                                    : tableActionIcon.blacklistOff
+                            )}
                             onClick={() => toggleBlacklist(u, !u.is_blacklisted)}
                             title={u.is_blacklisted ? "Quitar veto" : "Vetar"}
                         >
@@ -549,7 +549,7 @@ export default function Index({ users, catalogs, filters: serverFilters = {} }) 
                         <Button
                             size="icon"
                             variant="ghost"
-                            className="h-8 w-8 text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40"
+                            className={cn(tableActionIcon.base, tableActionIcon.delete)}
                             onClick={() => openDelete(u.id)}
                             title="Eliminar"
                         >

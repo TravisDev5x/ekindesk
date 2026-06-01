@@ -6,15 +6,18 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { Loader2, Eye, EyeOff } from "lucide-react";
-
-const PATTERN_STYLE = {
-    backgroundImage: "radial-gradient(circle, rgba(6,182,212,0.06) 1px, transparent 1px)",
-    backgroundSize: "32px 32px",
-};
-
-const INPUT_CLASS =
-    "h-11 w-full rounded-lg border-slate-700 bg-slate-800 text-slate-100 placeholder:text-slate-500 focus-visible:border-cyan-500 focus-visible:ring-1 focus-visible:ring-cyan-500/20";
+import {
+    authCard,
+    authPanelSide,
+    brandBadgeSm,
+    brandLogo,
+    btnBrand,
+    btnBrandOutline,
+    linkBrand,
+    surfaceAuth,
+} from "@/lib/marketingTheme";
 
 function GoogleIcon() {
     return (
@@ -41,59 +44,56 @@ function GoogleIcon() {
 
 function LoginBrandingColumn() {
     return (
-        <aside
-            className="hidden lg:flex lg:w-2/5 flex-col justify-between p-12 relative overflow-hidden bg-slate-950"
-            style={PATTERN_STYLE}
-        >
+        <aside className={authPanelSide}>
             <div
-                className="absolute -top-20 -left-20 w-96 h-96 rounded-full blur-3xl bg-gradient-to-br from-cyan-500/10 to-blue-600/10 -z-10 pointer-events-none"
+                className="absolute -top-20 -left-20 w-96 h-96 rounded-full blur-3xl bg-gradient-to-br from-[hsl(var(--brand)/0.1)] to-blue-600/10 -z-10 pointer-events-none"
                 aria-hidden
             />
 
             <div className="flex items-center gap-3 relative z-10">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 shadow-lg shadow-cyan-500/20">
-                    <span className="text-white font-black text-lg">E</span>
+                <div className={`h-10 w-10 rounded-xl ${brandLogo}`}>
+                    <span className="font-black text-lg">E</span>
                 </div>
-                <span className="text-white font-bold text-xl tracking-tight">EkinDesk</span>
+                <span className="text-foreground font-bold text-xl tracking-tight">EkinDesk</span>
             </div>
 
             <div className="relative z-10 my-auto">
-                <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/20 bg-cyan-500/10 px-4 py-1 text-sm text-cyan-400 mb-6">
-                    <span className="h-2 w-2 rounded-full bg-cyan-400 animate-pulse" />
+                <div className={`inline-flex items-center gap-2 ${brandBadgeSm} mb-6`}>
+                    <span className="h-2 w-2 rounded-full bg-brand animate-pulse" />
                     Acceso seguro
                 </div>
 
-                <h2 className="text-4xl font-black text-white leading-tight">
+                <h2 className="text-4xl font-black text-foreground leading-tight">
                     Bienvenido
                     <br />
                     de nuevo
                 </h2>
 
-                <p className="text-slate-400 text-base mt-4 max-w-sm leading-relaxed">
+                <p className="text-muted-foreground text-base mt-4 max-w-sm leading-relaxed">
                     Inicia sesión con el correo de tu cuenta para entrar al panel de tu negocio.
                 </p>
 
                 <ul className="mt-8 space-y-3">
-                    <li className="flex items-center gap-3 text-sm text-slate-300">
-                        <span className="h-2 w-2 shrink-0 rounded-full bg-cyan-400" />
+                    <li className="flex items-center gap-3 text-sm text-muted-foreground">
+                        <span className="h-2 w-2 shrink-0 rounded-full bg-brand" />
                         Misma cuenta para todas las pantallas.
                     </li>
-                    <li className="flex items-center gap-3 text-sm text-slate-300">
-                        <span className="h-2 w-2 shrink-0 rounded-full bg-blue-400" />
+                    <li className="flex items-center gap-3 text-sm text-muted-foreground">
+                        <span className="h-2 w-2 shrink-0 rounded-full bg-blue-500" />
                         Roles y permisos según tu equipo.
                     </li>
-                    <li className="flex items-center gap-3 text-sm text-slate-300">
-                        <span className="h-2 w-2 shrink-0 rounded-full bg-slate-400" />
+                    <li className="flex items-center gap-3 text-sm text-muted-foreground">
+                        <span className="h-2 w-2 shrink-0 rounded-full bg-muted-foreground" />
                         Tus datos seguros y aislados.
                     </li>
                 </ul>
             </div>
 
-            <div className="relative z-10 flex gap-4 text-xs text-slate-500">
-                <Link href="/privacidad" className="hover:text-slate-300 transition-colors">
+            <div className="relative z-10 flex gap-4 text-xs text-muted-foreground">
+                <Link href="/privacidad" className="hover:text-foreground transition-colors">
                     Aviso de privacidad
                 </Link>
-                <Link href="/terminos" className="hover:text-slate-300 transition-colors">
+                <Link href="/terminos" className="hover:text-foreground transition-colors">
                     Términos del servicio
                 </Link>
             </div>
@@ -159,6 +159,16 @@ export default function Login() {
             const userTheme = data?.user?.theme;
             if (userTheme && ["light", "dark", "system"].includes(userTheme)) {
                 localStorage.setItem("ekindesk_theme", userTheme);
+                const resolved =
+                    userTheme === "system"
+                        ? window.matchMedia("(prefers-color-scheme: dark)").matches
+                            ? "dark"
+                            : "light"
+                        : userTheme;
+                const root = document.documentElement;
+                root.classList.remove("light", "dark");
+                root.classList.add(resolved);
+                root.style.colorScheme = resolved;
             }
             window.location.href = data?.onboarding_redirect || "/home";
         } catch (err) {
@@ -181,24 +191,26 @@ export default function Login() {
     return (
         <>
             <Head title="Iniciar sesión — EkinDesk" />
-            <div className="min-h-screen flex bg-slate-950 text-slate-100">
+            <div className={`${surfaceAuth} flex`}>
                 <LoginBrandingColumn />
 
-                <div className="flex-1 flex items-center justify-center p-8 lg:p-16 bg-slate-900/50 min-h-screen">
-                    <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-2xl">
-                        <div className="lg:hidden flex items-center gap-3 mb-8">
-                            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600">
-                                <span className="text-white font-black">E</span>
+                <div className="flex-1 flex items-center justify-center p-8 lg:p-16 bg-muted/20 min-h-screen">
+                    <div className={authCard}>
+                        <div className="flex justify-between items-start mb-6">
+                            <div className="lg:hidden flex items-center gap-3">
+                                <div className={`h-9 w-9 ${brandLogo}`}>
+                                    <span className="font-black">E</span>
+                                </div>
+                                <span className="text-foreground font-bold text-lg">EkinDesk</span>
                             </div>
-                            <span className="text-white font-bold text-lg">EkinDesk</span>
+                            <div className="ml-auto">
+                                <ThemeToggle variant="icon" />
+                            </div>
                         </div>
 
                         <div className="flex justify-end items-center text-sm mb-6">
-                            <span className="text-slate-400">¿Aún no tienes cuenta?</span>
-                            <Link
-                                href="/register"
-                                className="text-cyan-400 hover:text-cyan-300 font-semibold ml-1"
-                            >
+                            <span className="text-muted-foreground">¿Aún no tienes cuenta?</span>
+                            <Link href="/register" className={`${linkBrand} ml-1`}>
                                 Crear cuenta gratis
                             </Link>
                         </div>
@@ -207,27 +219,27 @@ export default function Login() {
                             <Button
                                 type="button"
                                 variant="outline"
-                                className="w-full h-11 border-slate-700 text-slate-300 hover:border-slate-600 hover:bg-slate-800 bg-transparent"
+                                className={`w-full h-11 ${btnBrandOutline}`}
                                 onClick={(e) => e.preventDefault()}
                             >
                                 <GoogleIcon />
                                 <span className="ml-2">Continuar con Google</span>
                             </Button>
-                            <p className="text-slate-600 text-xs text-center mt-1">
+                            <p className="text-muted-foreground text-xs text-center mt-1">
                                 Próximamente disponible
                             </p>
                         </div>
 
                         <div className="relative my-6">
-                            <Separator className="bg-slate-800" />
-                            <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-slate-900 text-slate-500 text-xs px-3 whitespace-nowrap">
+                            <Separator className="bg-border" />
+                            <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card text-muted-foreground text-xs px-3 whitespace-nowrap">
                                 O CON CORREO Y CONTRASEÑA
                             </span>
                         </div>
 
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div>
-                                <Label htmlFor="login-email" className="text-slate-300 text-sm mb-1.5 block">
+                                <Label htmlFor="login-email" className="text-sm mb-1.5 block">
                                     Correo electrónico
                                 </Label>
                                 <Input
@@ -243,15 +255,12 @@ export default function Login() {
                                     autoFocus
                                     disabled={loading}
                                     aria-invalid={Boolean(error)}
-                                    className={INPUT_CLASS}
+                                    className="h-11"
                                 />
                             </div>
 
                             <div>
-                                <Label
-                                    htmlFor="login-password"
-                                    className="text-slate-300 text-sm mb-1.5 block"
-                                >
+                                <Label htmlFor="login-password" className="text-sm mb-1.5 block">
                                     Contraseña
                                 </Label>
                                 <div className="relative">
@@ -265,14 +274,14 @@ export default function Login() {
                                         autoComplete="current-password"
                                         disabled={loading}
                                         aria-invalid={Boolean(error)}
-                                        className={`${INPUT_CLASS} pr-12`}
+                                        className="h-11 pr-12"
                                     />
                                     <Button
                                         type="button"
                                         variant="ghost"
                                         size="icon"
                                         onClick={() => setShowPassword((v) => !v)}
-                                        className="absolute right-1 top-1/2 -translate-y-1/2 h-9 w-9 text-slate-400 hover:text-slate-200 hover:bg-slate-800"
+                                        className="absolute right-1 top-1/2 -translate-y-1/2 h-9 w-9 text-muted-foreground hover:text-foreground"
                                         disabled={loading}
                                         aria-label={
                                             showPassword ? "Ocultar contraseña" : "Mostrar contraseña"
@@ -288,31 +297,24 @@ export default function Login() {
                             </div>
 
                             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-3 mb-6">
-                                <label
-                                    className="flex cursor-pointer items-center"
-                                    htmlFor="remember"
-                                >
+                                <label className="flex cursor-pointer items-center" htmlFor="remember">
                                     <Checkbox
                                         id="remember"
                                         checked={remember}
                                         onCheckedChange={(v) => setRemember(Boolean(v))}
                                         disabled={loading}
-                                        className="border-slate-600 data-[state=checked]:bg-cyan-500 data-[state=checked]:border-cyan-500"
                                     />
-                                    <span className="text-slate-400 text-sm ml-2 select-none">
+                                    <span className="text-muted-foreground text-sm ml-2 select-none">
                                         Mantener sesión en este dispositivo
                                     </span>
                                 </label>
-                                <Link
-                                    href="/forgot-password"
-                                    className="text-cyan-400 hover:text-cyan-300 text-sm shrink-0"
-                                >
+                                <Link href="/forgot-password" className={`${linkBrand} text-sm shrink-0`}>
                                     ¿Olvidaste tu contraseña?
                                 </Link>
                             </div>
 
                             {error ? (
-                                <p className="text-red-400 text-xs" role="alert" aria-live="polite">
+                                <p className="text-destructive text-xs" role="alert" aria-live="polite">
                                     {error}
                                 </p>
                             ) : null}
@@ -320,7 +322,7 @@ export default function Login() {
                             <Button
                                 type="submit"
                                 disabled={loading}
-                                className="w-full h-11 gap-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-semibold rounded-lg border-0 transition-all duration-200"
+                                className={`w-full h-11 gap-2 rounded-lg ${btnBrand}`}
                             >
                                 {loading ? (
                                     <Loader2 className="h-4 w-4 animate-spin" aria-hidden />

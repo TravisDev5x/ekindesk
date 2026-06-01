@@ -17,6 +17,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { kpiCardSurface, hintWarning } from "@/lib/badgeStyles";
 import { AlertCircle, CalendarDays, ShieldOff, Ticket } from "lucide-react";
 
 const CALENDAR_PER_PAGE = 500;
@@ -170,9 +171,9 @@ export default function Calendario() {
     if (error === "no_permission") {
         return (
             <div className="mx-auto max-w-2xl p-6">
-                <Card className="border-amber-200 dark:border-amber-900/50 bg-amber-50/30 dark:bg-amber-900/10">
+                <Card className={cn("border", kpiCardSurface.warning.card)}>
                     <CardContent className="flex flex-col items-center gap-4 py-8 text-center">
-                        <ShieldOff className="h-10 w-10 text-amber-600" />
+                        <ShieldOff className={cn("h-10 w-10", hintWarning)} />
                         <p className="text-sm text-muted-foreground">
                             No tienes permiso para ver el calendario de tickets.
                         </p>

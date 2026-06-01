@@ -1,13 +1,12 @@
 import { Link } from "@inertiajs/react";
 import { Separator } from "@/components/ui/separator";
+import { brandLogo, footerLink } from "@/lib/marketingTheme";
 
 function BrandLogo() {
     return (
         <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-cyan-400 to-blue-600 text-sm font-black text-white">
-                E
-            </div>
-            <span className="text-lg font-bold text-white">EkinDesk</span>
+            <div className={`h-8 w-8 ${brandLogo}`}>E</div>
+            <span className="text-lg font-bold text-foreground">EkinDesk</span>
         </div>
     );
 }
@@ -16,19 +15,19 @@ export default function Footer() {
     const year = new Date().getFullYear();
 
     return (
-        <footer id="footer" className="py-16 px-6 bg-slate-950 border-t border-slate-800/50">
+        <footer id="footer" className="py-16 px-6 bg-background border-t border-border">
             <div className="mx-auto max-w-7xl">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
                     <div>
                         <BrandLogo />
-                        <p className="text-slate-400 text-sm mt-3 max-w-xs leading-relaxed">
+                        <p className="text-muted-foreground text-sm mt-3 max-w-xs leading-relaxed">
                             Helpdesk MSP profesional para equipos de soporte IT.
                         </p>
                         <div className="mt-4 flex gap-2">
                             {["X", "in", "GH"].map((label) => (
                                 <div
                                     key={label}
-                                    className="flex h-8 w-8 items-center justify-center rounded-md bg-slate-800 text-xs text-slate-500 hover:bg-slate-700 transition-colors cursor-default"
+                                    className="flex h-8 w-8 items-center justify-center rounded-md bg-muted text-xs text-muted-foreground hover:bg-muted/80 transition-colors cursor-default"
                                     title={label}
                                 >
                                     {label}
@@ -38,23 +37,20 @@ export default function Footer() {
                     </div>
 
                     <div>
-                        <h4 className="text-slate-200 font-semibold mb-4">Producto</h4>
+                        <h4 className="text-foreground font-semibold mb-4">Producto</h4>
                         <ul className="space-y-2 text-sm">
                             <li>
-                                <a href="#features" className="text-slate-400 hover:text-white transition-colors">
+                                <a href="#features" className={footerLink}>
                                     Características
                                 </a>
                             </li>
                             <li>
-                                <a href="#pricing" className="text-slate-400 hover:text-white transition-colors">
+                                <a href="#pricing" className={footerLink}>
                                     Planes
                                 </a>
                             </li>
                             <li>
-                                <a
-                                    href="#how-it-works"
-                                    className="text-slate-400 hover:text-white transition-colors"
-                                >
+                                <a href="#how-it-works" className={footerLink}>
                                     Cómo empezar
                                 </a>
                             </li>
@@ -62,25 +58,25 @@ export default function Footer() {
                     </div>
 
                     <div>
-                        <h4 className="text-slate-200 font-semibold mb-4">Empresa</h4>
+                        <h4 className="text-foreground font-semibold mb-4">Empresa</h4>
                         <ul className="space-y-2 text-sm">
                             <li>
-                                <a href="#mission" className="text-slate-400 hover:text-white transition-colors">
+                                <a href="#mission" className={footerLink}>
                                     Misión
                                 </a>
                             </li>
                             <li>
-                                <a href="#footer" className="text-slate-400 hover:text-white transition-colors">
+                                <a href="#footer" className={footerLink}>
                                     Contacto
                                 </a>
                             </li>
                             <li>
-                                <Link href="/privacidad" className="text-slate-400 hover:text-white transition-colors">
+                                <Link href="/privacidad" className={footerLink}>
                                     Aviso de privacidad
                                 </Link>
                             </li>
                             <li>
-                                <Link href="/terminos" className="text-slate-400 hover:text-white transition-colors">
+                                <Link href="/terminos" className={footerLink}>
                                     Términos
                                 </Link>
                             </li>
@@ -88,20 +84,20 @@ export default function Footer() {
                     </div>
 
                     <div>
-                        <h4 className="text-slate-200 font-semibold mb-4">Acceso</h4>
+                        <h4 className="text-foreground font-semibold mb-4">Acceso</h4>
                         <ul className="space-y-2 text-sm">
                             <li>
-                                <Link href="/login" className="text-slate-400 hover:text-white transition-colors">
+                                <Link href="/login" className={footerLink}>
                                     Iniciar sesión
                                 </Link>
                             </li>
                             <li>
-                                <Link href="/register" className="text-slate-400 hover:text-white transition-colors">
+                                <Link href="/register" className={footerLink}>
                                     Crear cuenta
                                 </Link>
                             </li>
                             <li>
-                                <Link href="/manual" className="text-slate-400 hover:text-white transition-colors">
+                                <Link href="/manual" className={footerLink}>
                                     Documentación
                                 </Link>
                             </li>
@@ -109,9 +105,9 @@ export default function Footer() {
                     </div>
                 </div>
 
-                <Separator className="my-8 bg-slate-800" />
+                <Separator className="my-8 bg-border" />
 
-                <div className="flex flex-col sm:flex-row justify-between items-center gap-4 text-sm text-slate-500">
+                <div className="flex flex-col sm:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
                     <p>© {year} EkinDesk. Todos los derechos reservados.</p>
                     <p>Hecho en México 🇲🇽</p>
                 </div>

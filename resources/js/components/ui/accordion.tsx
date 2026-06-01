@@ -19,7 +19,7 @@ export function AccordionSimple({ items, className, defaultOpen }: AccordionProp
       {items.map((item) => (
         <details
           key={item.value}
-          className="group rounded-md border border-border/60 bg-card/50"
+          className="group rounded-lg border border-border/70 bg-card shadow-sm"
           defaultOpen={item.value === defaultOpen}
         >
           <summary className="flex cursor-pointer items-center justify-between px-3 py-2 text-sm font-semibold text-foreground/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background">

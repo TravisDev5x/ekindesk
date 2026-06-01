@@ -32,6 +32,8 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { clientActiveBadge, clientInactiveBadge } from "@/lib/badgeStyles";
+import { cn } from "@/lib/utils";
 import { Building2, Eye, Pencil, Plus, Search, Trash2 } from "lucide-react";
 
 function initials(name) {
@@ -211,14 +213,13 @@ export default function Index({ clients, total, showOperatorColumn = false }) {
                                             </TableCell>
                                             <TableCell>
                                                 <Badge
-                                                    variant={
-                                                        client.is_active ? "secondary" : "outline"
-                                                    }
-                                                    className={
+                                                    variant="outline"
+                                                    className={cn(
+                                                        "text-xs",
                                                         client.is_active
-                                                            ? "text-emerald-700 dark:text-emerald-400"
-                                                            : ""
-                                                    }
+                                                            ? clientActiveBadge
+                                                            : clientInactiveBadge
+                                                    )}
                                                 >
                                                     {client.is_active ? "Activo" : "Inactivo"}
                                                 </Badge>

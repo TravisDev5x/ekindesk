@@ -5,6 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { AuthHeroShell } from "@/components/auth/AuthHeroShell";
+import { authHeroCard, authLinkGhost, authMessageError, authMessageSuccess } from "@/lib/marketingTheme";
+
 export default function ForgotPassword() {
     const sitekey = import.meta.env.VITE_HCAPTCHA_SITEKEY;
     const widgetId = useRef(null);
@@ -75,18 +78,10 @@ export default function ForgotPassword() {
     return (
         <>
             <Head title="Restablecer contraseña" />
-            <div className="flex min-h-[100dvh] flex-col items-center justify-center text-foreground relative px-4 py-6 pb-[max(2rem,calc(2rem+env(safe-area-inset-bottom)))] overflow-y-auto md:min-h-screen md:h-screen md:overflow-hidden md:pb-6">
-                <div
-                    className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat"
-                    style={{ backgroundImage: "url(/images/auth-hero.png)" }}
-                    aria-hidden
-                />
-                <div
-                    className="absolute inset-0 z-[1] pointer-events-none backdrop-blur-[6px] sm:backdrop-blur-[8px] bg-background/40 dark:bg-background/50"
-                    aria-hidden
-                />
-
-                <Card className="relative z-10 w-full max-w-[420px] shadow-2xl border-border/80 bg-card/90 dark:bg-card/85 backdrop-blur-md flex-shrink-0 my-auto md:my-0 pb-[max(1rem,env(safe-area-inset-bottom))] md:pb-6">
+            <AuthHeroShell>
+                <Card
+                    className={`${authHeroCard} flex-shrink-0 pb-[max(1rem,env(safe-area-inset-bottom))] md:pb-6`}
+                >
                     <CardHeader>
                         <CardTitle className="text-center">Restablecer contraseña</CardTitle>
                     </CardHeader>
@@ -102,7 +97,6 @@ export default function ForgotPassword() {
                                     placeholder="Ej: correo@empresa.com o 12345"
                                     autoComplete="username"
                                     disabled={loading}
-                                    className="focus-visible:ring-2 focus-visible:ring-ring focus-visible:border-transparent md:focus-visible:ring-primary/50"
                                 />
                                 <p className="text-xs text-muted-foreground">
                                     Si no tienes correo institucional, escribe tu número de empleado. Un administrador restablecerá tu contraseña y se comunicará contigo por WhatsApp empresarial, teléfono o personalmente.
@@ -110,23 +104,20 @@ export default function ForgotPassword() {
                             </div>
 
                             {sitekey && (
-                                <div className="border border-border/60 rounded-md p-3">
-                                    <div
-                                        className="h-captcha"
-                                        ref={captchaElRef}
-                                    />
+                                <div className="border border-border/60 rounded-md p-3 bg-muted/30">
+                                    <div className="h-captcha" ref={captchaElRef} />
                                 </div>
                             )}
 
-                            {message ? <p className="text-green-600 text-sm">{message}</p> : null}
-                            {error ? <p className="text-red-500 text-sm">{error}</p> : null}
+                            {message ? <p className={authMessageSuccess}>{message}</p> : null}
+                            {error ? <p className={authMessageError}>{error}</p> : null}
 
                             <Button type="submit" className="w-full min-h-[44px] md:min-h-0" disabled={loading}>
                                 {loading ? "Enviando..." : "Enviar solicitud"}
                             </Button>
                             <Link
                                 href="/login"
-                                className="inline-flex w-full items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground min-h-[44px] md:min-h-0"
+                                className={authLinkGhost}
                                 aria-disabled={loading}
                             >
                                 Volver
@@ -134,7 +125,7 @@ export default function ForgotPassword() {
                         </form>
                     </CardContent>
                 </Card>
-            </div>
+            </AuthHeroShell>
         </>
     );
 }

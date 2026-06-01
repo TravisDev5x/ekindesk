@@ -136,7 +136,7 @@ Inertia (Vite → inertia.jsx → páginas en Inertia/Pages/)
 - **Forms**: React Hook Form + Zod schemas
 - **Routing**: Add routes in `routes/web.php` with `Inertia::render('Module/Page')`; create page under `resources/js/Inertia/Pages/` with optional `.layout = AuthenticatedLayout`
 - **Catalog data**: Always read from `lib/catalogCache.js` (TTL 600s client-side cache), not raw API calls
-- **Styling**: Tailwind CSS + `class-variance-authority` for component variants; use `cn()` (from `lib/utils`) for conditional classes
+- **Styling**: Tailwind CSS + shadcn tokens (`resources/css/app.css`); `class-variance-authority` + `cn()` (`lib/utils`). Tema global light/dark/system (opción A): auth/landing/app; utilidades `lib/chartColors.js`, `lib/badgeStyles.js` (badges, `userStatusClass`, `tableActionIcon`, `statValue`); badges `components/badges/EntityBadges.jsx`, KPI `components/dashboard/KpiCard.jsx`; auth/onboarding shells; marketing `lib/marketingTheme.js` + `.mkt-*`. Evitar `slate-*` y hex sueltos en pantallas nuevas.
 - **TypeScript**: SIGUA pages use `.ts`/`.tsx`; rest of app is `.jsx`. New code in new SIGUA files should be TypeScript; new Helpdesk/Users/etc. files can remain JSX
 
 ---

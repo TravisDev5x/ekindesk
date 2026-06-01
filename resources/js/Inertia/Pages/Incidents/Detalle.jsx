@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { notify } from "@/lib/notify";
+import { IncidentSeverityBadge, IncidentStatusBadge } from "@/components/badges/EntityBadges";
 import { Loader2, Paperclip, Trash2, AlertTriangle, Building2, CalendarDays, User, MessageSquare, UserCog, ChevronLeft } from "lucide-react";
 
 export default function Detalle() {
@@ -142,24 +143,6 @@ export default function Detalle() {
     const severity = incident.incident_severity || incident.incidentSeverity;
     const type = incident.incident_type || incident.incidentType;
 
-    const resolveSeverityStyles = (item) => {
-        const level = Number(item?.level);
-        let styles = "bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20";
-        if (Number.isFinite(level)) {
-            if (level >= 4) styles = "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20";
-            else if (level >= 3) styles = "bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20";
-            else if (level >= 2) styles = "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20";
-        }
-        return styles;
-    };
-
-    const resolveStatusStyles = (item) => {
-        const code = (item?.code || "").toLowerCase();
-        if (item?.is_final) return "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20";
-        if (code.includes("cancel") || code.includes("rechaz")) return "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20";
-        return "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20";
-    };
-
     const scrollToRef = (ref) => {
         ref?.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     };
@@ -186,12 +169,8 @@ export default function Detalle() {
                     </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                    <Badge variant="outline" className={`text-[10px] font-semibold border ${resolveStatusStyles(status)}`}>
-                        {status?.name || "Estado"}
-                    </Badge>
-                    <Badge variant="outline" className={`text-[10px] font-semibold border ${resolveSeverityStyles(severity)}`}>
-                        {severity?.name || "Severidad"}
-                    </Badge>
+                    <IncidentStatusBadge status={status} />
+                    <IncidentSeverityBadge severity={severity} />
                 </div>
             </div>
 

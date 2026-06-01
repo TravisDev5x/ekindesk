@@ -23,18 +23,14 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { notify } from "@/lib/notify";
+import { invitationStatusClass, statValue } from "@/lib/badgeStyles";
+import { cn } from "@/lib/utils";
 import { UserPlus, Loader2, RefreshCw, XCircle, ArrowLeft } from "lucide-react";
 
 const STATUS_LABELS = {
     pending: "Pendiente",
     accepted: "Aceptada",
     expired: "Expirada",
-};
-
-const STATUS_VARIANT = {
-    pending: "outline",
-    accepted: "secondary",
-    expired: "destructive",
 };
 
 function formatDate(iso) {
@@ -169,19 +165,19 @@ export default function Invitations() {
                     <Card>
                         <CardContent className="p-4">
                             <p className="text-xs text-muted-foreground uppercase tracking-wide">Pendientes</p>
-                            <p className="text-2xl font-bold">{stats.pending}</p>
+                            <p className={statValue.default}>{stats.pending}</p>
                         </CardContent>
                     </Card>
                     <Card>
                         <CardContent className="p-4">
                             <p className="text-xs text-muted-foreground uppercase tracking-wide">Aceptadas</p>
-                            <p className="text-2xl font-bold text-emerald-600">{stats.accepted}</p>
+                            <p className={statValue.success}>{stats.accepted}</p>
                         </CardContent>
                     </Card>
                     <Card>
                         <CardContent className="p-4">
                             <p className="text-xs text-muted-foreground uppercase tracking-wide">Expiradas</p>
-                            <p className="text-2xl font-bold text-muted-foreground">{stats.expired}</p>
+                            <p className={statValue.muted}>{stats.expired}</p>
                         </CardContent>
                     </Card>
                 </div>
@@ -221,7 +217,13 @@ export default function Invitations() {
                                             <td className="p-3">{row.role_name || "—"}</td>
                                             <td className="p-3">{row.client_name || "Staff interno"}</td>
                                             <td className="p-3">
-                                                <Badge variant={STATUS_VARIANT[row.status] || "outline"}>
+                                                <Badge
+                                                    variant="outline"
+                                                    className={cn(
+                                                        "text-xs",
+                                                        invitationStatusClass(row.status)
+                                                    )}
+                                                >
                                                     {STATUS_LABELS[row.status] || row.status}
                                                 </Badge>
                                             </td>

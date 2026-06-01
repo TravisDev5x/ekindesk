@@ -1,3 +1,5 @@
+import { brandBadgeSm, brandGradientText, sectionDefault } from "@/lib/marketingTheme";
+
 const STEPS = [
     {
         n: "1",
@@ -23,14 +25,12 @@ const STEPS = [
 
 export default function HowItWorks() {
     return (
-        <section id="how-it-works" className="py-24 px-6 bg-slate-950">
+        <section id="how-it-works" className={sectionDefault}>
             <div className="mx-auto max-w-7xl">
                 <div className="text-center mb-16">
-                    <span className="inline-block rounded-full border border-cyan-500/20 bg-cyan-500/10 px-4 py-1 text-sm text-cyan-400 mb-4">
-                        Cómo empezar
-                    </span>
-                    <h2 className="text-4xl font-bold text-white">Operativo en minutos</h2>
-                    <p className="mt-3 text-slate-400">Sin instalaciones. Sin configuraciones complejas.</p>
+                    <span className={`inline-block ${brandBadgeSm} mb-4`}>Cómo empezar</span>
+                    <h2 className="text-4xl font-bold text-foreground">Operativo en minutos</h2>
+                    <p className="mt-3 text-muted-foreground">Sin instalaciones. Sin configuraciones complejas.</p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-10 md:gap-6">
@@ -38,15 +38,13 @@ export default function HowItWorks() {
                         <div key={step.n} className="relative text-center md:text-left">
                             {index < STEPS.length - 1 && (
                                 <div
-                                    className="hidden md:block absolute top-8 left-[calc(50%+2rem)] right-0 h-px bg-gradient-to-r from-cyan-500/50 to-transparent"
+                                    className="hidden md:block absolute top-8 left-[calc(50%+2rem)] right-0 h-px bg-gradient-to-r from-[hsl(var(--brand)/0.5)] to-transparent"
                                     aria-hidden
                                 />
                             )}
-                            <span className="text-6xl font-black bg-gradient-to-b from-cyan-400 to-blue-600 bg-clip-text text-transparent">
-                                {step.n}
-                            </span>
-                            <h3 className="text-white font-semibold mt-3">{step.title}</h3>
-                            <p className="text-slate-400 text-sm mt-1 leading-relaxed">{step.desc}</p>
+                            <span className={`text-6xl font-black ${brandGradientText}`}>{step.n}</span>
+                            <h3 className="text-foreground font-semibold mt-3">{step.title}</h3>
+                            <p className="text-muted-foreground text-sm mt-1 leading-relaxed">{step.desc}</p>
                         </div>
                     ))}
                 </div>

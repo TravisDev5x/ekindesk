@@ -11,6 +11,10 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
+import { AuthSimpleShell } from "@/components/auth/AuthSimpleShell";
+import { authSimpleCard } from "@/lib/marketingTheme";
+import { badgeStatus } from "@/lib/badgeStyles";
+import { cn } from "@/lib/utils";
 
 const STATUS = {
     idle: "idle",
@@ -62,16 +66,21 @@ export default function VerifyEmail() {
 
     const isSuccess = status === STATUS.success;
     const isError = status === STATUS.error;
-    const badgeVariant = isSuccess ? "secondary" : isError ? "destructive" : "outline";
     const title = isSuccess ? "Correo verificado" : isError ? "No se pudo verificar" : "Verificando correo";
+
+    const statusBadgeClass = isSuccess
+        ? badgeStatus.success
+        : isError
+          ? badgeStatus.danger
+          : "border-border/60 bg-muted/50 text-muted-foreground border";
 
     return (
         <>
             <Head title="Verificar correo" />
-            <div className="flex h-screen flex-col items-center justify-center bg-background text-foreground relative px-4 py-6">
-                <Card className="w-[440px]">
+            <AuthSimpleShell maxWidth="max-w-[440px]">
+                <Card className={authSimpleCard}>
                     <CardHeader className="space-y-3">
-                        <Badge variant={badgeVariant} className="w-fit">
+                        <Badge variant="outline" className={cn("w-fit text-xs", statusBadgeClass)}>
                             {isSuccess ? "Verificación completa" : isError ? "Verificación fallida" : "Verificando"}
                         </Badge>
                         <CardTitle className="text-center">{title}</CardTitle>
@@ -96,7 +105,7 @@ export default function VerifyEmail() {
                         </Button>
                     </CardFooter>
                 </Card>
-            </div>
+            </AuthSimpleShell>
         </>
     );
 }

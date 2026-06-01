@@ -1,17 +1,37 @@
 /**
- * Colores para gráficas del dashboard (Recharts).
- * Equivalentes a STATE_COLORS de Dashboard y a primary/muted para dark/light.
+ * Colores de gráficos alineados con tokens shadcn (--chart-1 … --chart-8).
+ * Colores de gráficos vía tokens --chart-N (siguen tema claro/oscuro).
  */
-export const stateDistributionColors = [
-    "#0ea5e9", // sky-500
-    "#10b981", // emerald-500
-    "#f59e0b", // amber-500
-    "#f43f5e", // rose-500
-    "#6366f1", // indigo-500
-    "#14b8a6", // teal-500
-    "#f97316", // orange-500
-    "#8b5cf6", // violet-500
+const CHART_VAR_NAMES = [
+    "--chart-1",
+    "--chart-2",
+    "--chart-3",
+    "--chart-4",
+    "--chart-5",
+    "--chart-6",
+    "--chart-7",
+    "--chart-8",
 ];
 
-/** Color principal para barras horizontales (MetricList), equivalente a bg-primary/70 */
-export const primaryBarColor = "#6366f1";
+export function chartColor(index) {
+    const name = CHART_VAR_NAMES[index % CHART_VAR_NAMES.length];
+    return `hsl(var(${name}))`;
+}
+
+export function chartColors(count = CHART_VAR_NAMES.length) {
+    return Array.from({ length: count }, (_, i) => chartColor(i));
+}
+
+/** Paleta para barra apilada de estados (DashboardStackedBar / HomeDashboard). */
+export const stateDistributionColors = chartColors();
+
+/** Barras simples (MetricList, CardBarChart, etc.) — alineado con --primary. */
+export const primaryBarColor = "hsl(var(--primary))";
+
+/** Relleno de barra de progreso (listados, Top Estados). */
+export function chartProgressStyle(percent, index = 0) {
+    const pct = Math.max(0, Math.min(100, Number(percent) || 0));
+    return { width: `${pct}%`, backgroundColor: chartColor(index) };
+}
+
+export default chartColors;

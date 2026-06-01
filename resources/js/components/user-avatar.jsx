@@ -4,8 +4,8 @@ import { cn } from "@/lib/utils";
 
 /** Colores del indicador de disponibilidad (compatible con futuro chat). */
 const STATUS_DOT = {
-    online: "bg-emerald-500 ring-2 ring-background",
-    busy: "bg-amber-500 ring-2 ring-background",
+    online: "bg-[hsl(var(--chart-2))] ring-2 ring-background",
+    busy: "bg-[hsl(var(--chart-3))] ring-2 ring-background",
     offline: "bg-muted-foreground/50 ring-2 ring-background",
 };
 

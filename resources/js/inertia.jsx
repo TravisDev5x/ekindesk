@@ -3,23 +3,24 @@ import "sileo/styles.css";
 import React, { Suspense } from "react";
 import { createRoot } from "react-dom/client";
 import { createInertiaApp } from "@inertiajs/react";
+import { resolvePageComponent } from "laravel-vite-plugin/inertia-helpers";
 import { Toaster } from "sileo";
 import { AuthProvider } from "@/context/AuthContext";
 import { InertiaI18nProvider } from "@/i18n/I18nProvider";
 import { SidebarPositionProvider } from "@/context/SidebarPositionContext";
 
 import { InertiaThemeProvider } from "./Inertia/components/InertiaThemeProvider";
+import { ThemeAuthSync } from "./Inertia/components/ThemeAuthSync";
 
-const pages = import.meta.glob("./Inertia/Pages/**/*.jsx");
+/** Solo entradas de página (excluye subcomponentes de Landing). */
+const pages = import.meta.glob([
+    "./Inertia/Pages/**/*.jsx",
+    "!./Inertia/Pages/Landing/components/**",
+]);
 
 createInertiaApp({
-    resolve: async (name) => {
-        const importPage = pages[`./Inertia/Pages/${name}.jsx`];
-        if (!importPage) {
-            throw new Error(`Página Inertia no encontrada: ${name}`);
-        }
-        return importPage();
-    },
+    resolve: (name) =>
+        resolvePageComponent(`./Inertia/Pages/${name}.jsx`, pages),
     setup({ el, App, props }) {
         createRoot(el).render(
             <Suspense
@@ -29,8 +30,9 @@ createInertiaApp({
                     </div>
                 }
             >
-                <InertiaThemeProvider>
-                    <AuthProvider>
+                <AuthProvider>
+                    <InertiaThemeProvider>
+                        <ThemeAuthSync />
                         <InertiaI18nProvider>
                             <SidebarPositionProvider>
                                 <Toaster
@@ -49,13 +51,13 @@ createInertiaApp({
                                 <App {...props} />
                             </SidebarPositionProvider>
                         </InertiaI18nProvider>
-                    </AuthProvider>
-                </InertiaThemeProvider>
+                    </InertiaThemeProvider>
+                </AuthProvider>
             </Suspense>
         );
     },
     progress: {
-        color: "#06b6d4",
+        color: "hsl(var(--brand))",
         delay: 100,
         includeCSS: true,
     },

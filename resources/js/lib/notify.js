@@ -12,12 +12,12 @@ import { sileo } from "sileo";
 
 const DEFAULT_DURATION = { success: 4000, info: 4000, warning: 6000, error: 8000 };
 
-/* Usan variables CSS del tema para que toasts coincidan con LiquidGlass Rosa y demás temas */
+/** Fondos por tipo; siguen --toast-* en :root y .dark (app.css). */
 const FILL_BY_TYPE = {
-    success: "hsl(var(--toast-success, 142 76% 96%))",
-    error: "hsl(var(--toast-error, 0 86% 97%))",
-    warning: "hsl(var(--toast-warning, 38 92% 96%))",
-    info: "hsl(var(--toast-info, 214 95% 96%))",
+    success: "hsl(var(--toast-success))",
+    error: "hsl(var(--toast-error))",
+    warning: "hsl(var(--toast-warning))",
+    info: "hsl(var(--toast-info))",
 };
 
 function normalizePayload(msgOrPayload, defaultTitle) {

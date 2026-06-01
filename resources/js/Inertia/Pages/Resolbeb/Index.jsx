@@ -15,10 +15,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { notify } from "@/lib/notify";
 import { clearCatalogCache } from "@/lib/catalogCache";
 import { cn } from "@/lib/utils";
+import { TicketPriorityBadge, TicketStateBadge } from "@/components/badges/EntityBadges";
+import { KpiCard } from "@/components/dashboard/KpiCard";
+import { kpiCardSurface, noticeWarningRow, noticeWarningBtnOutline } from "@/lib/badgeStyles";
+import { chartProgressStyle } from "@/lib/chartColors";
 
 import {
     Loader2, Plus, Filter, Tag, MapPin,
-    AlertCircle, CheckCircle2, Clock, Ticket, Flame, XCircle,
+    AlertCircle, Ticket, Flame, XCircle,
     ChevronLeft, ChevronRight, Search, X, User, Building2, BarChart3,
     ArrowRightCircle
 } from "lucide-react";
@@ -55,10 +59,10 @@ const TicketRow = memo(function TicketRow({ ticket }) {
                 </div>
             </TableCell>
             <TableCell>
-                <StateBadge state={ticket.state} />
+                <TicketStateBadge state={ticket.state} />
             </TableCell>
             <TableCell className="text-center">
-                <PriorityBadge priority={ticket.priority} />
+                <TicketPriorityBadge priority={ticket.priority} />
             </TableCell>
             <TableCell>
                 <div className="flex flex-col text-xs gap-0.5">
@@ -118,74 +122,6 @@ const TicketRow = memo(function TicketRow({ ticket }) {
         </TableRow>
     );
 });
-
-const PriorityBadge = memo(({ priority }) => {
-    const level = Number(priority?.level);
-    let styles = "bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20";
-    if (level === 1) styles = "bg-red-500/15 text-red-600 dark:text-red-400 border-red-500/20";
-    if (level === 2) styles = "bg-orange-500/15 text-orange-600 dark:text-orange-400 border-orange-500/20";
-    if (level === 3) styles = "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/20";
-    return (
-        <Badge variant="outline" className={`uppercase text-[10px] font-bold tracking-tight px-2 py-0.5 border ${styles}`}>
-            {priority?.name}
-        </Badge>
-    );
-});
-
-const StateBadge = memo(({ state }) => {
-    const code = (state?.code || "").toLowerCase();
-    let config = {
-        icon: <Clock className="w-3 h-3 mr-1.5" />,
-        styles: "bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20"
-    };
-    if (["abierto", "en_progreso", "asignado"].includes(code)) {
-        config = { icon: <Ticket className="w-3 h-3 mr-1.5" />, styles: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20" };
-    } else if (["resuelto", "cerrado"].includes(code)) {
-        config = { icon: <CheckCircle2 className="w-3 h-3 mr-1.5" />, styles: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20" };
-    } else if (code.includes("cancel") || code.includes("rechaz")) {
-        config = { icon: <AlertCircle className="w-3 h-3 mr-1.5" />, styles: "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20" };
-    }
-    return (
-        <Badge variant="outline" className={`font-medium py-0.5 pl-2 pr-2.5 border ${config.styles}`}>
-            {config.icon} {state?.name}
-        </Badge>
-    );
-});
-
-const SummaryCard = ({ title, value, icon: Icon, variant = "default", hint, className }) => {
-    const variants = {
-        default: "bg-card border-border/50 text-foreground",
-        blue: "bg-blue-50/50 border-blue-100 text-blue-900 dark:bg-blue-900/10 dark:border-blue-900/50 dark:text-blue-100",
-        red: "bg-red-50/50 border-red-100 text-red-900 dark:bg-red-900/10 dark:border-red-900/50 dark:text-red-100",
-        slate: "bg-muted/50 border-border text-foreground",
-        violet: "bg-violet-50/50 border-violet-100 text-violet-900 dark:bg-violet-900/10 dark:border-violet-900/50 dark:text-violet-100",
-    };
-    const iconStyles = {
-        default: "bg-muted/20 text-muted-foreground",
-        blue: "bg-blue-100 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400",
-        red: "bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400",
-        slate: "bg-muted text-muted-foreground",
-        violet: "bg-violet-100 text-violet-600 dark:bg-violet-500/20 dark:text-violet-400",
-    };
-    const currentStyle = variants[variant] || variants.default;
-    const currentIconStyle = iconStyles[variant] || iconStyles.default;
-    return (
-        <Card className={`shadow-sm transition-all hover:shadow-md border ${currentStyle} ${className}`}>
-            <CardContent className="p-5 flex items-center justify-between">
-                <div className="space-y-1">
-                    <p className="text-[10px] uppercase tracking-wider font-bold opacity-70">{title}</p>
-                    <div className="text-2xl font-bold tracking-tight">{value}</div>
-                    {hint && <p className="text-[10px] opacity-70">{hint}</p>}
-                </div>
-                {Icon && (
-                    <div className={`h-10 w-10 rounded-full flex items-center justify-center ${currentIconStyle}`}>
-                        <Icon className="h-5 w-5" />
-                    </div>
-                )}
-            </CardContent>
-        </Card>
-    );
-};
 
 const SummarySkeleton = () => (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -451,10 +387,10 @@ export default function ResolbebIndex({ mode = "tickets", catalogs: catalogsProp
             <Head title={pageTitle} />
         <div className="w-full max-w-[1920px] mx-auto p-4 md:p-6 lg:p-8 space-y-6 animate-in fade-in duration-500">
             {needsAreaWarning && (
-                <div className="rounded-lg border border-amber-500/50 bg-amber-500/10 text-amber-800 dark:text-amber-200 px-4 py-3 flex flex-wrap items-center justify-between gap-2">
+                <div className={cn(noticeWarningRow, "justify-between")}>
                     <span className="text-sm font-medium">Tienes permiso por área pero no tienes un área asignada. Asigna tu área para ver y gestionar tickets.</span>
                     <a href="/profile">
-                        <Button variant="outline" size="sm" className="border-amber-600/50 hover:bg-amber-500/20">Ir a mi perfil</Button>
+                        <Button variant="outline" size="sm" className={noticeWarningBtnOutline}>Ir a mi perfil</Button>
                     </a>
                 </div>
             )}
@@ -503,19 +439,19 @@ export default function ResolbebIndex({ mode = "tickets", catalogs: catalogsProp
                     <SummarySkeleton />
                 ) : summary ? (
                     <div className={cn("grid grid-cols-1 gap-4", canManageAll ? "sm:grid-cols-2 lg:grid-cols-4" : "sm:grid-cols-3")}>
-                        <SummaryCard title="Total Tickets" value={summary.total ?? 0} icon={Ticket} variant="blue" />
-                        <SummaryCard title="Críticos/Quemados" value={summary.burned ?? 0} icon={Flame} variant="red" hint="Sin atención > 72h" />
-                        <SummaryCard title="Cancelados" value={summary.canceled ?? 0} icon={XCircle} variant="slate" />
+                        <KpiCard title="Total Tickets" value={summary.total ?? 0} icon={Ticket} variant="blue" />
+                        <KpiCard title="Críticos/Quemados" value={summary.burned ?? 0} icon={Flame} variant="red" hint="Sin atención > 72h" />
+                        <KpiCard title="Cancelados" value={summary.canceled ?? 0} icon={XCircle} variant="slate" />
                         {canManageAll && (
-                            <Card className="border border-violet-100 bg-violet-50/30 dark:bg-violet-900/10 dark:border-violet-900/50 shadow-sm sm:col-span-2 lg:col-span-1 flex flex-col justify-center">
+                            <Card className={cn("border shadow-sm sm:col-span-2 lg:col-span-1 flex flex-col justify-center", kpiCardSurface.accent.card)}>
                                 <CardContent className="p-4 py-3">
                                     <div className="flex items-center justify-between mb-2">
-                                        <span className="text-[10px] uppercase font-bold text-violet-900 dark:text-violet-100 flex items-center gap-1">
+                                        <span className="text-[10px] uppercase font-bold text-foreground flex items-center gap-1">
                                             <BarChart3 className="w-3 h-3" /> Top Estados
                                         </span>
                                     </div>
                                     <div className="space-y-2">
-                                        {summaryStates.slice(0, 3).map((state) => {
+                                        {summaryStates.slice(0, 3).map((state, stateIdx) => {
                                             const value = Number(state.value || 0);
                                             const pct = summaryMax ? Math.round((value / summaryMax) * 100) : 0;
                                             return (
@@ -524,8 +460,8 @@ export default function ResolbebIndex({ mode = "tickets", catalogs: catalogsProp
                                                         <span className="truncate max-w-[100px] text-foreground/80 font-medium">{state.label}</span>
                                                         <span className="font-mono text-muted-foreground">{value}</span>
                                                     </div>
-                                                    <div className="h-1.5 bg-violet-200/50 dark:bg-violet-900/30 rounded-full overflow-hidden">
-                                                        <div className="h-full bg-violet-500 dark:bg-violet-400" style={{ width: `${pct}%` }} />
+                                                    <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                                                        <div className="h-full" style={chartProgressStyle(pct, stateIdx % 8)} />
                                                     </div>
                                                 </div>
                                             );

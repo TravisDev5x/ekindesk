@@ -17,6 +17,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Label } from "@/components/ui/label";
 import { notify } from "@/lib/notify";
 import { cn } from "@/lib/utils";
+import { IncidentSeverityBadge, IncidentStatusBadge } from "@/components/badges/EntityBadges";
 
 import {
     Loader2, Plus, Filter,
@@ -54,10 +55,10 @@ const IncidentRow = memo(function IncidentRow({ incident }) {
                 </div>
             </TableCell>
             <TableCell>
-                <StatusBadge status={status} />
+                <IncidentStatusBadge status={status} />
             </TableCell>
             <TableCell className="text-center">
-                <SeverityBadge severity={severity} />
+                <IncidentSeverityBadge severity={severity} />
             </TableCell>
             <TableCell>
                 <div className="flex flex-col text-xs gap-0.5">
@@ -106,53 +107,6 @@ const IncidentRow = memo(function IncidentRow({ incident }) {
     );
 });
 
-const SeverityBadge = memo(({ severity }) => {
-    const level = Number(severity?.level);
-    let styles = "bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20";
-    if (Number.isFinite(level)) {
-        if (level >= 4) styles = "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20";
-        else if (level >= 3) styles = "bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20";
-        else if (level >= 2) styles = "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20";
-    }
-
-    return (
-        <Badge variant="outline" className={`uppercase text-[10px] font-bold tracking-tight px-2 py-0.5 border ${styles}`}>
-            {severity?.name}
-        </Badge>
-    );
-});
-
-const StatusBadge = memo(({ status }) => {
-    const code = (status?.code || "").toLowerCase();
-    let config = {
-        icon: <Clock className="w-3 h-3 mr-1.5" />,
-        styles: "bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20"
-    };
-
-    if (status?.is_final) {
-        config = {
-            icon: <CheckCircle2 className="w-3 h-3 mr-1.5" />,
-            styles: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
-        };
-    } else if (code.includes("cancel") || code.includes("rechaz")) {
-        config = {
-            icon: <AlertTriangle className="w-3 h-3 mr-1.5" />,
-            styles: "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20"
-        };
-    } else {
-        config = {
-            icon: <ShieldAlert className="w-3 h-3 mr-1.5" />,
-            styles: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20"
-        };
-    }
-
-    return (
-        <Badge variant="outline" className={`font-medium py-0.5 pl-2 pr-2.5 border ${config.styles}`}>
-            {config.icon} {status?.name}
-        </Badge>
-    );
-});
-
 // ------------------------------------------------------------------
 // VISTA MÓVIL: CARD POR INCIDENCIA (solo visible en viewport < md)
 // ------------------------------------------------------------------
@@ -170,7 +124,7 @@ const IncidentCard = memo(function IncidentCard({ incident }) {
                     <div className="font-mono text-xs font-bold text-primary/80 bg-primary/5 py-1 px-2 rounded shrink-0">
                         #{String(incident.id).padStart(5, "0")}
                     </div>
-                    <StatusBadge status={status} />
+                    <IncidentStatusBadge status={status} />
                 </div>
                 <p className="font-semibold text-sm text-foreground line-clamp-2" title={incident.subject}>
                     {incident.subject}
@@ -184,7 +138,7 @@ const IncidentCard = memo(function IncidentCard({ incident }) {
                     </span>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                    <SeverityBadge severity={severity} />
+                    <IncidentSeverityBadge severity={severity} />
                     {assignedUser ? (
                         <span className="text-xs text-muted-foreground">{assignedUser.name}</span>
                     ) : (

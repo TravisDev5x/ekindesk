@@ -1,49 +1,34 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import axios from "@/lib/axios";
+import { useAuth } from "@/context/AuthContext";
 import { ThemeContext } from "@/components/theme-provider";
+import {
+    applyTheme,
+    readStoredTheme,
+    resolveTheme,
+    THEME_VALUES,
+    writeStoredTheme,
+} from "@/lib/theme";
 
-const STORAGE_KEY = "ekindesk_theme";
-const VALID = ["light", "dark", "system"];
-
-function getSystemTheme() {
-    if (typeof window === "undefined") return "light";
-    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-}
-
-function resolveTheme(theme) {
-    if (theme === "system" || !VALID.includes(theme)) return getSystemTheme();
-    return theme;
-}
-
-function applyTheme(theme) {
-    const resolved = resolveTheme(theme);
-    const root = document.documentElement;
-    root.classList.remove("light", "dark");
-    if (resolved === "dark") {
-        root.classList.add("dark");
-        root.style.colorScheme = "dark";
-    } else {
-        root.style.colorScheme = "light";
-    }
-}
-
-function readStoredTheme() {
-    try {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored && VALID.includes(stored)) return stored;
-    } catch {
-        // ignore
-    }
-    return "system";
-}
-
-/** ThemeContext para páginas Inertia. */
+/** ThemeContext para páginas Inertia (requiere AuthProvider como padre). */
 export function InertiaThemeProvider({ children }) {
+    const { user, updateUserTheme } = useAuth();
     const [theme, setThemeState] = useState(readStoredTheme);
     const mediaRef = useRef(null);
+    const initializedRef = useRef(false);
 
     useEffect(() => {
+        const root = document.documentElement;
+        if (!initializedRef.current) {
+            root.dataset.themeInit = "1";
+            initializedRef.current = true;
+        }
         applyTheme(theme);
+        if (root.dataset.themeInit) {
+            window.requestAnimationFrame(() => {
+                delete root.dataset.themeInit;
+            });
+        }
     }, [theme]);
 
     useEffect(() => {
@@ -67,19 +52,23 @@ export function InertiaThemeProvider({ children }) {
         };
     }, [theme]);
 
-    const setTheme = useCallback((newTheme) => {
-        if (!VALID.includes(newTheme)) return;
+    const setTheme = useCallback(
+        (newTheme, options = { persist: true }) => {
+            if (!THEME_VALUES.includes(newTheme)) return;
 
-        try {
-            localStorage.setItem(STORAGE_KEY, newTheme);
-        } catch {
-            // ignore
-        }
+            writeStoredTheme(newTheme);
+            setThemeState(newTheme);
 
-        setThemeState(newTheme);
+            if (user) {
+                updateUserTheme(newTheme);
+            }
 
-        axios.put("/api/profile/theme", { theme: newTheme }).catch(() => {});
-    }, []);
+            if (options.persist !== false) {
+                axios.put("/api/profile/theme", { theme: newTheme }).catch(() => {});
+            }
+        },
+        [user, updateUserTheme]
+    );
 
     const resolvedTheme = useMemo(() => resolveTheme(theme), [theme]);
 
@@ -88,7 +77,7 @@ export function InertiaThemeProvider({ children }) {
             theme,
             resolvedTheme,
             setTheme,
-            themes: VALID,
+            themes: THEME_VALUES,
             isDark: resolvedTheme === "dark",
         }),
         [theme, resolvedTheme, setTheme]

@@ -8,6 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { chartColor } from "@/lib/chartColors";
+import { KpiCard } from "@/components/dashboard/KpiCard";
 import {
   BarChart,
   Bar,
@@ -47,8 +49,6 @@ import {
 
 const RESOLVE_BASE = "/resolbeb";
 
-const CHART_COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899", "#06b6d4", "#84cc16"];
-
 function CustomTooltip({ active, payload, label }) {
   if (active && payload && payload.length) {
     return (
@@ -58,7 +58,7 @@ function CustomTooltip({ active, payload, label }) {
         )}
         {payload.map((entry, index) => (
           <p key={index} className="text-sm">
-            <span className="font-bold" style={{ color: entry.color || "#60a5fa" }}>{entry.name}:</span> {entry.value}
+            <span className="font-bold" style={{ color: entry.color || chartColor(0) }}>{entry.name}:</span> {entry.value}
           </p>
         ))}
       </div>
@@ -140,37 +140,6 @@ function ExpandableCard({ title, description, chartHeight = 350, children }) {
         </div>
       </div>
     </div>
-  );
-}
-
-function KpiCard({ title, value, icon: Icon, variant = "default", hint }) {
-  const variants = {
-    default: "border-border/50 bg-card",
-    danger: "border-red-200 bg-red-50/50 dark:bg-red-900/10 dark:border-red-900/50",
-    warning: "border-amber-200 bg-amber-50/50 dark:bg-amber-900/10 dark:border-amber-900/50",
-    success: "border-emerald-200 bg-emerald-50/50 dark:bg-emerald-900/10 dark:border-emerald-900/50",
-  };
-  const iconVariants = {
-    default: "bg-muted text-muted-foreground",
-    danger: "bg-red-100 text-red-600 dark:bg-red-500/20 dark:text-red-400",
-    warning: "bg-amber-100 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400",
-    success: "bg-emerald-100 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400",
-  };
-  return (
-    <Card className={cn("transition-all", variants[variant] || variants.default)}>
-      <CardContent className="p-5 flex items-center justify-between">
-        <div className="space-y-1">
-          <p className="text-xs uppercase tracking-wider font-semibold text-muted-foreground">{title}</p>
-          <div className="text-2xl font-bold tracking-tight">{value}</div>
-          {hint && <p className="text-[10px] text-muted-foreground">{hint}</p>}
-        </div>
-        {Icon && (
-          <div className={cn("h-11 w-11 rounded-full flex items-center justify-center", iconVariants[variant] || iconVariants.default)}>
-            <Icon className="h-5 w-5" />
-          </div>
-        )}
-      </CardContent>
-    </Card>
   );
 }
 
@@ -298,8 +267,9 @@ export default function DashboardContent({ isStandalone = false }) {
     >
       {isTvMode && (
         <Button
+          variant="destructive"
           size="sm"
-          className="fixed top-4 right-4 z-[10000] bg-red-600 hover:bg-red-700 text-white shadow-lg border-0 font-semibold"
+          className="fixed top-4 right-4 z-[10000] shadow-lg font-semibold"
           onClick={toggleTvMode}
           title="Salir de Modo TV"
         >
@@ -462,7 +432,7 @@ export default function DashboardContent({ isStandalone = false }) {
                     <XAxis type="number" tick={{ fontSize: 11 }} />
                     <YAxis type="category" dataKey="agente" width={100} tick={{ fontSize: 11 }} />
                     <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(255, 255, 255, 0.05)" }} />
-                    <Bar dataKey="total" name="Tickets" fill={CHART_COLORS[0]} radius={[0, 4, 4, 0]} />
+                    <Bar dataKey="total" name="Tickets" fill={chartColor(0)} radius={[0, 4, 4, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
@@ -489,8 +459,8 @@ export default function DashboardContent({ isStandalone = false }) {
                     <YAxis tick={{ fontSize: 11 }} />
                     <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(255, 255, 255, 0.05)" }} />
                     <Legend />
-                    <Area type="monotone" dataKey="creados" name="Creados" stackId="1" stroke={CHART_COLORS[0]} fill={CHART_COLORS[0]} fillOpacity={0.5} />
-                    <Area type="monotone" dataKey="cerrados" name="Cerrados" stackId="2" stroke={CHART_COLORS[1]} fill={CHART_COLORS[1]} fillOpacity={0.5} />
+                    <Area type="monotone" dataKey="creados" name="Creados" stackId="1" stroke={chartColor(0)} fill={chartColor(0)} fillOpacity={0.5} />
+                    <Area type="monotone" dataKey="cerrados" name="Cerrados" stackId="2" stroke={chartColor(1)} fill={chartColor(1)} fillOpacity={0.5} />
                   </AreaChart>
                 </ResponsiveContainer>
               ) : (
@@ -519,7 +489,7 @@ export default function DashboardContent({ isStandalone = false }) {
                       label={({ categoria, total }) => `${categoria}: ${total}`}
                     >
                       {(data.top_incidentes || []).map((_, i) => (
-                        <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                        <Cell key={i} fill={chartColor(i)} />
                       ))}
                     </Pie>
                     <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(255, 255, 255, 0.05)" }} />
@@ -553,7 +523,7 @@ export default function DashboardContent({ isStandalone = false }) {
                       <XAxis dataKey="sede" tick={{ fontSize: 10 }} />
                       <YAxis tick={{ fontSize: 11 }} />
                       <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(255, 255, 255, 0.05)" }} />
-                      <Bar dataKey="total" name="Tickets" fill={CHART_COLORS[0]} radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="total" name="Tickets" fill={chartColor(0)} radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 ) : (
@@ -580,7 +550,7 @@ export default function DashboardContent({ isStandalone = false }) {
                         label={({ categoria, total }) => `${categoria}: ${total}`}
                       >
                         {(data.top_fallas || []).map((_, i) => (
-                          <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                          <Cell key={i} fill={chartColor(i)} />
                         ))}
                       </Pie>
                       <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(255, 255, 255, 0.05)" }} />

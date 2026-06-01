@@ -6,6 +6,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { useAuth } from "@/context/AuthContext";
 import { useSidebarPosition } from "@/context/SidebarPositionContext";
 import { notify } from "@/lib/notify";
+import { hintWarning } from "@/lib/badgeStyles";
 import { useI18n } from "@/hooks/useI18n";
 import AuthenticatedLayout from "@/Inertia/Layouts/AuthenticatedLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -499,7 +500,7 @@ export default function Settings() {
                                     </div>
                                 ) : notifications.length === 0 ? (
                                     <div className="flex flex-col items-center py-12 border-2 border-dashed rounded-3xl opacity-60">
-                                        <CheckCircle2 className="h-10 w-10 text-green-500 mb-2" />
+                                        <CheckCircle2 className="h-10 w-10 text-emerald-700 dark:text-emerald-400 mb-2" />
                                         <p className="text-sm font-medium italic">
                                             Todo al día. No hay solicitudes pendientes.
                                         </p>
@@ -545,7 +546,7 @@ export default function Settings() {
                                                                     </span>
                                                                 )}
                                                                 {!payload.user_email && payload.requested_email && (
-                                                                    <span className="text-amber-600 dark:text-amber-400">
+                                                                    <span className={hintWarning}>
                                                                         Solicitado: {payload.requested_email}
                                                                     </span>
                                                                 )}

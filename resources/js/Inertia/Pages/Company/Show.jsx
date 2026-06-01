@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { storageUrl } from "@/lib/storage";
+import { PlanTypeBadge } from "@/components/badges/EntityBadges";
+import { brandLogo } from "@/lib/marketingTheme";
 import {
     Building2,
     Flag,
@@ -22,31 +24,6 @@ function initials(name) {
         .filter(Boolean);
     if (parts.length === 0) return "??";
     return (parts[0][0] + (parts[1]?.[0] || "")).toUpperCase();
-}
-
-function PlanTypeBadge({ type }) {
-    if (type === "msp") {
-        return (
-            <Badge className="border border-blue-500/20 bg-blue-500/15 text-blue-400 text-xs">
-                MSP
-            </Badge>
-        );
-    }
-    if (type === "inhouse") {
-        return (
-            <Badge className="border border-cyan-500/20 bg-cyan-500/15 text-cyan-400 text-xs">
-                In-House
-            </Badge>
-        );
-    }
-    if (type === "both") {
-        return (
-            <Badge className="border border-slate-500/20 bg-slate-500/15 text-slate-400 text-xs">
-                Flexible
-            </Badge>
-        );
-    }
-    return null;
 }
 
 function formatDate(value) {
@@ -103,8 +80,8 @@ export default function CompanyShow({ profile, plan, can }) {
                                     className="w-24 h-24 rounded-xl object-cover border border-border shrink-0"
                                 />
                             ) : (
-                                <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600">
-                                    <span className="text-3xl font-black text-white">
+                                <div className={`h-24 w-24 shrink-0 rounded-xl ${brandLogo}`}>
+                                    <span className="text-3xl font-black text-brand-foreground">
                                         {initials(profile.business_name)}
                                     </span>
                                 </div>

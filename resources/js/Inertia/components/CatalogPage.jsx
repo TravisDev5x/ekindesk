@@ -16,6 +16,8 @@ import {
 import { TableWrapper } from "@/components/ui/table-wrapper";
 import { TablePagination } from "@/components/ui/table-pagination";
 import InertiaPageShell from "@/Inertia/components/InertiaPageShell";
+import { clientActiveBadge, clientInactiveBadge } from "@/lib/badgeStyles";
+import { cn } from "@/lib/utils";
 
 const PER_PAGE_OPTIONS = ["10", "15", "25", "50", "100"];
 
@@ -37,7 +39,13 @@ function renderCell(col, row, onToggle) {
         return (
             <div className="flex items-center gap-2">
                 <Switch checked={active} onCheckedChange={() => onToggle(row)} />
-                <Badge variant={active ? "default" : "secondary"}>
+                <Badge
+                    variant="outline"
+                    className={cn(
+                        "text-xs",
+                        active ? clientActiveBadge : clientInactiveBadge
+                    )}
+                >
                     {active ? activeLabel : inactiveLabel}
                 </Badge>
             </div>

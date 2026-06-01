@@ -1,5 +1,5 @@
 import { Sun, Moon, Monitor } from "lucide-react";
-import { useThemeContext } from "@/components/theme-provider";
+import { useTheme } from "@/hooks/useTheme";
 
 const OPTIONS = [
     { value: "light", Icon: Sun },
@@ -8,7 +8,7 @@ const OPTIONS = [
 ];
 
 export function InertiaThemeToggle() {
-    const { theme, setTheme } = useThemeContext();
+    const { theme, setTheme } = useTheme();
 
     const currentIndex = OPTIONS.findIndex((o) => o.value === theme);
     const current = OPTIONS[currentIndex] ?? OPTIONS[2];

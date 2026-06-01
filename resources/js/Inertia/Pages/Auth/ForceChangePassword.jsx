@@ -6,6 +6,9 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import axios from "@/lib/axios";
 import { strongPasswordSchema } from "@/lib/passwordSchema";
+import { AuthSimpleShell } from "@/components/auth/AuthSimpleShell";
+import { authSimpleCard, authMessageError, authMessageSuccess, btnBrand } from "@/lib/marketingTheme";
+import { cn } from "@/lib/utils";
 
 export default function ForceChangePassword() {
     const { auth } = usePage().props;
@@ -58,8 +61,8 @@ export default function ForceChangePassword() {
     return (
         <>
             <Head title="Actualizar contraseña" />
-            <div className="flex h-screen items-center justify-center bg-background text-foreground">
-                <Card className="w-[420px]">
+            <AuthSimpleShell maxWidth="max-w-[420px]">
+                <Card className={authSimpleCard}>
                     <CardHeader>
                         <CardTitle className="text-center">Actualiza tu contraseña</CardTitle>
                     </CardHeader>
@@ -70,25 +73,44 @@ export default function ForceChangePassword() {
                         <form onSubmit={submit} className="space-y-4">
                             <div className="space-y-2">
                                 <Label>Contraseña actual</Label>
-                                <Input type="password" value={current} onChange={(e) => setCurrent(e.target.value)} disabled={loading} />
+                                <Input
+                                    type="password"
+                                    value={current}
+                                    onChange={(e) => setCurrent(e.target.value)}
+                                    disabled={loading}
+                                />
                             </div>
                             <div className="space-y-2">
                                 <Label>Nueva contraseña</Label>
-                                <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} disabled={loading} />
+                                <Input
+                                    type="password"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    disabled={loading}
+                                />
                             </div>
                             <div className="space-y-2">
                                 <Label>Confirmar contraseña</Label>
-                                <Input type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} disabled={loading} />
+                                <Input
+                                    type="password"
+                                    value={confirm}
+                                    onChange={(e) => setConfirm(e.target.value)}
+                                    disabled={loading}
+                                />
                             </div>
-                            {error ? <p className="text-red-500 text-sm">{error}</p> : null}
-                            {message ? <p className="text-green-600 text-sm">{message}</p> : null}
-                            <Button type="submit" className="w-full" disabled={loading}>
+                            {error ? <p className={authMessageError}>{error}</p> : null}
+                            {message ? <p className={authMessageSuccess}>{message}</p> : null}
+                            <Button
+                                type="submit"
+                                className={cn("w-full", btnBrand)}
+                                disabled={loading}
+                            >
                                 {loading ? "Guardando..." : "Guardar y continuar"}
                             </Button>
                         </form>
                     </CardContent>
                 </Card>
-            </div>
+            </AuthSimpleShell>
         </>
     );
 }

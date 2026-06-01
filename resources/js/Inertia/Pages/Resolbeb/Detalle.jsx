@@ -11,30 +11,13 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
+import { kpiCardSurface, hintWarning, noticeWarningPanel } from "@/lib/badgeStyles";
 import { notify } from "@/lib/notify";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Loader2, MessageSquare, ArrowLeft, ChevronDown, ChevronUp, UserCheck, AlertTriangle, XCircle, BellRing, ArrowUpFromLine } from "lucide-react";
+import { TicketPriorityBadgeByName, TicketStateBadgeByName } from "@/components/badges/EntityBadges";
 
 const RESOLVE_BASE = "/resolbeb";
-
-/** Badge semántico por nombre de estado (solo lectura). */
-function getStateBadgeClass(stateName) {
-    if (!stateName) return "bg-muted text-muted-foreground";
-    const n = String(stateName).toLowerCase();
-    if (n.includes("resuelto") || n.includes("cerrado") || n.includes("cerrada")) return "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-emerald-500/30";
-    if (n.includes("proceso") || n.includes("asignado") || n.includes("abierto")) return "bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/30";
-    if (n.includes("cancelado")) return "bg-muted text-muted-foreground";
-    return "bg-muted text-muted-foreground";
-}
-
-/** Badge semántico por prioridad (solo lectura). */
-function getPriorityBadgeClass(priorityName) {
-    if (!priorityName) return "bg-muted text-muted-foreground";
-    const n = String(priorityName).toLowerCase();
-    if (n.includes("crític") || n.includes("alta")) return "bg-red-500/15 text-red-700 dark:text-red-400 border-red-500/30";
-    if (n.includes("media")) return "bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/30";
-    return "bg-muted text-muted-foreground";
-}
 
 /** Pasos de la timeline: Creado -> Asignado -> En Proceso -> Resuelto. */
 const TIMELINE_STEPS = [
@@ -101,15 +84,15 @@ function RequesterView({
                     <Card className={ticket.is_overdue ? "border-l-4 border-l-destructive" : ""}>
                         <CardHeader className="pb-2">
                             <div className="flex flex-wrap items-center gap-2 mb-2">
-                                <Badge className={getStateBadgeClass(ticket.state?.name)}>{ticket.state?.name ?? "—"}</Badge>
-                                <Badge className={getPriorityBadgeClass(ticket.priority?.name)}>{ticket.priority?.name ?? "—"}</Badge>
+                                <TicketStateBadgeByName name={ticket.state?.name} />
+                                <TicketPriorityBadgeByName name={ticket.priority?.name} />
                                 <Badge variant="outline" className="text-xs">{ticket.area_current?.name ?? "—"}</Badge>
                                 {ticket.is_overdue && <Badge variant="destructive">SLA vencido</Badge>}
                             </div>
                             <CardTitle className="text-lg md:text-xl">Ticket #{ticket.id} — {ticket.subject}</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <p className="text-slate-600 dark:text-slate-300 whitespace-pre-wrap text-sm">
+                            <p className="text-muted-foreground whitespace-pre-wrap text-sm">
                                 {descLong && !descExpanded ? (
                                     <>
                                         {(ticket.description || "").slice(0, 280)}…
@@ -276,7 +259,7 @@ function ManagerView({
                         {!showEscalateForm ? (
                             <Button size="sm" variant="outline" onClick={() => setShowEscalateForm(true)}><ArrowUpFromLine className="h-4 w-4 mr-2" /> Escalar ticket</Button>
                         ) : (
-                            <Card className="flex-1 min-w-[280px] p-3 border-amber-200 dark:border-amber-800">
+                            <Card className={cn("flex-1 min-w-[280px] p-3 border", kpiCardSurface.warning.card)}>
                                 <div className="flex flex-wrap items-end gap-2">
                                     <div className="flex-1 min-w-[160px] space-y-1">
                                         <Label className="text-xs">Área destino</Label>
@@ -417,9 +400,9 @@ function ManagerView({
                     </div>
                     <div>
                         <h4 className="text-sm font-semibold flex items-center gap-2 mb-2">Notas internas</h4>
-                        {internalNoteEntries.length ? <div className="space-y-3">{internalNoteEntries.map((h) => <div key={h.id} className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-sm"><div className="text-muted-foreground text-xs mb-1">{h.actor?.name} · {new Date(h.created_at).toLocaleString()}</div><div className="whitespace-pre-wrap">{h.note || "—"}</div></div>)}</div> : <p className="text-sm text-muted-foreground">Sin notas internas.</p>}
+                        {internalNoteEntries.length ? <div className="space-y-3">{internalNoteEntries.map((h) => <div key={h.id} className={noticeWarningPanel}><div className="text-muted-foreground text-xs mb-1">{h.actor?.name} · {new Date(h.created_at).toLocaleString()}</div><div className="whitespace-pre-wrap">{h.note || "—"}</div></div>)}</div> : <p className="text-sm text-muted-foreground">Sin notas internas.</p>}
                     </div>
-                    {alertEntries.length > 0 && <div><h4 className="text-sm font-semibold flex items-center gap-2 mb-2"><AlertTriangle className="h-4 w-4 text-amber-600" /> Alertas del solicitante</h4><div className="space-y-3">{alertEntries.map((h) => <div key={h.id} className="rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/20 p-3 text-sm"><div className="text-muted-foreground text-xs mb-1">{h.actor?.name} · {new Date(h.created_at).toLocaleString()}</div><div className="whitespace-pre-wrap">{h.note || "—"}</div></div>)}</div></div>}
+                    {alertEntries.length > 0 && <div><h4 className="text-sm font-semibold flex items-center gap-2 mb-2"><AlertTriangle className={cn("h-4 w-4", hintWarning)} /> Alertas del solicitante</h4><div className="space-y-3">{alertEntries.map((h) => <div key={h.id} className={noticeWarningPanel}><div className="text-muted-foreground text-xs mb-1">{h.actor?.name} · {new Date(h.created_at).toLocaleString()}</div><div className="whitespace-pre-wrap">{h.note || "—"}</div></div>)}</div></div>}
                     <div>
                         <h4 className="text-sm font-semibold mb-2">Cambios de estado</h4>
                         {stateChangeWithDiff.length ? <div className="space-y-2">{stateChangeWithDiff.map((h) => <div key={h.id} className="text-sm flex flex-wrap gap-x-4 gap-y-1"><span>{new Date(h.created_at).toLocaleString()}</span><span>{h.actor?.name}</span><span>{h.from_area?.name || "—"} → {h.to_area?.name || "—"}</span><span>{h.state?.name || "—"}</span><span className="text-muted-foreground">{h.note || "—"}</span></div>)}</div> : <p className="text-sm text-muted-foreground">Sin cambios de estado</p>}

@@ -1,10 +1,16 @@
 /* resources/css/app.css */
-@import "tailwindcss";
-@config "../../tailwind.config.js";
-
 @import url("https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&display=swap");
 
+@import "tailwindcss";
+@config "../../tailwind.config.js";
+@plugin "tailwindcss-animate";
+
 @custom-variant dark (&:is(.dark *));
+
+/*
+ * Opción A: auth, landing y app comparten tema global (light / dark / system).
+ * Superficies (.surface-*): solo layout + tokens; sin forzar paleta oscura.
+ */
 
 /* ===== shadcn tokens ===== */
 :root {
@@ -38,18 +44,42 @@
 
     --radius: 0.75rem;
 
-    /* Sidebar (comportamiento por defecto = izquierda) */
+    /* Acento marca (login/landing — Fase 3) */
+    --brand: 187 92% 42%;
+    --brand-foreground: 0 0% 100%;
+    --brand-muted: 199 89% 48%;
+    --brand-subtle: 187 76% 94%;
+
+    /* Sidebar */
+    --sidebar: 0 0% 98%;
+    --sidebar-foreground: 222.2 84% 4.9%;
+    --sidebar-primary: 222.2 47.4% 11.2%;
+    --sidebar-primary-foreground: 210 40% 98%;
+    --sidebar-accent: 210 40% 96.1%;
+    --sidebar-accent-foreground: 222.2 47.4% 11.2%;
+    --sidebar-border: 214.3 31.8% 91.4%;
+    --sidebar-ring: 222.2 84% 4.9%;
     --sidebar-width: 16rem;
     --sidebar-width-collapsed: 72px;
 
-    /* Toasts: fondos por tipo (HSL sin hsl()) para que sigan el tema) */
+    /* Gráficos (shadcn chart-N) */
+    --chart-1: 221 83% 53%;
+    --chart-2: 142 71% 45%;
+    --chart-3: 38 92% 50%;
+    --chart-4: 0 84% 60%;
+    --chart-5: 262 83% 58%;
+    --chart-6: 330 81% 60%;
+    --chart-7: 187 85% 43%;
+    --chart-8: 84 81% 44%;
+
+    /* Toasts (HSL sin hsl()) */
     --toast-success: 142 76% 96%;
     --toast-error: 0 86% 97%;
     --toast-warning: 38 92% 96%;
     --toast-info: 214 95% 96%;
 }
 
-/* Modo oscuro: Negro moderno (Zinc / Vercel���Linear), sin tonos azulados ni slate */
+/* Modo oscuro */
 .dark {
     --background: 0 0% 0%;
     --foreground: 0 0% 98%;
@@ -78,14 +108,115 @@
     --border: 240 4% 14%;
     --input: 240 4% 14%;
     --ring: 240 4% 84%;
-    --sidebar: hsl(0 0% 0%);
-    --sidebar-foreground: hsl(0 0% 98%);
-    --sidebar-primary: hsl(0 0% 98%);
-    --sidebar-primary-foreground: hsl(0 0% 9%);
-    --sidebar-accent: hsl(240 4% 12%);
-    --sidebar-accent-foreground: hsl(0 0% 98%);
-    --sidebar-border: hsl(240 4% 14%);
-    --sidebar-ring: hsl(240 4% 84%);
+
+    --brand: 187 85% 53%;
+    --brand-foreground: 0 0% 9%;
+    --brand-muted: 199 80% 55%;
+    --brand-subtle: 187 35% 14%;
+
+    --sidebar: 0 0% 0%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 0 0% 98%;
+    --sidebar-primary-foreground: 0 0% 9%;
+    --sidebar-accent: 240 4% 12%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 240 4% 14%;
+    --sidebar-ring: 240 4% 84%;
+
+    --chart-1: 217 91% 60%;
+    --chart-2: 142 69% 58%;
+    --chart-3: 43 96% 56%;
+    --chart-4: 0 72% 51%;
+    --chart-5: 270 95% 75%;
+    --chart-6: 330 90% 65%;
+    --chart-7: 187 80% 55%;
+    --chart-8: 84 70% 55%;
+
+    --toast-success: 142 35% 16%;
+    --toast-error: 0 45% 18%;
+    --toast-warning: 38 45% 18%;
+    --toast-info: 214 45% 18%;
+}
+
+/* Superficies (opción A — heredan :root / .dark del html) */
+.surface-app,
+.surface-auth,
+.surface-marketing {
+    min-height: 100%;
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+}
+
+.surface-marketing {
+    font-family: "Source Sans 3", system-ui, sans-serif;
+}
+
+/*
+ * Landing — modo claro: fondo ≠ card (evita “solo líneas” en bordes).
+ * Oscuro sigue con tokens globales .dark (card ya contrasta con background).
+ */
+html.light .surface-marketing,
+html.light .surface-auth {
+    --background: 210 33% 97%;
+    --foreground: 222 47% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --muted: 210 32% 93%;
+    --muted-foreground: 215 18% 42%;
+    --secondary: 210 36% 95%;
+    --secondary-foreground: 222 47% 11%;
+    --accent: 187 45% 94%;
+    --accent-foreground: 187 70% 28%;
+    --border: 214 26% 86%;
+    --input: 214 26% 86%;
+    --ring: 187 70% 38%;
+    --brand-subtle: 187 55% 92%;
+}
+
+/* Elevación marketing/auth (sombra en claro; borde suave en oscuro) */
+.surface-marketing .mkt-elevated,
+.surface-auth .mkt-elevated {
+    background-color: hsl(var(--card));
+    color: hsl(var(--card-foreground));
+    border: 1px solid hsl(var(--border) / 0.65);
+    box-shadow:
+        0 1px 2px hsl(222 47% 11% / 0.04),
+        0 8px 24px hsl(222 47% 11% / 0.06);
+}
+
+.dark .surface-marketing .mkt-elevated,
+.dark .surface-auth .mkt-elevated {
+    border-color: hsl(var(--border));
+    box-shadow: 0 12px 40px hsl(0 0% 0% / 0.35);
+}
+
+.surface-marketing .mkt-section-alt {
+    background-color: hsl(var(--secondary));
+}
+
+.surface-marketing .mkt-section-default {
+    background-color: hsl(var(--background));
+}
+
+/* Patrón de puntos — más visible en claro */
+html.light .surface-marketing .mkt-dots,
+html.light .surface-auth .mkt-dots {
+    background-image: radial-gradient(
+        circle,
+        hsl(var(--brand) / 0.14) 1px,
+        transparent 1px
+    );
+    background-size: 32px 32px;
+}
+
+.dark .surface-marketing .mkt-dots,
+.dark .surface-auth .mkt-dots {
+    background-image: radial-gradient(
+        circle,
+        hsl(var(--brand) / 0.08) 1px,
+        transparent 1px
+    );
+    background-size: 32px 32px;
 }
 
 /* ===== base styles sin @apply (v4-friendly) ===== */
@@ -137,8 +268,10 @@ html[data-theme-switching="1"] *::after {
     transition: none !important;
 }
 
-/* bordes consistentes */
-* {
+/* Bordes por token (sin transición global: evita líneas blancas al cambiar tema) */
+*,
+*::before,
+*::after {
     border-color: hsl(var(--border));
 }
 
@@ -248,12 +381,13 @@ html[data-theme-switching="1"] *::after {
     -webkit-mask-image: linear-gradient(to bottom, black 0%, transparent 85%);
 }
 
-/* Transici?n suave al cambiar tema */
-*, *::before, *::after {
+/* Transición suave al cambiar tema (sin border-color: evita líneas blancas en cards) */
+*:not([data-no-transition]):not([data-no-transition] *) {
     transition:
         background-color 0.2s ease,
-        border-color 0.2s ease,
-        color 0.15s ease;
+        color 0.15s ease,
+        fill 0.15s ease,
+        stroke 0.15s ease;
 }
 
 /* Excluir elementos donde la transici?n es molesta */

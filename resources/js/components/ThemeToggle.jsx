@@ -1,5 +1,5 @@
 import { Sun, Moon, Monitor } from 'lucide-react';
-import { useThemeContext } from './theme-provider';
+import { useTheme } from '@/hooks/useTheme';
 
 const OPTIONS = [
     { value: 'light', icon: Sun, label: 'Claro' },
@@ -8,7 +8,7 @@ const OPTIONS = [
 ];
 
 export function ThemeToggle({ variant = 'icon', value, onValueChange }) {
-    const { theme: contextTheme, setTheme } = useThemeContext();
+    const { theme: contextTheme, setTheme } = useTheme();
     const theme = value ?? contextTheme;
 
     const applyTheme = (next) => {

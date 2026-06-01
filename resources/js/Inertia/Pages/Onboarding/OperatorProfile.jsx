@@ -15,6 +15,11 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
+import { OnboardingShell } from "@/components/onboarding/OnboardingShell";
+import { OnboardingStepIndicator } from "@/components/onboarding/OnboardingStepIndicator";
+import { linkBrand } from "@/lib/marketingTheme";
+import { badgeStatus } from "@/lib/badgeStyles";
+import { cn } from "@/lib/utils";
 
 function formatMoney(value) {
     const n = Number(value);
@@ -63,24 +68,9 @@ export default function OperatorProfile({ plans = [], selectedPlan = null, step 
     };
 
     return (
-        <div className="min-h-[100dvh] bg-background py-10 px-4">
+        <OnboardingShell>
             <Head title="Configura tu perfil de negocio" />
-            <div className="mx-auto max-w-2xl space-y-8">
-                <div className="flex items-center justify-center gap-3">
-                    <div className="flex items-center gap-2">
-                        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-semibold">
-                            {step}
-                        </span>
-                        <span className="text-sm font-medium">Perfil de negocio</span>
-                    </div>
-                    <div className="h-px w-12 bg-border" />
-                    <div className="flex items-center gap-2 opacity-50">
-                        <span className="flex h-8 w-8 items-center justify-center rounded-full border border-border text-sm">
-                            2
-                        </span>
-                        <span className="text-sm">Primer cliente</span>
-                    </div>
-                </div>
+            <OnboardingStepIndicator currentStep={step} />
 
                 <div className="text-center space-y-2">
                     <h1 className="text-2xl font-bold tracking-tight">Configura tu perfil de negocio</h1>
@@ -241,7 +231,12 @@ export default function OperatorProfile({ plans = [], selectedPlan = null, step 
                                         <div className="flex items-center justify-between gap-2">
                                             <p className="font-semibold">{activePlan.name}</p>
                                             {activePlan.highlighted && (
-                                                <Badge>Recomendado</Badge>
+                                                <Badge
+                                                    variant="outline"
+                                                    className={cn("text-xs", badgeStatus.brand)}
+                                                >
+                                                    Recomendado
+                                                </Badge>
                                             )}
                                         </div>
                                         <p className="text-sm text-muted-foreground">
@@ -291,12 +286,11 @@ export default function OperatorProfile({ plans = [], selectedPlan = null, step 
 
                     <p className="text-center text-sm text-muted-foreground">
                         ¿Ya tienes cuenta?{" "}
-                        <Link href="/login" className="text-primary hover:underline">
+                        <Link href="/login" className={linkBrand}>
                             Inicia sesión
                         </Link>
                     </p>
                 </form>
-            </div>
-        </div>
+        </OnboardingShell>
     );
 }

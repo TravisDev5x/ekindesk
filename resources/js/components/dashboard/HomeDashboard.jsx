@@ -22,6 +22,14 @@ import { TinyVerticalBarChart } from "@/components/dashboard/TinyVerticalBarChar
 import { DashboardOperativo } from "@/components/dashboard/DashboardOperativo";
 import { TicketCalendarPreview } from "@/components/dashboard/TicketCalendarPreview";
 import { getDashboardProfile } from "@/lib/dashboardProfile";
+import { chartColor } from "@/lib/chartColors";
+import {
+    metricCardVariant,
+    noticeWarningRow,
+    dialogSuccessHeader,
+    dialogSuccessTitle,
+    hintWarning,
+} from "@/lib/badgeStyles";
 import { cn } from "@/lib/utils";
 import {
     Activity,
@@ -65,42 +73,21 @@ const DEFAULT_FILTERS = {
     state: "all",
 };
 
-const STATE_COLORS = [
-    "bg-sky-500 dark:bg-sky-600",
-    "bg-emerald-500 dark:bg-emerald-600",
-    "bg-amber-500 dark:bg-amber-600",
-    "bg-rose-500 dark:bg-rose-600",
-    "bg-indigo-500 dark:bg-indigo-600",
-    "bg-teal-500 dark:bg-teal-600",
-    "bg-orange-500 dark:bg-orange-600",
-    "bg-violet-500 dark:bg-violet-600",
-];
-
 // --- COMPONENTES UI MEJORADOS ---
 
-const SummaryMetric = ({ label, value, icon: Icon, helper, variant = "default" }) => {
-    const variants = {
-        default: "border-border/50 bg-card hover:bg-accent/5",
-        destructive: "border-red-200 bg-red-50/50 dark:bg-red-900/10 dark:border-red-900/50",
-        success: "border-emerald-200 bg-emerald-50/50 dark:bg-emerald-900/10 dark:border-emerald-900/50"
-    };
-
-    const iconColors = {
-        default: "text-primary bg-primary/10",
-        destructive: "text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/40",
-        success: "text-emerald-600 bg-emerald-100 dark:text-emerald-400 dark:bg-emerald-900/40"
-    };
+const SummaryMetric = ({ label, value, icon: Icon, helper, variant = "default", valueClassName }) => {
+    const surface = metricCardVariant[variant] || metricCardVariant.default;
 
     return (
-        <Card className={cn("shadow-sm transition-all duration-200", variants[variant] || variants.default)}>
+        <Card className={cn("shadow-sm transition-all duration-200", surface.card)}>
             <CardContent className="p-5 flex items-start justify-between">
-                <div className="space-y-1">
+                <div className="space-y-1 min-w-0">
                     <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">{label}</p>
-                    <div className="text-2xl font-bold tracking-tight text-foreground">{value}</div>
+                    <div className={cn("text-2xl font-bold tracking-tight text-foreground", valueClassName)}>{value}</div>
                     {helper && <p className="text-[11px] text-muted-foreground/80">{helper}</p>}
                 </div>
                 {Icon && (
-                    <div className={cn("h-9 w-9 rounded-lg flex items-center justify-center", iconColors[variant] || iconColors.default)}>
+                    <div className={cn("h-9 w-9 rounded-lg flex items-center justify-center shrink-0", surface.icon)}>
                         <Icon className="h-4.5 w-4.5" />
                     </div>
                 )}
@@ -285,7 +272,10 @@ const StateDistribution = ({ states, total }) => {
                         const pct = total ? Math.round((value / total) * 100) : 0;
                         return (
                             <div key={`legend-${idx}`} className="flex items-center gap-2 bg-muted/20 p-2 rounded border border-border/30">
-                                <div className={cn("h-2.5 w-2.5 rounded-full shrink-0", STATE_COLORS[idx % STATE_COLORS.length])} />
+                                <div
+                                    className="h-2.5 w-2.5 rounded-full shrink-0"
+                                    style={{ backgroundColor: chartColor(idx % 8) }}
+                                />
                                 <div className="flex flex-col min-w-0">
                                     <span className="text-[10px] font-medium truncate leading-tight" title={state.label}>{state.label}</span>
                                     <span className="text-[10px] text-muted-foreground">{value} ({pct}%)</span>
@@ -659,58 +649,17 @@ function DashboardSolicitante() {
 
             {/* Cards de métricas del solicitante */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <Card className="shadow-sm border-border/50 bg-card">
-                    <CardContent className="p-5 flex items-start justify-between">
-                        <div className="space-y-1">
-                            <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">Tickets realizados</p>
-                            <div className="text-2xl font-bold tracking-tight text-foreground">{stats.total}</div>
-                            <p className="text-[11px] text-muted-foreground/80">Total que has creado</p>
-                        </div>
-                        <div className="h-9 w-9 rounded-lg flex items-center justify-center text-primary bg-primary/10">
-                            <Ticket className="h-4.5 w-4.5" />
-                        </div>
-                    </CardContent>
-                </Card>
-                <Card className="shadow-sm border-emerald-200 bg-emerald-50/30 dark:bg-emerald-900/10 dark:border-emerald-900/50">
-                    <CardContent className="p-5 flex items-start justify-between">
-                        <div className="space-y-1">
-                            <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">Resueltos</p>
-                            <div className="text-2xl font-bold tracking-tight text-foreground">{stats.resolved}</div>
-                            <p className="text-[11px] text-muted-foreground/80">Cerrados o resueltos</p>
-                        </div>
-                        <div className="h-9 w-9 rounded-lg flex items-center justify-center text-emerald-600 bg-emerald-100 dark:text-emerald-400 dark:bg-emerald-900/40">
-                            <CheckCircle className="h-4.5 w-4.5" />
-                        </div>
-                    </CardContent>
-                </Card>
-                <Card className="shadow-sm border-amber-200 bg-amber-50/30 dark:bg-amber-900/10 dark:border-amber-900/50">
-                    <CardContent className="p-5 flex items-start justify-between">
-                        <div className="space-y-1">
-                            <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">Cancelados</p>
-                            <div className="text-2xl font-bold tracking-tight text-foreground">{stats.cancelled}</div>
-                            <p className="text-[11px] text-muted-foreground/80">Tuyos o que te cancelaron</p>
-                        </div>
-                        <div className="h-9 w-9 rounded-lg flex items-center justify-center text-amber-600 bg-amber-100 dark:text-amber-400 dark:bg-amber-900/40">
-                            <XCircle className="h-4.5 w-4.5" />
-                        </div>
-                    </CardContent>
-                </Card>
-                <Card className="shadow-sm border-primary/30 bg-primary/5">
-                    <CardContent className="p-5 flex items-start justify-between">
-                        <div className="space-y-1 min-w-0">
-                            <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">Quien te resuelve más</p>
-                            <div className="text-lg font-bold tracking-tight text-foreground truncate" title={topResolver?.label}>
-                                {topResolver ? topResolver.label : "—"}
-                            </div>
-                            <p className="text-[11px] text-muted-foreground/80">
-                                {topResolver ? `${topResolver.value} ticket${topResolver.value !== 1 ? "s" : ""} resueltos` : "Sin datos"}
-                            </p>
-                        </div>
-                        <div className="h-9 w-9 rounded-lg flex items-center justify-center text-primary bg-primary/10 shrink-0">
-                            <UserCheck className="h-4.5 w-4.5" />
-                        </div>
-                    </CardContent>
-                </Card>
+                <SummaryMetric label="Tickets realizados" value={stats.total} icon={Ticket} helper="Total que has creado" />
+                <SummaryMetric label="Resueltos" value={stats.resolved} icon={CheckCircle} variant="success" helper="Cerrados o resueltos" />
+                <SummaryMetric label="Cancelados" value={stats.cancelled} icon={XCircle} variant="warning" helper="Tuyos o que te cancelaron" />
+                <SummaryMetric
+                    label="Quien te resuelve más"
+                    value={topResolver ? topResolver.label : "—"}
+                    icon={UserCheck}
+                    variant="info"
+                    valueClassName="text-lg truncate"
+                    helper={topResolver ? `${topResolver.value} ticket${topResolver.value !== 1 ? "s" : ""} resueltos` : "Sin datos"}
+                />
             </div>
 
             {/* Top 5 tipos de ticket que más manda */}
@@ -824,7 +773,7 @@ function DashboardSolicitante() {
                                             <span className="font-medium text-foreground">#{String(t.id).padStart(5, "0")} — {t.subject}</span>
                                             <div className="flex items-center gap-2 flex-wrap">
                                                 {unassigned && (
-                                                    <span className="inline-flex items-center gap-1 text-[11px] text-amber-600 dark:text-amber-400" title="Sin asignar">
+                                                    <span className={cn("inline-flex items-center gap-1 text-[11px]", hintWarning)} title="Sin asignar">
                                                         <AlertCircle className="h-3.5 w-3.5" /> Sin asignar
                                                     </span>
                                                 )}
@@ -869,8 +818,8 @@ function DashboardSolicitante() {
                 <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto p-0 gap-0">
                     {createSuccessTicketId ? (
                         <>
-                            <DialogHeader className="p-5 pb-2 bg-emerald-500/10 border-b border-emerald-500/20">
-                                <DialogTitle className="text-lg flex items-center gap-2 text-emerald-700 dark:text-emerald-400">
+                            <DialogHeader className={dialogSuccessHeader}>
+                                <DialogTitle className={dialogSuccessTitle}>
                                     <CheckCircle2 className="h-5 w-5" /> Solicitud registrada
                                 </DialogTitle>
                                 <DialogDescription>
@@ -1471,7 +1420,7 @@ function DashboardAdmin() {
 
             {/* Aviso cuando todo está en 0 y hay filtros activos (p. ej. rango de fechas sin datos) */}
             {data && totalTickets === 0 && activeFilterCount > 0 && (
-                <div className="rounded-lg border border-amber-200 dark:border-amber-900/50 bg-amber-50/50 dark:bg-amber-900/10 px-4 py-3 text-sm text-amber-800 dark:text-amber-200 flex flex-wrap items-center gap-2">
+                <div className={cn(noticeWarningRow, "text-sm")}>
                     <AlertTriangle className="h-4 w-4 shrink-0" />
                     <span className="flex-1 font-medium">Los filtros actuales no devuelven ningún ticket.</span>
                     <Button variant="outline" size="sm" className="h-7" onClick={clearFilters}>
