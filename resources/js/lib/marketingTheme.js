@@ -3,6 +3,14 @@
  * En claro, .surface-marketing redefine --background/--card en app.css (mkt-*).
  */
 
+/** Gradiente marca (sin utilidades blue-* sueltas) */
+export const brandGradientFill =
+    "bg-gradient-to-r from-[hsl(var(--brand))] to-[hsl(var(--brand-muted))]";
+
+/** Halo decorativo en panel lateral auth */
+export const brandPanelGlow =
+    "absolute -top-20 -left-20 w-96 h-96 rounded-full blur-3xl bg-gradient-to-br from-[hsl(var(--brand)/0.1)] to-[hsl(var(--brand-muted)/0.1)] -z-10 pointer-events-none";
+
 /** Hero / panel lateral auth — patrón de puntos (clase .mkt-dots en CSS) */
 export const heroSectionClass = "relative min-h-screen flex items-center pt-24 pb-16 px-6 mkt-section-default mkt-dots";
 
@@ -13,7 +21,7 @@ export const surfaceRoot = "surface-marketing min-h-screen mkt-section-default t
 export const surfaceAuth = "surface-auth min-h-screen bg-background text-foreground antialiased";
 
 export const brandLogo =
-    "flex items-center justify-center rounded-lg bg-gradient-to-br from-[hsl(var(--brand))] to-blue-600 text-sm font-black text-brand-foreground shadow-lg shadow-[hsl(var(--brand)/0.25)]";
+    `flex items-center justify-center rounded-lg bg-gradient-to-br from-[hsl(var(--brand))] to-[hsl(var(--brand-muted))] text-sm font-black text-brand-foreground shadow-lg shadow-[hsl(var(--brand)/0.25)]`;
 
 export const brandBadge =
     "inline-flex items-center gap-2 rounded-full border border-brand/30 bg-brand/10 px-4 py-1.5 text-sm text-brand-muted";
@@ -22,10 +30,10 @@ export const brandBadgeSm =
     "inline-flex items-center gap-2 rounded-full border border-brand/20 bg-brand/10 px-4 py-1 text-sm text-brand-muted";
 
 export const brandGradientText =
-    "bg-gradient-to-r from-brand-muted to-blue-500 bg-clip-text text-transparent";
+    "bg-gradient-to-r from-brand-muted to-brand bg-clip-text text-transparent";
 
 export const btnBrand =
-    "bg-gradient-to-r from-[hsl(var(--brand))] to-blue-600 font-semibold text-brand-foreground hover:opacity-90 border-0 shadow-md shadow-[hsl(var(--brand)/0.2)]";
+    `${brandGradientFill} font-semibold text-brand-foreground hover:opacity-90 border-0 shadow-md shadow-[hsl(var(--brand)/0.2)]`;
 
 export const btnBrandOutline =
     "border-border bg-card/80 text-foreground/90 hover:border-brand/50 hover:text-brand-muted hover:bg-card";
@@ -51,7 +59,7 @@ export const featureIconBox =
     "mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-brand-subtle";
 
 export const infoBadge =
-    "inline-block rounded-full border border-blue-500/25 bg-blue-500/10 px-4 py-1 text-sm text-blue-700 dark:text-blue-400 mb-4";
+    "inline-block rounded-full border border-brand/25 bg-brand/10 px-4 py-1 text-sm text-brand-muted mb-4";
 
 export const pricingTabWrap =
     "inline-flex gap-1 rounded-xl border border-border/80 bg-card/90 p-1.5 shadow-sm";

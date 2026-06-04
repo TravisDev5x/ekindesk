@@ -6,7 +6,7 @@ import { useSidebarPosition } from '@/context/SidebarPositionContext'
 import { useI18n } from '@/hooks/useI18n'
 import { cn } from '@/lib/utils'
 import { menuItemDestructive } from '@/lib/badgeStyles'
-import { isExternalUrl, shouldUseInertiaLink } from '@/lib/inertiaNavigation'
+import { isExternalUrl, shouldUseInertiaLink, normalizeLegacyAppPath } from '@/lib/inertiaNavigation'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -25,6 +25,8 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { UserAvatar } from '@/components/user-avatar'
+import { TenantBrandHeader, TenantBrandMark } from '@/components/TenantBrand'
+import { isClientPortalTenant } from '@/lib/tenantBranding'
 
 import {
     Home,
@@ -107,7 +109,7 @@ function renderNavAnchor({ href, onNavigate, className, children }) {
     if (shouldUseInertiaLink(href)) {
         return (
             <InertiaLink
-                href={href}
+                href={normalizeLegacyAppPath(href)}
                 preserveScroll
                 onClick={handleClick}
                 className={className}
@@ -333,7 +335,11 @@ const SectionTitle = ({ children, collapsed, showSeparatorWhenCollapsed }) => {
 export function Sidebar({ collapsed, onToggle, onNavigate, currentPath: currentPathProp = '' }) {
     const { user, logout, updateUserPrefs, hasRole, can } = useAuth()
     const { t } = useI18n()
-    const { url } = usePage()
+    const { url, props: pageProps } = usePage()
+    const tenant = pageProps.tenant ?? {}
+    const isPortalBrand = isClientPortalTenant(tenant)
+    const brandTitle = isPortalBrand ? tenant.name : t('brand.title')
+    const brandSubtitle = isPortalBrand ? t('brand.portalSubtitle') : t('brand.subtitle')
     const pathname = currentPathProp || url.split('?')[0]
     const { position: sidebarPosition } = useSidebarPosition()
     const tooltipSide = sidebarPosition === 'right' ? 'left' : 'right'
@@ -490,21 +496,20 @@ export function Sidebar({ collapsed, onToggle, onNavigate, currentPath: currentP
                     className={cn(
                         'flex items-center gap-2 overflow-hidden min-w-0 flex-1 transition-opacity duration-200',
                         collapsed
-                            ? 'opacity-0 w-0 min-w-0 overflow-hidden absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none'
+                            ? 'justify-center opacity-100 w-auto min-w-0 relative static pointer-events-auto'
                             : 'opacity-100 delay-75'
                     )}
                 >
-                    <div className="flex shrink-0 items-center justify-center h-8 w-8 rounded-lg bg-primary text-primary-foreground shadow-md">
-                        <ShieldCheck className="h-4 w-4" />
-                    </div>
-                    <div className="flex flex-col min-w-0">
-                        <span className="text-sm font-bold leading-none tracking-tight truncate">
-                            {t('brand.title')}
-                        </span>
-                        <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-widest mt-0.5 opacity-80 truncate">
-                            {t('brand.subtitle')}
-                        </span>
-                    </div>
+                    {collapsed ? (
+                        <TenantBrandMark tenant={tenant} className="h-8 w-8" fallbackName={t('brand.title')} />
+                    ) : (
+                        <TenantBrandHeader
+                            tenant={tenant}
+                            title={brandTitle}
+                            subtitle={brandSubtitle}
+                            markClassName="h-8 w-8"
+                        />
+                    )}
                 </div>
                 <Tooltip delayDuration={0} open={toggleBtnTooltipOpen} onOpenChange={setToggleBtnTooltipOpen}>
                     <TooltipTrigger asChild>

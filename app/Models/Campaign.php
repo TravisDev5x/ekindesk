@@ -14,6 +14,8 @@ class Campaign extends Model
     protected $fillable = [
         'name',
         'is_active',
+        'operator_user_id',
+        'client_id',
     ];
 
     /**

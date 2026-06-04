@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Incident;
+use App\Services\ClientScopeService;
 use App\Models\IncidentHistory;
 use App\Models\IncidentStatus;
 use App\Models\User;
@@ -16,6 +17,10 @@ use Carbon\Carbon;
 
 class IncidentController extends Controller
 {
+    public function __construct(
+        protected ClientScopeService $clientScope
+    ) {}
+
     public function index(Request $request)
     {
         $user = Auth::user();
@@ -23,9 +28,10 @@ class IncidentController extends Controller
             return response()->json(['message' => 'No autorizado'], 401);
         }
 
-        if (!$user->can('incidents.manage_all') && $user->can('incidents.view_area') && !$user->area_id) {
+        if ($blocked = $this->clientScope->guardOperationalModuleAccess($user, 'incidents')) {
             Log::warning('incidents.view_area sin area_id', ['user_id' => $user->id]);
-            return response()->json(['message' => 'Asigna tu area para acceder a incidencias'], 403);
+
+            return $blocked;
         }
 
         Gate::authorize('viewAny', Incident::class);
@@ -44,6 +50,7 @@ class IncidentController extends Controller
 
         $policy = app(\App\Policies\IncidentPolicy::class);
         $query = $policy->scopeFor($user, $query);
+        $this->clientScope->applyClientFilter($request, $user, $query);
 
         $this->applyFilters($request, $user, $query);
 
@@ -81,9 +88,10 @@ class IncidentController extends Controller
     public function show(Incident $incident)
     {
         $user = Auth::user();
-        if ($user && !$user->can('incidents.manage_all') && $user->can('incidents.view_area') && !$user->area_id) {
+        if ($user && ($blocked = $this->clientScope->guardOperationalModuleAccess($user, 'incidents'))) {
             Log::warning('incidents.show sin area_id', ['user_id' => $user->id, 'incident_id' => $incident->id]);
-            return response()->json(['message' => 'Asigna tu area para acceder a incidencias'], 403);
+
+            return $blocked;
         }
         Gate::authorize('view', $incident);
 
@@ -142,6 +150,10 @@ class IncidentController extends Controller
 
         $data['reporter_id'] = $user->id;
 
+        if (! $this->clientScope->assertSedeAccessible($user, (int) $data['sede_id'])) {
+            return response()->json(['message' => 'La sede seleccionada no está disponible para tu organización.'], 422);
+        }
+
         if (isset($data['assigned_user_id']) && !$user->can('incidents.assign') && !$user->can('incidents.manage_all')) {
             unset($data['assigned_user_id']);
         }
@@ -199,9 +211,10 @@ class IncidentController extends Controller
     {
         $user = Auth::user();
         if (!$user) return response()->json(['message' => 'No autorizado'], 401);
-        if (!$user->can('incidents.manage_all') && $user->can('incidents.view_area') && !$user->area_id) {
+        if ($blocked = $this->clientScope->guardOperationalModuleAccess($user, 'incidents')) {
             Log::warning('incidents.update sin area_id', ['user_id' => $user->id, 'incident_id' => $incident->id]);
-            return response()->json(['message' => 'Asigna tu area para acceder a incidencias'], 403);
+
+            return $blocked;
         }
         Gate::authorize('update', $incident);
 

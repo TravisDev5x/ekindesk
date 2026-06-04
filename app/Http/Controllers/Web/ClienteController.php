@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Cliente;
 use App\Models\Sede;
 use App\Models\TicketState;
+use App\Services\OperatorScopeService;
+use App\Services\TenantContextService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -15,6 +17,10 @@ use Inertia\Response;
 
 class ClienteController extends Controller
 {
+    public function __construct(
+        protected OperatorScopeService $operatorScope
+    ) {}
+
     protected const INDUSTRIES = [
         'Tecnología', 'Retail', 'Manufactura', 'Salud',
         'Educación', 'Logística', 'Finanzas',
@@ -23,41 +29,23 @@ class ClienteController extends Controller
 
     private function canViewAllClients(): bool
     {
-        $user = auth()->user();
-
-        return $user->hasRole('super_admin') || $user->can('clients.view_all');
+        return $this->operatorScope->bypassesOperatorScope(auth()->user());
     }
 
     private function clientQuery(): Builder
     {
-        $user = auth()->user();
-
-        if ($user->hasRole('super_admin')) {
-            return Cliente::query();
-        }
-
-        if ($user->can('clients.view_all')) {
-            return Cliente::query();
-        }
-
-        return Cliente::forOperator($user->id);
+        return $this->operatorScope->applyOnClients(Cliente::query(), auth()->user());
     }
 
     private function authorizeClient(Cliente $client): void
     {
-        if ($this->canViewAllClients()) {
-            return;
-        }
-
-        if ((int) $client->operator_user_id !== (int) auth()->id()) {
-            abort(403);
-        }
+        $this->operatorScope->authorizeClient(auth()->user(), $client);
     }
 
     public function index(): Response
     {
         $user = auth()->user();
-        $showOperatorColumn = $user->hasRole('super_admin') || $user->can('clients.view_all');
+        $showOperatorColumn = $this->operatorScope->bypassesOperatorScope($user);
 
         $counts = ['sedes'];
         if (\App\Models\Ticket::query()->exists()) {
@@ -114,6 +102,7 @@ class ClienteController extends Controller
                 'logo_path' => $logoPath,
                 'is_active' => $validated['is_active'] ?? true,
                 'operator_user_id' => auth()->id(),
+                'portal_slug' => TenantContextService::generateUniquePortalSlug($validated['business_name']),
             ]);
 
             foreach ($validated['sites'] ?? [] as $site) {

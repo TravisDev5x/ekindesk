@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Cliente;
 use App\Models\Sede;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
@@ -10,10 +11,34 @@ use Illuminate\Support\Facades\DB;
 
 class ClientScopeService
 {
-    /** Administración global: sin restricción por cliente. */
+    public function __construct(
+        protected OperatorScopeService $operatorScope,
+        protected TenantClientResolver $tenantResolver,
+        protected TenantContextService $tenantContext
+    ) {}
+
+    /** Portal empresa final por subdominio: solo este client_id. */
+    public function applyStrictPortalClient(Builder $query, User $user, string $clientColumn = 'client_id'): Builder
+    {
+        $enforced = $this->tenantContext->enforcedClientId();
+        if (! $enforced) {
+            return $query;
+        }
+
+        if ($this->operatorScope->bypassesOperatorScope($user)) {
+            return $query->where($clientColumn, $enforced);
+        }
+
+        return $query->where($clientColumn, $enforced);
+    }
+
+    /**
+     * Sin restricción a un único cliente (plataforma o todos los clientes del MSP).
+     */
     public function bypassesClientScope(User $user): bool
     {
-        return $user->can('tickets.manage_all');
+        return $this->operatorScope->bypassesOperatorScope($user)
+            || $this->operatorScope->hasMspWideAccess($user);
     }
 
     /**
@@ -32,50 +57,162 @@ class ClientScopeService
         }
 
         $data['sede_id'] = (int) $user->sede_id;
-        $data['client_id'] = $user->sede->client_id ? (int) $user->sede->client_id : null;
+        $data['client_id'] = $this->resolveUserClientId($user);
+
+        return null;
+    }
+
+    /**
+     * Bloquea acceso operativo si tiene permiso de área sin area_id (config incompleta).
+     *
+     * @return \Illuminate\Http\JsonResponse|null
+     */
+    public function guardOperationalModuleAccess(User $user, string $module): ?\Illuminate\Http\JsonResponse
+    {
+        if ($this->operatorScope->bypassesOperatorScope($user) || $this->operatorScope->hasMspWideAccess($user)) {
+            return null;
+        }
+
+        if ($this->tenantResolver->hasAreaPermissionWithoutArea($user, $module)) {
+            $label = $module === 'incidents' ? 'incidencias' : 'tickets';
+
+            return response()->json([
+                'message' => "Asigna tu área para acceder a {$label}",
+            ], 403);
+        }
 
         return null;
     }
 
     public function syncTicketClientFromSede(int $sedeId): ?int
     {
+        return $this->syncClientIdFromSede($sedeId);
+    }
+
+    public function syncClientIdFromSede(int $sedeId): ?int
+    {
         $clientId = Sede::where('id', $sedeId)->value('client_id');
 
         return $clientId ? (int) $clientId : null;
     }
 
-    public function resolveUserClientId(User $user): ?int
+    /** Restringe incidencias al cliente o al operador MSP del usuario. */
+    public function applyIncidentScope(Builder $query, User $user): Builder
     {
-        $user->loadMissing('sede:id,client_id');
+        if ($this->tenantContext->enforcedClientId()) {
+            return $this->applyStrictPortalClient($query, $user);
+        }
 
-        return $user->sede?->client_id ? (int) $user->sede->client_id : null;
-    }
-
-    /** Restringe tickets al cliente de la sede del usuario (salvo manage_all). */
-    public function applyTicketScope(Builder $query, User $user): Builder
-    {
-        if ($this->bypassesClientScope($user)) {
+        if ($this->operatorScope->bypassesOperatorScope($user)) {
             return $query;
+        }
+
+        if ($this->operatorScope->hasMspWideAccess($user)) {
+            return $this->operatorScope->applyOnIncidents($query, $user);
         }
 
         $clientId = $this->resolveUserClientId($user);
-        if (! $clientId) {
-            return $query->where('requester_id', $user->id);
+        if ($clientId) {
+            return $query->where(function ($q) use ($clientId) {
+                $q->where('client_id', $clientId)
+                    ->orWhereIn('sede_id', $this->sedeIdsSubquery($clientId));
+            });
         }
 
-        return $query->where(function ($q) use ($clientId) {
-            $q->where('client_id', $clientId)
-                ->orWhere(function ($sub) use ($clientId) {
-                    $this->whereTicketSedeInClient($sub, $clientId);
-                });
-        });
+        return $this->applyIncidentsWithoutTenant($query, $user);
     }
 
-    /** Restringe listado de usuarios al mismo cliente (salvo manage_all). */
+    public function incidentVisibleToUser(User $user, \App\Models\Incident $incident): bool
+    {
+        if ($this->operatorScope->bypassesOperatorScope($user)) {
+            return true;
+        }
+
+        if ($this->operatorScope->hasMspWideAccess($user)) {
+            if ($this->operatorScope->usesLegacyMspWideAccess($user)) {
+                return true;
+            }
+
+            $operatorId = $this->operatorScope->resolveOperatorUserId($user);
+            if (! $operatorId) {
+                return false;
+            }
+            $incident->loadMissing('sede:id,client_id', 'client:id,operator_user_id');
+
+            if ($incident->client_id) {
+                $op = Cliente::query()->where('id', $incident->client_id)->value('operator_user_id');
+
+                return (int) $op === $operatorId;
+            }
+
+            if ($incident->sede?->client_id) {
+                $op = Cliente::where('id', $incident->sede->client_id)->value('operator_user_id');
+
+                return (int) $op === $operatorId;
+            }
+
+            return false;
+        }
+
+        $clientId = $this->resolveUserClientId($user);
+        if ($clientId) {
+            if ($incident->client_id) {
+                return (int) $incident->client_id === $clientId;
+            }
+            $incident->loadMissing('sede:id,client_id');
+
+            return $incident->sede && (int) $incident->sede->client_id === $clientId;
+        }
+
+        if ($this->tenantResolver->isAreaScopedWithoutTenant($user, 'incidents')) {
+            return $user->area_id && (int) $incident->area_id === (int) $user->area_id;
+        }
+
+        return (int) $incident->reporter_id === (int) $user->id;
+    }
+
+    /** @see TenantClientResolver */
+    public function resolveUserClientId(User $user): ?int
+    {
+        return $this->tenantResolver->resolve($user);
+    }
+
+    /** Restringe tickets al cliente o al operador MSP del usuario. */
+    public function applyTicketScope(Builder $query, User $user): Builder
+    {
+        return $this->operatorScope->applyOnTickets($query, $user);
+    }
+
+    /** Restringe listado de usuarios al mismo cliente u operador MSP. */
     public function applyUserScope(Builder $query, User $user): Builder
     {
-        if ($this->bypassesClientScope($user)) {
+        if ($enforced = $this->tenantContext->enforcedClientId()) {
+            return $query->where(function ($q) use ($enforced) {
+                $q->where('users.client_id', $enforced)
+                    ->orWhereIn('users.sede_id', $this->sedeIdsSubquery($enforced));
+            });
+        }
+
+        if ($this->operatorScope->bypassesOperatorScope($user)) {
             return $query;
+        }
+
+        if ($this->operatorScope->hasMspWideAccess($user)) {
+            if ($this->operatorScope->usesLegacyMspWideAccess($user)) {
+                return $query;
+            }
+
+            $operatorId = $this->operatorScope->resolveOperatorUserId($user);
+            if (! $operatorId) {
+                return $query->whereRaw('0 = 1');
+            }
+
+            return $query->whereIn('users.sede_id', function ($sub) use ($operatorId) {
+                $sub->select('sites.id')
+                    ->from('sites')
+                    ->join('clients', 'clients.id', '=', 'sites.client_id')
+                    ->where('clients.operator_user_id', $operatorId);
+            });
         }
 
         $clientId = $this->resolveUserClientId($user);
@@ -88,8 +225,34 @@ class ClientScopeService
 
     public function ticketVisibleToUser(User $user, \App\Models\Ticket $ticket): bool
     {
-        if ($this->bypassesClientScope($user)) {
+        if ($this->operatorScope->bypassesOperatorScope($user)) {
             return true;
+        }
+
+        if ($this->operatorScope->hasMspWideAccess($user)) {
+            if ($this->operatorScope->usesLegacyMspWideAccess($user)) {
+                return true;
+            }
+
+            $operatorId = $this->operatorScope->resolveOperatorUserId($user);
+            if (! $operatorId) {
+                return false;
+            }
+            $ticket->loadMissing('sede:id,client_id', 'cliente:id,operator_user_id');
+
+            if ($ticket->client_id) {
+                $op = \App\Models\Cliente::where('id', $ticket->client_id)->value('operator_user_id');
+
+                return (int) $op === $operatorId;
+            }
+
+            if ($ticket->sede?->client_id) {
+                $op = \App\Models\Cliente::where('id', $ticket->sede->client_id)->value('operator_user_id');
+
+                return (int) $op === $operatorId;
+            }
+
+            return false;
         }
 
         $clientId = $this->resolveUserClientId($user);
@@ -108,26 +271,83 @@ class ClientScopeService
 
     public function assertSedeAccessible(User $user, int $sedeId): bool
     {
-        if ($this->bypassesClientScope($user)) {
+        if ($this->operatorScope->bypassesOperatorScope($user)) {
             return Sede::where('id', $sedeId)->exists();
         }
 
-        $clientId = $this->resolveUserClientId($user);
-        if (! $clientId) {
-            return (int) $user->sede_id === $sedeId;
+        if ($this->operatorScope->hasMspWideAccess($user)) {
+            if ($this->operatorScope->usesLegacyMspWideAccess($user)) {
+                return Sede::where('id', $sedeId)->exists();
+            }
+
+            $operatorId = $this->operatorScope->resolveOperatorUserId($user);
+            if (! $operatorId) {
+                return false;
+            }
+
+            return Sede::where('id', $sedeId)
+                ->whereIn('client_id', function ($sub) use ($operatorId) {
+                    $sub->select('id')->from('clients')->where('operator_user_id', $operatorId);
+                })
+                ->exists();
         }
 
-        return Sede::where('id', $sedeId)->where('client_id', $clientId)->exists();
+        $clientId = $this->resolveUserClientId($user);
+        if ($clientId) {
+            return Sede::where('id', $sedeId)->where('client_id', $clientId)->exists();
+        }
+
+        if ($this->tenantResolver->isAreaScopedWithoutTenant($user, 'tickets')
+            || $this->tenantResolver->isAreaScopedWithoutTenant($user, 'incidents')) {
+            return false;
+        }
+
+        return (int) $user->sede_id === $sedeId;
     }
 
     public function assertUserAccessible(User $user, int $targetUserId): bool
     {
-        if ($this->bypassesClientScope($user)) {
+        if ($enforced = $this->tenantContext->enforcedClientId()) {
+            if ((int) $user->id === $targetUserId) {
+                return true;
+            }
+
+            return DB::table('users')
+                ->where('id', $targetUserId)
+                ->where(function ($q) use ($enforced) {
+                    $q->where('client_id', $enforced)
+                        ->orWhereIn('sede_id', $this->sedeIdsSubquery($enforced));
+                })
+                ->exists();
+        }
+
+        if ($this->operatorScope->bypassesOperatorScope($user)) {
             return true;
         }
 
         if ((int) $user->id === $targetUserId) {
             return true;
+        }
+
+        if ($this->operatorScope->hasMspWideAccess($user)) {
+            if ($this->operatorScope->usesLegacyMspWideAccess($user)) {
+                return true;
+            }
+
+            $operatorId = $this->operatorScope->resolveOperatorUserId($user);
+            if (! $operatorId) {
+                return false;
+            }
+
+            return DB::table('users')
+                ->where('id', $targetUserId)
+                ->whereIn('sede_id', function ($sub) use ($operatorId) {
+                    $sub->select('sites.id')
+                        ->from('sites')
+                        ->join('clients', 'clients.id', '=', 'sites.client_id')
+                        ->where('clients.operator_user_id', $operatorId);
+                })
+                ->exists();
         }
 
         $clientId = $this->resolveUserClientId($user);
@@ -153,10 +373,16 @@ class ClientScopeService
             return;
         }
 
-        if (! $this->bypassesClientScope($user)) {
-            $own = $this->resolveUserClientId($user);
-            if ($own !== $clientId) {
-                return;
+        if (! $this->operatorScope->bypassesOperatorScope($user)) {
+            if ($this->operatorScope->hasMspWideAccess($user)) {
+                if (! $this->operatorScope->assertClientIdInScope($user, $clientId)) {
+                    return;
+                }
+            } else {
+                $own = $this->resolveUserClientId($user);
+                if ($own !== $clientId) {
+                    return;
+                }
             }
         }
 
@@ -189,32 +415,36 @@ class ClientScopeService
             return [];
         }
 
-        if ($this->bypassesClientScope($user)) {
-            return DB::table('clients')
-                ->where('is_active', true)
-                ->orderBy('name')
-                ->get(['id', 'name'])
-                ->all();
-        }
-
-        $clientId = $this->resolveUserClientId($user);
-        if (! $clientId) {
-            return [];
-        }
-
-        return DB::table('clients')
-            ->where('id', $clientId)
-            ->where('is_active', true)
-            ->get(['id', 'name'])
-            ->all();
+        return $this->operatorScope->clientsForCatalog($user);
     }
 
     public function sedesQueryForUser(?User $user): \Illuminate\Database\Query\Builder
     {
         $q = DB::table('sites')->where('is_active', true);
-        if (! $user || $this->bypassesClientScope($user)) {
+
+        if (! $user) {
+            return $q->whereRaw('0 = 1');
+        }
+
+        if ($this->operatorScope->bypassesOperatorScope($user)) {
             return $q;
         }
+
+        if ($this->operatorScope->hasMspWideAccess($user)) {
+            if ($this->operatorScope->usesLegacyMspWideAccess($user)) {
+                return $q;
+            }
+
+            $operatorId = $this->operatorScope->resolveOperatorUserId($user);
+            if (! $operatorId) {
+                return $q->whereRaw('0 = 1');
+            }
+
+            return $q->whereIn('client_id', function ($sub) use ($operatorId) {
+                $sub->select('id')->from('clients')->where('operator_user_id', $operatorId);
+            });
+        }
+
         $clientId = $this->resolveUserClientId($user);
         if ($clientId) {
             $q->where('client_id', $clientId);
@@ -232,9 +462,29 @@ class ClientScopeService
         }
 
         $q = DB::table('users')->whereNull('deleted_at');
-        if ($user->can('tickets.manage_all') || $user->can('incidents.manage_all')) {
+
+        if ($this->operatorScope->bypassesOperatorScope($user)) {
             return $q;
         }
+
+        if ($this->operatorScope->hasMspWideAccess($user)) {
+            if ($this->operatorScope->usesLegacyMspWideAccess($user)) {
+                return $q;
+            }
+
+            $operatorId = $this->operatorScope->resolveOperatorUserId($user);
+            if (! $operatorId) {
+                return $q->whereRaw('0 = 1');
+            }
+
+            return $q->whereIn('sede_id', function ($sub) use ($operatorId) {
+                $sub->select('sites.id')
+                    ->from('sites')
+                    ->join('clients', 'clients.id', '=', 'sites.client_id')
+                    ->where('clients.operator_user_id', $operatorId);
+            });
+        }
+
         if ($user->can('tickets.view_area') || $user->can('incidents.view_area')) {
             if ($user->area_id) {
                 $q->where('area_id', $user->area_id);
@@ -253,6 +503,19 @@ class ClientScopeService
     private function whereTicketSedeInClient(Builder $query, int $clientId): Builder
     {
         return $query->whereIn('sede_id', $this->sedeIdsSubquery($clientId));
+    }
+
+    private function applyIncidentsWithoutTenant(Builder $query, User $user): Builder
+    {
+        if ($this->tenantResolver->isAreaScopedWithoutTenant($user, 'incidents')) {
+            return $query;
+        }
+
+        if ($user->can('incidents.view_own')) {
+            return $query->where('reporter_id', $user->id);
+        }
+
+        return $query->whereRaw('0 = 1');
     }
 
     private function sedeIdsSubquery(int $clientId): \Closure

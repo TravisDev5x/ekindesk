@@ -17,6 +17,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Label } from "@/components/ui/label";
 import { notify } from "@/lib/notify";
 import { cn } from "@/lib/utils";
+import { hintWarning, unassignedRowMutedPl } from "@/lib/badgeStyles";
 import { IncidentSeverityBadge, IncidentStatusBadge } from "@/components/badges/EntityBadges";
 
 import {
@@ -72,8 +73,8 @@ const IncidentRow = memo(function IncidentRow({ incident }) {
                             </span>
                         </div>
                     ) : (
-                        <span className="text-muted-foreground italic pl-1 flex items-center gap-1">
-                            <AlertTriangle className="w-3 h-3 text-orange-400" /> Sin asignar
+                        <span className={unassignedRowMutedPl}>
+                            <AlertTriangle className={cn("w-3 h-3", hintWarning)} /> Sin asignar
                         </span>
                     )}
                 </div>
@@ -142,8 +143,8 @@ const IncidentCard = memo(function IncidentCard({ incident }) {
                     {assignedUser ? (
                         <span className="text-xs text-muted-foreground">{assignedUser.name}</span>
                     ) : (
-                        <span className="text-xs text-muted-foreground italic flex items-center gap-1">
-                            <AlertTriangle className="w-3 h-3 text-orange-400" /> Sin asignar
+                        <span className={cn("text-xs", unassignedRowMutedPl)}>
+                            <AlertTriangle className={cn("w-3 h-3", hintWarning)} /> Sin asignar
                         </span>
                     )}
                 </div>

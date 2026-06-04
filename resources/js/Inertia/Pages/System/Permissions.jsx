@@ -21,6 +21,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { notify } from "@/lib/notify";
+import { cn } from "@/lib/utils";
+import { statusDotWarning } from "@/lib/badgeStyles";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { Loader2, Plus, Save, ShieldCheck, Trash2 } from "lucide-react";
 
@@ -198,7 +200,7 @@ export default function Permissions() {
                             <TabsTrigger key={role.id} value={String(role.id)} className="text-sm">
                                 {role.name}
                                 {isRoleDirty(role) && (
-                                    <span className="ml-1.5 h-1.5 w-1.5 rounded-full bg-amber-500" />
+                                    <span className={cn("ml-1.5 h-1.5 w-1.5", statusDotWarning)} />
                                 )}
                             </TabsTrigger>
                         ))}

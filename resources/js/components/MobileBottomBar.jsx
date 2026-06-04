@@ -3,7 +3,7 @@ import { Link as InertiaLink, usePage } from '@inertiajs/react'
 import { useI18n } from '@/hooks/useI18n'
 import { useAuth } from '@/context/AuthContext'
 import { cn } from '@/lib/utils'
-import { shouldUseInertiaLink } from '@/lib/inertiaNavigation'
+import { shouldUseInertiaLink, normalizeLegacyAppPath } from '@/lib/inertiaNavigation'
 import { Home, Ticket, LayoutDashboard, Menu, Layers, AlertTriangle } from 'lucide-react'
 
 const ICON_SIZE = 22
@@ -26,7 +26,7 @@ function NavItem({ to, end, pathname, getLinkClassName, children, onClick }) {
   if (shouldUseInertiaLink(to)) {
     return (
       <InertiaLink
-        href={to}
+        href={normalizeLegacyAppPath(to)}
         preserveScroll
         onClick={onClick}
         className={className}

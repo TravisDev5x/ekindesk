@@ -16,7 +16,7 @@ class TicketState extends Model
     public const CODE_CLOSED = 'cerrado';
     public const CODE_RESOLVED = 'resuelto';
 
-    protected $fillable = ['name', 'code', 'is_active', 'is_final'];
+    protected $fillable = ['name', 'code', 'is_active', 'is_final', 'operator_user_id', 'client_id'];
 
     protected $casts = [
         'is_active' => 'boolean',

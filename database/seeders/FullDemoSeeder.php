@@ -234,6 +234,8 @@ class FullDemoSeeder extends Seeder
                 'password' => Hash::make($password),
                 'status' => 'active',
                 'email_verified_at' => now(),
+                'is_operator' => true,
+                'onboarding_completed' => true,
                 'campaign_id' => $campaign?->id,
                 'area_id' => $area?->id,
                 'position_id' => $position?->id,

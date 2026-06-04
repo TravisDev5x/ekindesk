@@ -9,11 +9,13 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use App\Services\ClientScopeService;
+use App\Services\OperatorCatalogScopeService;
 
 class CatalogController extends Controller
 {
     public function __construct(
-        protected ClientScopeService $clientScope
+        protected ClientScopeService $clientScope,
+        protected OperatorCatalogScopeService $catalogScope
     ) {}
 
     /** TTL caché catálogos (segundos). */
@@ -53,9 +55,28 @@ class CatalogController extends Controller
         return $filtered === [] ? null : array_unique($filtered);
     }
 
+    private function scopedCatalogTable(string $table)
+    {
+        return $this->catalogScope->apply(DB::table($table), Auth::user(), $table);
+    }
+
     private function cacheKey($user, ?array $modules): string
     {
-        $base = 'catalogs.v2.' . ($user ? $user->id : 'guest');
+        $operatorKey = 'guest';
+        if ($user) {
+            $operatorKey = app(\App\Services\OperatorScopeService::class)->resolveOperatorUserId($user)
+                ?? ('u'.$user->id);
+        }
+
+        $tenant = app(\App\Services\TenantContextService::class)->current();
+        if ($tenant->isClientPortal() && $tenant->clientId) {
+            $operatorKey .= '.portal'.$tenant->clientId;
+            if ($this->catalogScope->usesPerClientCatalogInPortal()) {
+                $operatorKey .= '.perClient';
+            }
+        }
+
+        $base = 'catalogs.v4.'.$operatorKey.'.'.($user ? $user->id : 'guest');
         if ($modules === null || $modules === []) {
             return $base . '.full';
         }
@@ -122,9 +143,9 @@ class CatalogController extends Controller
 
         return [
             'clients' => $user ? $this->clientScope->clientsForCatalog($user) : [],
-            'campaigns' => DB::table('campaigns')->where('is_active', true)->orderBy('name')->get(['id', 'name']),
-            'areas' => DB::table('areas')->where('is_active', true)->orderBy('name')->get(['id', 'name']),
-            'positions' => DB::table('positions')->where('is_active', true)->orderBy('name')->get(['id', 'name']),
+            'campaigns' => $this->scopedCatalogTable('campaigns')->where('is_active', true)->orderBy('name')->get(['id', 'name']),
+            'areas' => $this->scopedCatalogTable('areas')->where('is_active', true)->orderBy('name')->get(['id', 'name']),
+            'positions' => $this->scopedCatalogTable('positions')->where('is_active', true)->orderBy('name')->get(['id', 'name']),
             'sedes' => $sedes,
             'ubicaciones' => $ubicacionesQuery
                 ->orderBy('sites.name')
@@ -162,12 +183,12 @@ class CatalogController extends Controller
         }
 
         return [
-            'priorities' => DB::table('priorities')->orderBy('level')->orderBy('name')->get(['id', 'name', 'level', 'is_active']),
+            'priorities' => $this->scopedCatalogTable('priorities')->orderBy('level')->orderBy('name')->get(['id', 'name', 'level', 'is_active']),
             'impact_levels' => $this->getImpactLevels(),
             'urgency_levels' => $this->getUrgencyLevels(),
             'priority_matrix' => $this->getPriorityMatrix(),
-            'ticket_states' => DB::table('ticket_states')->orderBy('name')->get(['id', 'name', 'code', 'is_active', 'is_final']),
-            'ticket_types' => DB::table('ticket_types')->orderBy('name')->get(['id', 'name', 'code', 'is_active']),
+            'ticket_states' => $this->scopedCatalogTable('ticket_states')->orderBy('name')->get(['id', 'name', 'code', 'is_active', 'is_final']),
+            'ticket_types' => $this->scopedCatalogTable('ticket_types')->orderBy('name')->get(['id', 'name', 'code', 'is_active']),
             'area_users' => $areaUsers,
         ];
     }
@@ -183,9 +204,9 @@ class CatalogController extends Controller
             ];
         }
         return [
-            'incident_types' => DB::table('incident_types')->orderBy('name')->get(['id', 'name', 'code', 'is_active']),
-            'incident_severities' => DB::table('incident_severities')->orderBy('level')->orderBy('name')->get(['id', 'name', 'code', 'level', 'is_active']),
-            'incident_statuses' => DB::table('incident_statuses')->orderBy('name')->get(['id', 'name', 'code', 'is_active', 'is_final']),
+            'incident_types' => $this->scopedCatalogTable('incident_types')->orderBy('name')->get(['id', 'name', 'code', 'is_active']),
+            'incident_severities' => $this->scopedCatalogTable('incident_severities')->orderBy('level')->orderBy('name')->get(['id', 'name', 'code', 'level', 'is_active']),
+            'incident_statuses' => $this->scopedCatalogTable('incident_statuses')->orderBy('name')->get(['id', 'name', 'code', 'is_active', 'is_final']),
         ];
     }
 
@@ -194,7 +215,7 @@ class CatalogController extends Controller
         if (! Schema::hasTable('impact_levels')) {
             return collect();
         }
-        return DB::table('impact_levels')->where('is_active', true)->orderBy('weight')->get(['id', 'name', 'weight']);
+        return $this->scopedCatalogTable('impact_levels')->where('is_active', true)->orderBy('weight')->get(['id', 'name', 'weight']);
     }
 
     private function getUrgencyLevels()
@@ -202,7 +223,7 @@ class CatalogController extends Controller
         if (! Schema::hasTable('urgency_levels')) {
             return collect();
         }
-        return DB::table('urgency_levels')->where('is_active', true)->orderBy('weight')->get(['id', 'name', 'weight']);
+        return $this->scopedCatalogTable('urgency_levels')->where('is_active', true)->orderBy('weight')->get(['id', 'name', 'weight']);
     }
 
     private function getPriorityMatrix()

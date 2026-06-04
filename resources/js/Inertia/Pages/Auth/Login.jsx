@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Head, Link } from "@inertiajs/react";
+import { useEffect, useMemo, useState } from "react";
+import { Head, Link, usePage } from "@inertiajs/react";
 import axios from "@/lib/axios";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -12,12 +12,20 @@ import {
     authCard,
     authPanelSide,
     brandBadgeSm,
-    brandLogo,
+    brandPanelGlow,
     btnBrand,
     btnBrandOutline,
     linkBrand,
     surfaceAuth,
 } from "@/lib/marketingTheme";
+import {
+    getTenantBrandName,
+    isClientPortalTenant,
+    resolveTenantBrandCssVars,
+} from "@/lib/tenantBranding";
+import { TenantBrandLoginMark } from "@/components/TenantBrand";
+import { statusDotInfo } from "@/lib/badgeStyles";
+import { cn } from "@/lib/utils";
 
 function GoogleIcon() {
     return (
@@ -42,25 +50,31 @@ function GoogleIcon() {
     );
 }
 
-function LoginBrandingColumn() {
+function LoginBrandingColumn({ tenant }) {
+    const brandName = getTenantBrandName(tenant, "EkinDesk");
+    const isPortal = isClientPortalTenant(tenant);
+    const welcome =
+        tenant?.portal_welcome_message ||
+        (isPortal
+            ? `Accede al portal de ${brandName}.`
+            : "Inicia sesión con el correo de tu cuenta para entrar al panel de tu negocio.");
+
     return (
-        <aside className={authPanelSide}>
-            <div
-                className="absolute -top-20 -left-20 w-96 h-96 rounded-full blur-3xl bg-gradient-to-br from-[hsl(var(--brand)/0.1)] to-blue-600/10 -z-10 pointer-events-none"
-                aria-hidden
-            />
+        <aside
+            className={authPanelSide}
+            style={resolveTenantBrandCssVars(tenant)}
+        >
+            <div className={brandPanelGlow} aria-hidden />
 
             <div className="flex items-center gap-3 relative z-10">
-                <div className={`h-10 w-10 rounded-xl ${brandLogo}`}>
-                    <span className="font-black text-lg">E</span>
-                </div>
-                <span className="text-foreground font-bold text-xl tracking-tight">EkinDesk</span>
+                <TenantBrandLoginMark tenant={tenant} />
+                <span className="text-foreground font-bold text-xl tracking-tight">{brandName}</span>
             </div>
 
             <div className="relative z-10 my-auto">
                 <div className={`inline-flex items-center gap-2 ${brandBadgeSm} mb-6`}>
                     <span className="h-2 w-2 rounded-full bg-brand animate-pulse" />
-                    Acceso seguro
+                    {isPortal ? "Portal de tu organización" : "Acceso seguro"}
                 </div>
 
                 <h2 className="text-4xl font-black text-foreground leading-tight">
@@ -69,9 +83,7 @@ function LoginBrandingColumn() {
                     de nuevo
                 </h2>
 
-                <p className="text-muted-foreground text-base mt-4 max-w-sm leading-relaxed">
-                    Inicia sesión con el correo de tu cuenta para entrar al panel de tu negocio.
-                </p>
+                <p className="text-muted-foreground text-base mt-4 max-w-sm leading-relaxed">{welcome}</p>
 
                 <ul className="mt-8 space-y-3">
                     <li className="flex items-center gap-3 text-sm text-muted-foreground">
@@ -79,7 +91,7 @@ function LoginBrandingColumn() {
                         Misma cuenta para todas las pantallas.
                     </li>
                     <li className="flex items-center gap-3 text-sm text-muted-foreground">
-                        <span className="h-2 w-2 shrink-0 rounded-full bg-blue-500" />
+                        <span className={cn("h-2 w-2 shrink-0", statusDotInfo)} />
                         Roles y permisos según tu equipo.
                     </li>
                     <li className="flex items-center gap-3 text-sm text-muted-foreground">
@@ -102,6 +114,14 @@ function LoginBrandingColumn() {
 }
 
 export default function Login() {
+    const { tenant = {}, authProviders = {}, flash = {} } = usePage().props;
+    const pageTitle = useMemo(() => {
+        if (tenant?.mode === "client_portal" && tenant?.name) {
+            return `Iniciar sesión — ${tenant.name}`;
+        }
+        return "Iniciar sesión — EkinDesk";
+    }, [tenant]);
+
     const [form, setForm] = useState({ email: "", password: "" });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
@@ -121,6 +141,12 @@ export default function Login() {
     useEffect(() => {
         axios.get("/sanctum/csrf-cookie", { withCredentials: true }).catch(() => {});
     }, []);
+
+    useEffect(() => {
+        if (typeof flash?.error === "string" && flash.error) {
+            setError(flash.error);
+        }
+    }, [flash?.error]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -190,44 +216,62 @@ export default function Login() {
 
     return (
         <>
-            <Head title="Iniciar sesión — EkinDesk" />
+            <Head title={pageTitle} />
             <div className={`${surfaceAuth} flex`}>
-                <LoginBrandingColumn />
+                <LoginBrandingColumn tenant={tenant} />
 
                 <div className="flex-1 flex items-center justify-center p-8 lg:p-16 bg-muted/20 min-h-screen">
                     <div className={authCard}>
                         <div className="flex justify-between items-start mb-6">
                             <div className="lg:hidden flex items-center gap-3">
-                                <div className={`h-9 w-9 ${brandLogo}`}>
-                                    <span className="font-black">E</span>
-                                </div>
-                                <span className="text-foreground font-bold text-lg">EkinDesk</span>
+                                <TenantBrandLoginMark tenant={tenant} className="h-9 w-9" />
+                                <span className="text-foreground font-bold text-lg">
+                                    {getTenantBrandName(tenant, "EkinDesk")}
+                                </span>
                             </div>
                             <div className="ml-auto">
                                 <ThemeToggle variant="icon" />
                             </div>
                         </div>
 
-                        <div className="flex justify-end items-center text-sm mb-6">
-                            <span className="text-muted-foreground">¿Aún no tienes cuenta?</span>
-                            <Link href="/register" className={`${linkBrand} ml-1`}>
-                                Crear cuenta gratis
-                            </Link>
-                        </div>
+                        {tenant?.mode !== "client_portal" ? (
+                            <div className="flex justify-end items-center text-sm mb-6">
+                                <span className="text-muted-foreground">¿Aún no tienes cuenta?</span>
+                                <Link href="/register" className={`${linkBrand} ml-1`}>
+                                    Crear cuenta gratis
+                                </Link>
+                            </div>
+                        ) : null}
 
                         <div>
-                            <Button
-                                type="button"
-                                variant="outline"
-                                className={`w-full h-11 ${btnBrandOutline}`}
-                                onClick={(e) => e.preventDefault()}
-                            >
-                                <GoogleIcon />
-                                <span className="ml-2">Continuar con Google</span>
-                            </Button>
-                            <p className="text-muted-foreground text-xs text-center mt-1">
-                                Próximamente disponible
-                            </p>
+                            {authProviders?.google ? (
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    className={`w-full h-11 ${btnBrandOutline}`}
+                                    asChild
+                                >
+                                    <a href="/auth/google/redirect?intent=login">
+                                        <GoogleIcon />
+                                        <span className="ml-2">Continuar con Google</span>
+                                    </a>
+                                </Button>
+                            ) : (
+                                <>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        className={`w-full h-11 ${btnBrandOutline}`}
+                                        disabled
+                                    >
+                                        <GoogleIcon />
+                                        <span className="ml-2">Continuar con Google</span>
+                                    </Button>
+                                    <p className="text-muted-foreground text-xs text-center mt-1">
+                                        Próximamente disponible
+                                    </p>
+                                </>
+                            )}
                         </div>
 
                         <div className="relative my-6">

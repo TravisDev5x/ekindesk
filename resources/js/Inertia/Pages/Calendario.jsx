@@ -17,7 +17,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { kpiCardSurface, hintWarning } from "@/lib/badgeStyles";
+import { kpiCardSurface, hintWarning, unassignedRowMuted } from "@/lib/badgeStyles";
 import { AlertCircle, CalendarDays, ShieldOff, Ticket } from "lucide-react";
 
 const CALENDAR_PER_PAGE = 500;
@@ -307,8 +307,8 @@ export default function Calendario() {
                                             </span>
                                             <div className="flex flex-wrap items-center gap-2">
                                                 {unassigned && (
-                                                    <span className="inline-flex items-center gap-1 text-[11px] text-amber-600">
-                                                        <AlertCircle className="h-3.5 w-3.5" />
+                                                    <span className={cn("text-[11px]", unassignedRowMuted)}>
+                                                        <AlertCircle className={cn("h-3.5 w-3.5", hintWarning)} />
                                                         Sin asignar
                                                     </span>
                                                 )}

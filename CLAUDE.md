@@ -143,7 +143,7 @@ Inertia (Vite → inertia.jsx → páginas en Inertia/Pages/)
 
 ## Multi-Tenant / Operator Onboarding
 
-Recent additions (2026 migrations): `clients`, `user_invitations`, `operator_profiles`, `plans` tables. The `client_id` column exists on `users`, `tickets`, and `sites`.
+Recent additions (2026 migrations): `clients`, `user_invitations`, `operator_profiles`, `plans` tables. The `client_id` column exists on `users`, `tickets`, `incidents`, and `sites` (tenant key for operational data). See **`docs/DATABASE_TENANCY.md`** for PostgreSQL setup, indexes, and backfill helpers (`App\Support\Database\TenantBackfill`).
 
 `EnsureOnboardingComplete` middleware (alias `onboarding`) blocks access to the main app until the operator completes setup. Don't bypass this middleware for new protected routes.
 

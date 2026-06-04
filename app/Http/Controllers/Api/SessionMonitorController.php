@@ -3,11 +3,18 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
+use App\Services\ClientScopeService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class SessionMonitorController extends Controller
 {
+    public function __construct(
+        protected ClientScopeService $clientScope
+    ) {}
+
     /**
      * Lista sesiones activas (usuarios con sesión abierta).
      * Solo expone: usuario, última actividad, IP, navegador. No expone session id ni payload.
@@ -23,14 +30,23 @@ class SessionMonitorController extends Controller
             ]);
         }
 
+        $actor = Auth::user();
+        if (! $actor) {
+            return response()->json(['message' => 'No autorizado'], 401);
+        }
+
         $table = config('session.table', 'sessions');
         $lifetime = (int) config('session.lifetime', 120);
         $minActivity = now()->subMinutes($lifetime)->timestamp;
 
+        $allowedUsers = User::query();
+        $this->clientScope->applyUserScope($allowedUsers, $actor);
+
         $sessions = DB::table($table)
             ->whereNotNull('user_id')
             ->where('last_activity', '>=', $minActivity)
-            ->join('users', $table . '.user_id', '=', 'users.id')
+            ->whereIn('user_id', $allowedUsers->select('users.id'))
+            ->join('users', $table.'.user_id', '=', 'users.id')
             ->select(
                 'users.id as user_id',
                 'users.first_name',
@@ -42,23 +58,24 @@ class SessionMonitorController extends Controller
                 'users.avatar_path',
                 'users.availability',
                 'users.last_login_at',
-                $table . '.ip_address',
-                $table . '.user_agent',
-                $table . '.last_activity'
+                $table.'.ip_address',
+                $table.'.user_agent',
+                $table.'.last_activity'
             )
-            ->orderByDesc($table . '.last_activity')
+            ->orderByDesc($table.'.last_activity')
             ->get();
 
         $list = $sessions->map(function ($row) {
             $lastLoginAt = $row->last_login_at ? \Illuminate\Support\Carbon::parse($row->last_login_at) : null;
-            $fullName = trim(($row->first_name ?? '') . ' ' . ($row->paternal_last_name ?? '') . ' ' . ($row->maternal_last_name ?? ''));
+            $fullName = trim(($row->first_name ?? '').' '.($row->paternal_last_name ?? '').' '.($row->maternal_last_name ?? ''));
             if ($fullName === '') {
                 $fullName = (string) ($row->name_legacy ?? '');
             }
             $avatarPath = $row->avatar_path ?? null;
             $avatarUrl = is_string($avatarPath) && trim($avatarPath) !== ''
-                ? rtrim(config('app.url'), '/') . '/storage/' . ltrim($avatarPath, '/')
+                ? rtrim(config('app.url'), '/').'/storage/'.ltrim($avatarPath, '/')
                 : null;
+
             return [
                 'user_id' => $row->user_id,
                 'name' => $fullName,
@@ -94,9 +111,18 @@ class SessionMonitorController extends Controller
             ], 400);
         }
 
+        $actor = Auth::user();
+        if (! $actor) {
+            return response()->json(['message' => 'No autorizado'], 401);
+        }
+
         $validated = $request->validate([
             'user_id' => ['required', 'integer', 'exists:users,id'],
         ]);
+
+        if (! $this->clientScope->assertUserAccessible($actor, (int) $validated['user_id'])) {
+            return response()->json(['message' => 'No tienes acceso a este usuario.'], 403);
+        }
 
         $table = config('session.table', 'sessions');
 
@@ -139,6 +165,7 @@ class SessionMonitorController extends Controller
         if (stripos($ua, 'MSIE') !== false || stripos($ua, 'Trident/') !== false) {
             return 'Internet Explorer';
         }
+
         return 'Otro';
     }
 }

@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { router } from "@inertiajs/react";
 import axios from "@/lib/axios";
 import { notify } from "@/lib/notify";
 
@@ -28,9 +29,30 @@ function isGuestOnlyPath() {
     return GUEST_ONLY_PATHS.some((p) => path === p || path.startsWith(p + "/"));
 }
 
-export const AuthProvider = ({ children }) => {
-    const [user, setUser] = useState(null);
-    const [loading, setLoading] = useState(true);
+function mapAuthPayload(payload) {
+    if (!payload?.user) return null;
+    return {
+        ...payload.user,
+        roles: payload.roles ?? payload.user.roles ?? [],
+        permissions: payload.permissions ?? payload.user.permissions ?? [],
+        onboarding_redirect:
+            payload.onboarding_redirect ?? payload.user.onboarding_redirect ?? null,
+    };
+}
+
+function mapInertiaAuthUser(inertiaUser) {
+    if (!inertiaUser) return null;
+    return {
+        ...inertiaUser,
+        roles: inertiaUser.roles ?? [],
+        permissions: inertiaUser.permissions ?? [],
+        onboarding_redirect: inertiaUser.onboarding_redirect ?? null,
+    };
+}
+
+export const AuthProvider = ({ children, initialAuthUser = null }) => {
+    const [user, setUser] = useState(() => mapInertiaAuthUser(initialAuthUser));
+    const [loading, setLoading] = useState(() => !initialAuthUser && !isGuestOnlyPath());
 
     useEffect(() => {
         if (isGuestOnlyPath()) {
@@ -38,19 +60,21 @@ export const AuthProvider = ({ children }) => {
             setLoading(false);
             return;
         }
+
+        if (initialAuthUser) {
+            window.__auth_user_id = initialAuthUser.id;
+            setLoading(false);
+            return;
+        }
+
         axios
             .get("/check-auth", { withCredentials: true })
             .then((res) => {
-                const payload = res.data;
-                if (payload?.user) {
-                    setUser({
-                        ...payload.user,
-                        roles: payload.roles || [],
-                        permissions: payload.permissions || [],
-                        onboarding_redirect: payload.onboarding_redirect ?? null,
-                    });
-                    window.__auth_user_id = payload.user.id;
-                    showSessionFlash(payload.flash);
+                const mapped = mapAuthPayload(res.data);
+                if (mapped) {
+                    setUser(mapped);
+                    window.__auth_user_id = mapped.id;
+                    showSessionFlash(res.data.flash);
                 } else {
                     setUser(null);
                     delete window.__auth_user_id;
@@ -58,6 +82,20 @@ export const AuthProvider = ({ children }) => {
             })
             .catch(() => setUser(null))
             .finally(() => setLoading(false));
+    }, [initialAuthUser]);
+
+    useEffect(() => {
+        const off = router.on("navigate", (event) => {
+            const nextUser = event.detail.page.props?.auth?.user;
+            if (nextUser) {
+                setUser(mapInertiaAuthUser(nextUser));
+                window.__auth_user_id = nextUser.id;
+            } else if (!isGuestOnlyPath()) {
+                setUser(null);
+                delete window.__auth_user_id;
+            }
+        });
+        return () => off();
     }, []);
 
     const login = useCallback(async (credentials) => {

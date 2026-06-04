@@ -54,6 +54,9 @@ export default function AcceptInvitation({
     role_name,
     client_name,
     expires_at,
+    assigns_role_on_accept,
+    google_enabled,
+    google_url,
     error: pageError,
 }) {
     const isInvalid = Boolean(pageError) || !token;
@@ -112,25 +115,47 @@ export default function AcceptInvitation({
             <AuthSimpleShell maxWidth="max-w-lg">
                 <InvitationCard
                     title="Configura tu cuenta"
-                    description="Completa tus datos para activar el acceso a HelpDesk."
+                    description="Completa tus datos para entrar. Un administrador te asignará el rol y permisos según tu puesto."
                 >
                     <div className="rounded-lg border border-border/60 bg-muted/40 p-3 text-sm space-y-1 mb-4">
                         <p>
-                            Fuiste invitado como <strong>{role_name}</strong>
+                            Fuiste invitado
                             {client_name ? (
                                 <>
                                     {" "}
-                                    en <strong>{client_name}</strong>
+                                    a <strong>{client_name}</strong>
+                                </>
+                            ) : null}
+                            {role_name && assigns_role_on_accept ? (
+                                <>
+                                    {" "}
+                                    con rol sugerido <strong>{role_name}</strong>
                                 </>
                             ) : null}
                             .
                         </p>
+                        {!assigns_role_on_accept && (
+                            <p className="text-muted-foreground text-xs">
+                                Tras activar tu cuenta verás un aviso hasta que un administrador confirme tu rol.
+                            </p>
+                        )}
                         {expires_at && (
                             <Badge variant="outline" className="text-xs font-normal">
                                 Invitación válida hasta {formatExpiry(expires_at)}
                             </Badge>
                         )}
                     </div>
+
+                    {google_enabled && google_url ? (
+                        <>
+                            <Button type="button" variant="outline" className="w-full mb-4" asChild>
+                                <a href={google_url}>Continuar con Google</a>
+                            </Button>
+                            <p className="text-center text-xs text-muted-foreground mb-4">
+                                O completa el formulario con contraseña
+                            </p>
+                        </>
+                    ) : null}
 
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <input type="hidden" name="token" value={data.token} readOnly />

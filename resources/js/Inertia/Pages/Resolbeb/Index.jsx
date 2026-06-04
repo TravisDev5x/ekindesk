@@ -17,12 +17,18 @@ import { clearCatalogCache } from "@/lib/catalogCache";
 import { cn } from "@/lib/utils";
 import { TicketPriorityBadge, TicketStateBadge } from "@/components/badges/EntityBadges";
 import { KpiCard } from "@/components/dashboard/KpiCard";
-import { kpiCardSurface, noticeWarningRow, noticeWarningBtnOutline } from "@/lib/badgeStyles";
+import {
+    kpiCardSurface,
+    noticeWarningRow,
+    noticeWarningBtnOutline,
+    hintWarning,
+    unassignedRowMutedPl,
+} from "@/lib/badgeStyles";
 import { chartProgressStyle } from "@/lib/chartColors";
 
 import {
     Loader2, Plus, Filter, Tag, MapPin,
-    AlertCircle, Ticket, Flame, XCircle,
+    AlertCircle, Ticket, Flame, XCircle, Clock,
     ChevronLeft, ChevronRight, Search, X, User, Building2, BarChart3,
     ArrowRightCircle
 } from "lucide-react";
@@ -76,8 +82,8 @@ const TicketRow = memo(function TicketRow({ ticket }) {
                             </span>
                         </div>
                     ) : (
-                        <span className="text-muted-foreground italic pl-1 flex items-center gap-1">
-                            <AlertCircle className="w-3 h-3 text-orange-400" /> Sin asignar
+                        <span className={unassignedRowMutedPl}>
+                            <AlertCircle className={cn("w-3 h-3", hintWarning)} /> Sin asignar
                         </span>
                     )}
                 </div>

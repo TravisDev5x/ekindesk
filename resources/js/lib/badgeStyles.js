@@ -178,8 +178,30 @@ export const statValue = {
 export const clientActiveBadge = badgeStatus.success;
 export const clientInactiveBadge = withBorder(badgeNeutral);
 
-/** Texto de aviso secundario (settings, alertas). */
+/** Texto de aviso secundario (settings, alertas; sustituye text-orange-* / text-amber-600). */
 export const hintWarning = "text-amber-700 dark:text-amber-400";
+
+/** «Sin asignar» en tablas (icono + texto). */
+export const unassignedRowMuted = "text-muted-foreground italic flex items-center gap-1";
+export const unassignedRowMutedPl = "text-muted-foreground italic pl-1 flex items-center gap-1";
+
+/** Punto de estado (listas auth, tabs con cambios pendientes). */
+export const statusDotWarning = "rounded-full bg-[hsl(var(--chart-3))]";
+export const statusDotInfo = "rounded-full bg-[hsl(var(--chart-1))]";
+
+/** Badge sin borde (trial, mockups landing). Misma semántica que badgeStatus. */
+export const badgeStatusFlat = {
+    danger: "border-0 shrink-0 bg-destructive/15 text-destructive",
+    warning: "border-0 shrink-0 bg-amber-500/15 text-amber-800 dark:text-amber-400",
+    success: "border-0 shrink-0 bg-emerald-500/15 text-emerald-800 dark:text-emerald-400",
+};
+
+/** Acento borde izquierdo mock tickets (Hero landing). */
+export const mockTicketAccentBorder = {
+    danger: "border-l-2 border-l-destructive",
+    warning: "border-l-2 border-l-[hsl(var(--chart-3))]",
+    success: "border-l-2 border-l-[hsl(var(--chart-2))]",
+};
 
 /** Tarjetas métricas inline (HomeDashboard SummaryMetric). */
 export const metricCardVariant = {

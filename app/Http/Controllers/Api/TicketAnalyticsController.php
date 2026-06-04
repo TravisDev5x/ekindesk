@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\DB;
 use App\Services\ClientScopeService;
+use App\Support\Database\SqlDialect;
 
 class TicketAnalyticsController extends Controller
 {
@@ -149,7 +150,7 @@ class TicketAnalyticsController extends Controller
                 $avg = (clone $base)
                     ->whereNotNull('resolved_at')
                     ->whereIn('ticket_state_id', $finalStateIds)
-                    ->selectRaw('AVG(TIMESTAMPDIFF(SECOND, created_at, resolved_at))/3600 as avg_hours')
+                    ->selectRaw(SqlDialect::avgHoursBetween('created_at', 'resolved_at').' as avg_hours')
                     ->value('avg_hours');
                 $avgResolutionHours = $avg !== null ? round((float) $avg, 1) : null;
             }

@@ -1,3 +1,4 @@
+@include('emails.partials.theme-colors')
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -14,58 +15,53 @@
     </noscript>
     <![endif]-->
 </head>
-<body style="margin: 0; padding: 0; background-color: #f1f5f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 16px; line-height: 1.6; color: #0f172a;">
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #f1f5f9;">
+<body style="margin: 0; padding: 0; background-color: {{ $emailTheme['page_bg'] }}; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 16px; line-height: 1.6; color: {{ $emailTheme['foreground'] }};">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: {{ $emailTheme['page_bg'] }};">
         <tr>
             <td align="center" style="padding: 32px 16px;">
                 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width: 480px;">
-                    <!-- Card container (estilo shadcn: card con borde y radio) -->
                     <tr>
-                        <td style="background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); overflow: hidden;">
+                        <td style="background-color: {{ $emailTheme['card'] }}; border: 1px solid {{ $emailTheme['border'] }}; border-radius: 12px; box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06); overflow: hidden;">
                             <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
-                                <!-- Header -->
                                 <tr>
-                                    <td style="padding: 24px 24px 16px 24px; border-bottom: 1px solid #e2e8f0;">
-                                        <h1 style="margin: 0; font-size: 1.25rem; font-weight: 600; color: #0f172a; letter-spacing: -0.025em;">
+                                    <td style="padding: 24px 24px 16px 24px; border-bottom: 1px solid {{ $emailTheme['border'] }};">
+                                        <h1 style="margin: 0; font-size: 1.25rem; font-weight: 600; color: {{ $emailTheme['foreground'] }}; letter-spacing: -0.025em;">
                                             HelpDesk
                                         </h1>
-                                        <p style="margin: 4px 0 0 0; font-size: 0.875rem; color: #64748b;">
+                                        <p style="margin: 4px 0 0 0; font-size: 0.875rem; color: {{ $emailTheme['muted'] }};">
                                             Verificación de correo
                                         </p>
                                     </td>
                                 </tr>
-                                <!-- Body -->
                                 <tr>
                                     <td style="padding: 24px;">
-                                        <p style="margin: 0 0 16px 0; font-size: 1rem; color: #0f172a;">
+                                        <p style="margin: 0 0 16px 0; font-size: 1rem; color: {{ $emailTheme['foreground'] }};">
                                             Hola,
                                         </p>
-                                        <p style="margin: 0 0 24px 0; font-size: 1rem; color: #334155;">
+                                        <p style="margin: 0 0 24px 0; font-size: 1rem; color: {{ $emailTheme['body'] }};">
                                             Para activar tu cuenta, verifica tu correo haciendo clic en el botón siguiente. Podrás entrar como visitante y un administrador te asignará un rol para interactuar.
                                         </p>
-                                        <!-- CTA (estilo botón primary shadcn) -->
                                         <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="left">
                                             <tr>
-                                                <td align="center" style="border-radius: 8px; background-color: #0f172a;">
-                                                    <a href="{{ $url }}" target="_blank" rel="noopener noreferrer" style="display: inline-block; padding: 10px 20px; font-size: 0.875rem; font-weight: 500; color: #f8fafc; text-decoration: none;">
+                                                <td align="center" style="border-radius: 8px; background-color: {{ $emailTheme['primary'] }};">
+                                                    <a href="{{ $url }}" target="_blank" rel="noopener noreferrer" style="display: inline-block; padding: 10px 20px; font-size: 0.875rem; font-weight: 500; color: {{ $emailTheme['primary_fg'] }}; text-decoration: none;">
                                                         Verificar correo
                                                     </a>
                                                 </td>
                                             </tr>
                                         </table>
                                         <div style="clear: both; height: 24px;"></div>
-                                        <p style="margin: 0; font-size: 0.8125rem; color: #64748b;">
+                                        <p style="margin: 0; font-size: 0.8125rem; color: {{ $emailTheme['muted'] }};">
                                             Si el botón no funciona, copia y pega este enlace en tu navegador:
                                         </p>
                                         <p style="margin: 8px 0 0 0; font-size: 0.8125rem;">
-                                            <a href="{{ $url }}" style="color: #3b82f6; text-decoration: underline; word-break: break-all;">{{ $url }}</a>
+                                            <a href="{{ $url }}" style="color: {{ $emailTheme['link'] }}; text-decoration: underline; word-break: break-all;">{{ $url }}</a>
                                         </p>
                                     </td>
                                 </tr>
-                                <!-- Footer -->
                                 <tr>
-                                    <td style="padding: 16px 24px 24px 24px; border-top: 1px solid #e2e8f0; background-color: #f8fafc;">
-                                        <p style="margin: 0; font-size: 0.75rem; color: #64748b;">
+                                    <td style="padding: 16px 24px 24px 24px; border-top: 1px solid {{ $emailTheme['border'] }}; background-color: {{ $emailTheme['footer_bg'] }};">
+                                        <p style="margin: 0; font-size: 0.75rem; color: {{ $emailTheme['muted'] }};">
                                             Si no solicitaste este registro, ignora este correo.
                                         </p>
                                     </td>
@@ -73,10 +69,9 @@
                             </table>
                         </td>
                     </tr>
-                    <!-- Optional footer outside card -->
                     <tr>
                         <td style="padding-top: 24px; text-align: center;">
-                            <p style="margin: 0; font-size: 0.75rem; color: #94a3b8;">
+                            <p style="margin: 0; font-size: 0.75rem; color: {{ $emailTheme['footer_muted'] }};">
                                 HelpDesk Empresarial
                             </p>
                         </td>

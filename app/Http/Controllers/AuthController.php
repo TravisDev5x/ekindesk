@@ -14,10 +14,11 @@ use App\Models\Role;
 use App\Models\UserInvitation;
 use App\Mail\VerifyEmail;
 use App\Services\OnboardingRedirectService;
+use App\Services\TenantContextService;
 
 class AuthController extends Controller
 {
-    public function login(Request $request)
+    public function login(Request $request, TenantContextService $tenantContext)
     {
         $request->validate([
             'identifier' => ['required'],
@@ -64,6 +65,18 @@ class AuthController extends Controller
         if ($user->status === 'active' && $user->email && is_null($user->email_verified_at)) {
             return response()->json([
                 'errors' => ['root' => 'Verifica tu correo para activar la cuenta']
+            ], 403);
+        }
+
+        $tenantContext->resolve($request);
+        if (! $tenantContext->userCanAccessCurrentPortal($user)) {
+            Log::channel('single')->warning('Login rechazado: portal incorrecto', [
+                'user_id' => $user->id,
+                'host' => $request->getHost(),
+            ]);
+
+            return response()->json([
+                'errors' => ['root' => 'No tienes acceso a este portal. Inicia sesión en la URL de tu organización.'],
             ], 403);
         }
 

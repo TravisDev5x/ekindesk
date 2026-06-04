@@ -95,15 +95,15 @@ export default function Invitations() {
 
     const handleCreate = async (e) => {
         e.preventDefault();
-        if (!form.email.trim() || !form.role_id) {
-            notify.error("Completa correo y rol");
+        if (!form.email.trim()) {
+            notify.error("Indica el correo del invitado");
             return;
         }
         setSubmitting(true);
         try {
             await axios.post("/api/invitations", {
                 email: form.email.trim(),
-                role_id: Number(form.role_id),
+                ...(form.role_id ? { role_id: Number(form.role_id) } : {}),
                 client_id: form.client_id && form.client_id !== "none" ? Number(form.client_id) : null,
             });
             notify.success("Invitación enviada");
@@ -281,7 +281,8 @@ export default function Invitations() {
                         <DialogHeader>
                             <DialogTitle>Nueva invitación</DialogTitle>
                             <DialogDescription>
-                                Se enviará un correo con un enlace válido por 48 horas.
+                                Se enviará un correo con enlace válido 48 h. El invitado activará su cuenta y un
+                                administrador le asignará el rol según su puesto.
                             </DialogDescription>
                         </DialogHeader>
                         <form onSubmit={handleCreate} className="space-y-4">
@@ -297,15 +298,18 @@ export default function Invitations() {
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label>Rol</Label>
+                                <Label>Rol sugerido (opcional)</Label>
                                 <Select
-                                    value={form.role_id}
-                                    onValueChange={(v) => setForm((f) => ({ ...f, role_id: v }))}
+                                    value={form.role_id || "none"}
+                                    onValueChange={(v) =>
+                                        setForm((f) => ({ ...f, role_id: v === "none" ? "" : v }))
+                                    }
                                 >
                                     <SelectTrigger>
-                                        <SelectValue placeholder="Selecciona un rol" />
+                                        <SelectValue placeholder="El admin asignará después" />
                                     </SelectTrigger>
                                     <SelectContent>
+                                        <SelectItem value="none">Sin rol — asignar después</SelectItem>
                                         {roles.map((r) => (
                                             <SelectItem key={r.id} value={String(r.id)}>
                                                 {r.name}

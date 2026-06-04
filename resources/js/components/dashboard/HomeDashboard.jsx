@@ -1369,7 +1369,7 @@ function DashboardAdmin() {
                                 {canViewArea && (
                                     <div className="space-y-1.5">
                                         <Label className="text-[10px] uppercase font-bold text-muted-foreground ml-1 flex justify-between">
-                                            Area {isAreaLocked && <span className="text-[9px] text-orange-500">(Fijo)</span>}
+                                            Area {isAreaLocked && <span className={cn("text-[9px]", hintWarning)}>(Fijo)</span>}
                                         </Label>
                                         <Select value={filters.area} onValueChange={(v) => setFilters(p => ({ ...p, area: v }))} disabled={isAreaLocked}>
                                             <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Área" /></SelectTrigger>

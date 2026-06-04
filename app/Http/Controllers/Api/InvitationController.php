@@ -7,6 +7,8 @@ use App\Mail\UserInvitation as UserInvitationMail;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\UserInvitation;
+use App\Services\InvitationTenancyService;
+use App\Services\OperatorScopeService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
@@ -15,6 +17,11 @@ use Illuminate\Validation\ValidationException;
 
 class InvitationController extends Controller
 {
+    public function __construct(
+        protected InvitationTenancyService $invitationTenancy,
+        protected OperatorScopeService $operatorScope
+    ) {}
+
     public function index(Request $request)
     {
         $actor = Auth::user();
@@ -23,6 +30,17 @@ class InvitationController extends Controller
 
         if (! $this->canSeeAllInvitations($actor)) {
             $query->where('invited_by', $actor->id);
+        }
+
+        if ($this->operatorScope->resolveOperatorUserId($actor) && ! $this->operatorScope->bypassesOperatorScope($actor)) {
+            $operatorId = $this->operatorScope->resolveOperatorUserId($actor);
+            $query->where(function ($q) use ($operatorId, $actor) {
+                $q->whereNull('client_id')
+                    ->orWhereIn('client_id', function ($sub) use ($operatorId) {
+                        $sub->select('id')->from('clients')->where('operator_user_id', $operatorId);
+                    })
+                    ->orWhere('invited_by', $actor->id);
+            });
         }
 
         if ($status = $request->input('status')) {
@@ -55,11 +73,12 @@ class InvitationController extends Controller
     {
         $validated = $request->validate([
             'email' => 'required|email|max:255',
-            'role_id' => 'required|exists:roles,id,deleted_at,NULL',
+            'role_id' => 'nullable|exists:roles,id,deleted_at,NULL',
             'client_id' => 'nullable|exists:clients,id',
         ]);
 
         $email = strtolower(trim($validated['email']));
+        $actor = Auth::user();
 
         if (User::where('email', $email)->exists()) {
             throw ValidationException::withMessages([
@@ -79,11 +98,19 @@ class InvitationController extends Controller
             ]);
         }
 
-        $role = $this->resolveRoleForGuard((int) $validated['role_id']);
-        if (! $role) {
-            throw ValidationException::withMessages([
-                'role_id' => ['Rol incompatible con el guard actual.'],
-            ]);
+        $clientId = $this->invitationTenancy->resolveClientIdForCreate(
+            $actor,
+            isset($validated['client_id']) ? (int) $validated['client_id'] : null
+        );
+
+        $role = null;
+        if (! empty($validated['role_id'])) {
+            $role = $this->resolveRoleForGuard((int) $validated['role_id']);
+            if (! $role) {
+                throw ValidationException::withMessages([
+                    'role_id' => ['Rol incompatible con el guard actual.'],
+                ]);
+            }
         }
 
         UserInvitation::query()
@@ -95,8 +122,8 @@ class InvitationController extends Controller
             'email' => $email,
             'token' => (string) Str::uuid(),
             'invited_by' => Auth::id(),
-            'client_id' => $validated['client_id'] ?? null,
-            'role_id' => $role->id,
+            'client_id' => $clientId,
+            'role_id' => $role?->id,
             'status' => UserInvitation::STATUS_PENDING,
             'expires_at' => now()->addHours(48),
         ]);

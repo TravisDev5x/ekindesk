@@ -4,11 +4,17 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Sede;
+use App\Services\OperatorScopeService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 
 class SedeController extends Controller
 {
+    public function __construct(
+        protected OperatorScopeService $operatorScope
+    ) {}
+
     private function siteRules(bool $forUpdate = false, ?int $ignoreId = null): array
     {
         $nameRule = ['required', 'min:2', Rule::unique('sites', 'name')];
@@ -35,15 +41,32 @@ class SedeController extends Controller
 
     public function index()
     {
-        return Sede::with('cliente:id,name')
-            ->orderBy('type')
+        $user = Auth::user();
+        if (! $user) {
+            return response()->json(['message' => 'No autorizado'], 401);
+        }
+
+        $query = $this->operatorScope->applyOnSites(
+            Sede::with('cliente:id,name'),
+            $user
+        );
+
+        return $query->orderBy('type')
             ->orderBy('name')
             ->get();
     }
 
     public function store(Request $request)
     {
+        $user = Auth::user();
+        if (! $user) {
+            return response()->json(['message' => 'No autorizado'], 401);
+        }
+
         $data = $request->validate($this->siteRules());
+        if (! empty($data['client_id']) && ! $this->operatorScope->assertClientIdInScope($user, (int) $data['client_id'])) {
+            return response()->json(['message' => 'Cliente no válido para tu organización'], 422);
+        }
 
         $sede = Sede::create($data);
         $sede->load('cliente:id,name');
@@ -53,7 +76,17 @@ class SedeController extends Controller
 
     public function update(Request $request, Sede $sede)
     {
+        $user = Auth::user();
+        if (! $user) {
+            return response()->json(['message' => 'No autorizado'], 401);
+        }
+
+        $this->operatorScope->authorizeSite($user, $sede);
+
         $data = $request->validate($this->siteRules(true, $sede->id));
+        if (! empty($data['client_id']) && ! $this->operatorScope->assertClientIdInScope($user, (int) $data['client_id'])) {
+            return response()->json(['message' => 'Cliente no válido para tu organización'], 422);
+        }
 
         $sede->update($data);
         $sede->load('cliente:id,name');

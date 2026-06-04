@@ -2,6 +2,8 @@
 
 namespace App\Http\Middleware;
 
+use App\Services\OnboardingRedirectService;
+use App\Services\TenantContextService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Middleware;
@@ -43,11 +45,19 @@ class HandleInertiaRequests extends Middleware
         $user = $request->user();
 
         if ($user) {
-            $user->loadMissing(['area:id,name', 'sede:id,name']);
+            $user->loadMissing([
+                'area:id,name',
+                'sede:id,name,client_id',
+                'sede.cliente:id,name',
+            ]);
         }
+
+        $onboarding = app(OnboardingRedirectService::class);
+        $tenant = app(TenantContextService::class)->resolve($request);
 
         return [
             ...parent::share($request),
+            'tenant' => $tenant->brandingForFrontend(),
             'auth' => [
                 'user' => $user ? [
                     'id' => $user->id,
@@ -57,6 +67,7 @@ class HandleInertiaRequests extends Middleware
                     'maternal_last_name' => $user->maternal_last_name,
                     'email' => $user->email,
                     'phone' => $user->phone,
+                    'employee_number' => $user->employee_number,
                     'avatar_url' => $user->avatar_url,
                     'status' => $user->status,
                     'theme' => $user->theme,
@@ -66,12 +77,16 @@ class HandleInertiaRequests extends Middleware
                     'sidebar_position' => $user->sidebar_position,
                     'sidebar_hover_preview' => $user->sidebar_hover_preview,
                     'is_operator' => $user->is_operator,
-                    'client_id' => $user->client_id,
+                    'client_id' => $user->client_id ?? $user->sede?->client_id,
+                    'client_name' => $user->sede?->cliente?->name,
                     'onboarding_completed' => $user->onboarding_completed,
+                    'onboarding_redirect' => $onboarding->redirectPath($user),
                     'is_blacklisted' => $user->is_blacklisted,
                     'force_password_change' => $user->force_password_change ?? false,
                     'area' => $user->area?->name,
+                    'area_id' => $user->area_id,
                     'sede' => $user->sede?->name,
+                    'sede_id' => $user->sede_id,
                     'availability' => $user->availability,
                     'roles' => $user->getCachedRoleNames()->values()->all(),
                     'permissions' => $user->getCachedPermissions()->values()->all(),
@@ -99,6 +114,9 @@ class HandleInertiaRequests extends Middleware
                 'error' => fn () => $request->session()->get('error'),
                 'info' => fn () => $request->session()->get('info'),
                 'warning' => fn () => $request->session()->get('warning'),
+            ],
+            'authProviders' => [
+                'google' => (bool) config('services.google.client_id'),
             ],
         ];
     }

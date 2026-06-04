@@ -77,6 +77,39 @@ class OnboardingRedirectService
             return true;
         }
 
+        // Redirects 302 en routes/inertia_legacy.php (no bloquear por onboarding incompleto).
+        foreach ($this->legacyRedirectPrefixes() as $prefix) {
+            if ($path === $prefix || str_starts_with($path, $prefix.'/')) {
+                return true;
+            }
+        }
+
         return false;
+    }
+
+    /** @return list<string> */
+    private function legacyRedirectPrefixes(): array
+    {
+        return [
+            'app',
+            'inicio',
+            'resolvev1',
+            'resolbeb/resolvev1',
+            'tickets',
+            'mis-tickets',
+            'ticket-states',
+            'ticket-types',
+            'ticket-estados',
+            'ticket-tipos',
+            'incidentes',
+            'audit-command-center',
+            'audit',
+            'configuracion',
+            'usuarios',
+            'invitaciones',
+            'prioridades',
+            'invitation/accept',
+            'invitations/accept',
+        ];
     }
 }

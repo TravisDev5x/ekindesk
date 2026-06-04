@@ -3,6 +3,7 @@
 namespace App\Traits;
 
 use App\Models\AuditLog;
+use App\Models\Ticket;
 use Illuminate\Support\Facades\Log;
 
 trait Auditable
@@ -73,7 +74,7 @@ trait Auditable
     ): void {
         try {
             $request = request();
-            AuditLog::create([
+            $payload = [
                 'user_id' => auth()->id(),
                 'auditable_type' => $model->getMorphClass(),
                 'auditable_id' => $model->getKey(),
@@ -82,7 +83,15 @@ trait Auditable
                 'new_values' => $newValues,
                 'ip_address' => $request ? $request->ip() : null,
                 'user_agent' => $request ? $request->userAgent() : null,
-            ]);
+            ];
+
+            if ($model instanceof Ticket) {
+                $payload['client_id'] = $model->client_id
+                    ?? ($model->relationLoaded('sede') ? $model->sede?->client_id : null)
+                    ?? \App\Models\Sede::where('id', $model->sede_id)->value('client_id');
+            }
+
+            AuditLog::create($payload);
         } catch (\Throwable $e) {
             Log::error('AuditLog failed', [
                 'auditable_type' => $model->getMorphClass(),

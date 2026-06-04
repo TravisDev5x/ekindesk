@@ -1,0 +1,175 @@
+<?php
+
+namespace App\Services;
+
+use App\Models\Cliente;
+use App\Models\User;
+use App\Support\Tenancy\TenantContext;
+use App\Support\Tenancy\TenantContext as Ctx;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
+
+class TenantContextService
+{
+    protected ?TenantContext $resolved = null;
+
+    protected ?int $resolvedRequestId = null;
+
+    public function resolve(Request $request): TenantContext
+    {
+        $requestId = spl_object_id($request);
+        if ($this->resolved !== null && $this->resolvedRequestId === $requestId) {
+            return $this->resolved;
+        }
+
+        $subdomain = $this->extractSubdomain($request);
+
+        if ($subdomain && config('tenancy.enforce_subdomain', true)) {
+            $client = $this->findClientByPortalSlug($subdomain);
+            if ($client) {
+                return $this->storeResolved($requestId, new TenantContext(
+                    mode: Ctx::MODE_CLIENT_PORTAL,
+                    subdomain: $subdomain,
+                    clientId: (int) $client->id,
+                    client: $client,
+                ));
+            }
+        }
+
+        return $this->storeResolved($requestId, new TenantContext(mode: Ctx::MODE_PLATFORM, subdomain: $subdomain));
+    }
+
+    private function storeResolved(int $requestId, TenantContext $context): TenantContext
+    {
+        $this->resolvedRequestId = $requestId;
+        $this->resolved = $context;
+
+        return $context;
+    }
+
+    public function current(): TenantContext
+    {
+        if ($this->resolved) {
+            return $this->resolved;
+        }
+
+        return $this->resolve(request());
+    }
+
+    /** ID de cliente forzado por subdominio (portal empresa final). */
+    public function enforcedClientId(): ?int
+    {
+        $ctx = $this->current();
+
+        return $ctx->enforcesStrictClientIsolation() ? $ctx->clientId : null;
+    }
+
+    public function isStrictClientPortal(): bool
+    {
+        return $this->current()->enforcesStrictClientIsolation();
+    }
+
+    /**
+     * Usuario puede acceder al portal del subdominio actual.
+     */
+    public function userCanAccessCurrentPortal(?User $user): bool
+    {
+        $ctx = $this->current();
+        if (! $ctx->isClientPortal() || ! $user) {
+            return true;
+        }
+
+        if ($user->hasRole('super_admin')) {
+            return true;
+        }
+
+        $clientId = $ctx->clientId;
+        $userClientId = app(TenantClientResolver::class)->resolve($user);
+
+        if ($userClientId && (int) $userClientId === (int) $clientId) {
+            return true;
+        }
+
+        if ($user->is_operator || $user->can('clients.view_all') || $user->can('tickets.manage_all')) {
+            $operatorId = app(OperatorScopeService::class)->resolveOperatorUserId($user);
+
+            return $operatorId && (int) Cliente::where('id', $clientId)->value('operator_user_id') === (int) $operatorId;
+        }
+
+        return false;
+    }
+
+    public function loginUrlForClient(Cliente $client): ?string
+    {
+        if (! $client->portal_slug || ! config('tenancy.base_domain')) {
+            return null;
+        }
+
+        $scheme = config('tenancy.portal_scheme', 'https');
+
+        return "{$scheme}://{$client->portal_slug}.".config('tenancy.base_domain').'/login';
+    }
+
+    private function extractSubdomain(Request $request): ?string
+    {
+        $subdomain = $request->header('X-Tenant-Subdomain');
+
+        if (! $subdomain && $request->getHost()) {
+            $host = strtolower($request->getHost());
+            $base = config('tenancy.base_domain');
+            if ($base && str_ends_with($host, '.'.strtolower($base))) {
+                $subdomain = substr($host, 0, -strlen('.'.strtolower($base)));
+            } elseif (substr_count($host, '.') >= 2) {
+                $parts = explode('.', $host);
+                $first = $parts[0];
+                if (! in_array($first, ['www', 'app', 'api'], true)) {
+                    $subdomain = $first;
+                }
+            }
+        }
+
+        $subdomain = is_string($subdomain) ? strtolower(trim($subdomain)) : null;
+
+        if ($subdomain === '' || in_array($subdomain, config('tenancy.reserved_subdomains', []), true)) {
+            return null;
+        }
+
+        return $subdomain;
+    }
+
+    private function findClientByPortalSlug(string $slug): ?Cliente
+    {
+        if (! Schema::hasColumn('clients', 'portal_slug')) {
+            return null;
+        }
+
+        return Cache::remember("tenant.portal.{$slug}", 300, function () use ($slug) {
+            return Cliente::query()
+                ->where('portal_slug', $slug)
+                ->where('is_active', true)
+                ->first();
+        });
+    }
+
+    public static function generateUniquePortalSlug(string $name, ?int $ignoreClientId = null): string
+    {
+        $base = Str::slug($name);
+        if ($base === '') {
+            $base = 'cliente';
+        }
+
+        $slug = $base;
+        $n = 0;
+        while (Cliente::query()
+            ->when($ignoreClientId, fn ($q) => $q->where('id', '!=', $ignoreClientId))
+            ->where('portal_slug', $slug)
+            ->exists()) {
+            $n++;
+            $slug = $base.'-'.$n;
+        }
+
+        return $slug;
+    }
+}

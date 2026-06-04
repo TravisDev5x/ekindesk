@@ -12,6 +12,8 @@ use App\Http\Middleware\SetLocale;
 use App\Http\Middleware\EnsurePermissionOrAdmin;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\EnsureOnboardingComplete;
+use App\Http\Middleware\ApplyPgsqlTenantRls;
+use App\Http\Middleware\EnforceTenantBoundary;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -36,11 +38,15 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->api(append: [
+            EnforceTenantBoundary::class,
+            ApplyPgsqlTenantRls::class,
             EnforcePasswordChange::class,
             SecurityHeaders::class,
         ]);
 
         $middleware->web(append: [
+            EnforceTenantBoundary::class,
+            ApplyPgsqlTenantRls::class,
             SecurityHeaders::class,
             HandleInertiaRequests::class,
             EnsureOnboardingComplete::class,

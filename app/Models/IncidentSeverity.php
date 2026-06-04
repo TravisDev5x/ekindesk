@@ -10,7 +10,7 @@ class IncidentSeverity extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'code', 'level', 'is_active'];
+    protected $fillable = ['name', 'code', 'level', 'is_active', 'operator_user_id', 'client_id'];
 
     protected $casts = [
         'level' => 'integer',

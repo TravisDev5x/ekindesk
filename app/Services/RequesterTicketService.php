@@ -17,6 +17,10 @@ use Illuminate\Support\Facades\Log;
  */
 class RequesterTicketService
 {
+    public function __construct(
+        protected OperatorScopeService $operatorScope
+    ) {}
+
     /**
      * Envía una alerta/observación del solicitante y notifica a responsables.
      *
@@ -59,9 +63,11 @@ class RequesterTicketService
         if ($ticket->assigned_user_id && (int) $ticket->assigned_user_id !== (int) $requester->id) {
             $recipientIds->push($ticket->assigned_user_id);
         }
-        $recipientIds = $recipientIds->merge(
-            User::permission('tickets.manage_all')->pluck('id')
-        )->unique()->filter(fn ($id) => (int) $id !== (int) $requester->id)->values();
+        $manageAllIds = User::permission('tickets.manage_all')->get()
+            ->filter(fn (User $u) => $this->operatorScope->userInTicketOperatorScope($u, $ticket))
+            ->pluck('id');
+        $recipientIds = $recipientIds->merge($manageAllIds)
+            ->unique()->filter(fn ($id) => (int) $id !== (int) $requester->id)->values();
 
         $notification = new TicketRequesterAlertNotification($ticket->id, $msg, $requester->id);
         foreach (User::whereIn('id', $recipientIds)->get() as $recipient) {

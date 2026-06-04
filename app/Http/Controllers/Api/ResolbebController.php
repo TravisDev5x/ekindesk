@@ -10,6 +10,8 @@ use App\Models\TicketState;
 use App\Models\TicketType;
 use App\Models\User;
 use App\Policies\TicketPolicy;
+use App\Services\ClientScopeService;
+use App\Support\Database\SqlDialect;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
@@ -26,6 +28,10 @@ use Illuminate\Support\Facades\Gate;
  */
 class ResolbebController extends Controller
 {
+    public function __construct(
+        protected ClientScopeService $clientScope
+    ) {}
+
     /**
      * Dashboard operativo: KPIs, balance de carga, tendencia, top incidentes y top 5 críticos.
      * Filtros opcionales: sede_id, assigned_user_id.
@@ -37,8 +43,8 @@ class ResolbebController extends Controller
             return response()->json(['message' => 'No autorizado'], 401);
         }
 
-        if (! $user->can('tickets.manage_all') && $user->can('tickets.view_area') && ! $user->area_id) {
-            return response()->json(['message' => 'Asigna tu área para acceder al dashboard'], 403);
+        if ($blocked = $this->clientScope->guardOperationalModuleAccess($user, 'tickets')) {
+            return $blocked;
         }
 
         Gate::authorize('viewAny', Ticket::class);
@@ -79,7 +85,7 @@ class ResolbebController extends Controller
                     $q1->whereNotNull('due_at')->where('due_at', '<=', now());
                 })->orWhere(function ($q2) {
                     $q2->whereNull('due_at')
-                        ->whereRaw('DATE_ADD(created_at, INTERVAL ? HOUR) <= ?', [Ticket::SLA_LIMIT_HOURS, now()]);
+                        ->whereRaw(SqlDialect::createdAtPlusHoursLte('created_at', Ticket::SLA_LIMIT_HOURS), [now()]);
                 });
             })
             ->count();
@@ -99,7 +105,7 @@ class ResolbebController extends Controller
         $mttrSemanal = (clone $base)
             ->whereNotNull('resolved_at')
             ->whereBetween('resolved_at', [$semanaInicio, $semanaFin])
-            ->selectRaw('AVG(TIMESTAMPDIFF(SECOND, created_at, resolved_at)) / 3600 as avg_hours')
+            ->selectRaw(SqlDialect::avgHoursBetween('created_at', 'resolved_at').' as avg_hours')
             ->value('avg_hours');
         $mttrSemanal = $mttrSemanal !== null ? round((float) $mttrSemanal, 1) : null;
 

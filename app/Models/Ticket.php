@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\ClientScopeService;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -54,6 +55,18 @@ class Ticket extends Model
         'sla_status_text',
         'first_response_time_text',
     ];
+
+    protected static function booted(): void
+    {
+        static::saving(function (Ticket $ticket) {
+            if (! $ticket->sede_id) {
+                return;
+            }
+            if ($ticket->isDirty('sede_id') || $ticket->client_id === null) {
+                $ticket->client_id = app(ClientScopeService::class)->syncClientIdFromSede((int) $ticket->sede_id);
+            }
+        });
+    }
 
     public function areaOrigin(): BelongsTo { return $this->belongsTo(\App\Models\Area::class, 'area_origin_id'); }
     public function areaCurrent(): BelongsTo { return $this->belongsTo(\App\Models\Area::class, 'area_current_id'); }

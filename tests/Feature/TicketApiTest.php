@@ -97,7 +97,7 @@ class TicketApiTest extends TestCase
         $response = $this->actingAs($this->user, 'web')->getJson('/api/tickets');
 
         $response->assertStatus(200)
-            ->assertJsonStructure(['data', 'links', 'meta']);
+            ->assertJsonStructure(['data', 'links', 'current_page', 'total']);
     }
 
     /**

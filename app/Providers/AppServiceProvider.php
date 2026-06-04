@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\URL;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
+use App\Support\Tenancy\PgsqlRowLevelSecurity;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -32,6 +33,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        if ($this->app->runningInConsole() && PgsqlRowLevelSecurity::enabled()) {
+            PgsqlRowLevelSecurity::setBypass(true);
+        }
+
         $this->fixViteHotFileForNetworkAccess();
 
         RateLimiter::for('login', function (Request $request) {
@@ -47,6 +52,10 @@ class AppServiceProvider extends ServiceProvider
                 return response()->json(['message' => 'Demasiadas peticiones. Espera un momento.'], 429);
             });
         });
+
+        if ($this->app->runningInConsole() && PgsqlRowLevelSecurity::enabled()) {
+            PgsqlRowLevelSecurity::setBypass(true);
+        }
 
         Gate::policy(Ticket::class, TicketPolicy::class);
         Gate::policy(Incident::class, IncidentPolicy::class);

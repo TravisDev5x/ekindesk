@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { storageUrl } from "@/lib/storage";
 import { PlanTypeBadge } from "@/components/badges/EntityBadges";
+import { badgeStatus } from "@/lib/badgeStyles";
 import { brandLogo } from "@/lib/marketingTheme";
 import {
     Building2,
@@ -153,7 +154,7 @@ export default function CompanyShow({ profile, plan, can }) {
                                         <span className="font-semibold text-lg">{plan.name}</span>
                                         <PlanTypeBadge type={plan.type} />
                                         {isInTrial(profile) && (
-                                            <Badge className="border-amber-500/30 bg-amber-500/15 text-amber-600 dark:text-amber-400">
+                                            <Badge className={badgeStatus.warning}>
                                                 Trial · vence{" "}
                                                 {new Intl.DateTimeFormat("es-MX", {
                                                     dateStyle: "medium",

@@ -1,4 +1,6 @@
-/** Rutas con Inertia::render en routes/web.php. */
+/** Rutas con Inertia::render en routes/web.php (+ destinos tras normalizeLegacyAppPath). */
+import { normalizeLegacyAppPath } from "@/lib/legacyRoutes";
+
 const INERTIA_PATH_PREFIXES = [
     "/home",
     "/manual",
@@ -23,22 +25,16 @@ const INERTIA_PATH_PREFIXES = [
     "/clients",
     "/company",
     "/incidents",
-    "/incidents/",
     "/incident-types",
     "/incident-severities",
     "/incident-statuses",
     "/resolbeb",
     "/tickets/wallboard",
-    "/resolbeb/estados",
-    "/resolbeb/tipos",
-    "/resolbeb/tickets/new",
-    "/resolbeb/tickets/",
-    "/resolbeb/tickets",
-    "/resolbeb/mis-tickets",
     "/onboarding",
     "/force-change-password",
     "/login",
     "/register",
+    "/register/accept",
     "/forgot-password",
     "/reset-password",
     "/verify-email",
@@ -55,8 +51,9 @@ export function isExternalUrl(url) {
 
 export function shouldUseInertiaLink(url) {
     if (!url || isExternalUrl(url)) return false;
+    const normalized = normalizeLegacyAppPath(url.split("?")[0]);
     return INERTIA_PATH_PREFIXES.some(
-        (prefix) => url === prefix || url.startsWith(`${prefix}/`)
+        (prefix) => normalized === prefix || normalized.startsWith(`${prefix}/`)
     );
 }
 
@@ -65,3 +62,5 @@ export function resolveNavClassName(className, isActive) {
     if (typeof className === "function") return className(isActive);
     return className ?? "";
 }
+
+export { normalizeLegacyAppPath };

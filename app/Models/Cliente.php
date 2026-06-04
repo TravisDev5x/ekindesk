@@ -26,6 +26,9 @@ class Cliente extends Model
         'contact_phone',
         'website',
         'logo_path',
+        'portal_slug',
+        'portal_primary_color',
+        'portal_welcome_message',
         'notes',
         'is_active',
     ];

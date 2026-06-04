@@ -4,6 +4,7 @@ namespace App\Policies;
 
 use App\Models\Incident;
 use App\Models\User;
+use App\Services\ClientScopeService;
 use Illuminate\Database\Eloquent\Builder;
 
 class IncidentPolicy
@@ -20,6 +21,10 @@ class IncidentPolicy
 
     public function view(User $user, Incident $incident): bool
     {
+        if (! app(ClientScopeService::class)->incidentVisibleToUser($user, $incident)) {
+            return false;
+        }
+
         $scope = $this->scopeType($user);
         if ($scope === 'all') return true;
         $areaId = $user->area_id;
@@ -62,11 +67,11 @@ class IncidentPolicy
     {
         $scope = $this->scopeType($user);
         if ($scope === 'all') {
-            return $query;
+            return app(ClientScopeService::class)->applyIncidentScope($query, $user);
         }
 
         $areaId = $user->area_id;
-        return $query->where(function ($q) use ($scope, $user, $areaId) {
+        $query = $query->where(function ($q) use ($scope, $user, $areaId) {
             if (in_array($scope, ['area', 'area+own'], true) && $areaId) {
                 $q->where('area_id', $areaId);
                 if ($scope === 'area+own') {
@@ -74,8 +79,12 @@ class IncidentPolicy
                 }
             } elseif ($scope === 'own') {
                 $q->where('reporter_id', $user->id);
+            } else {
+                $q->whereRaw('0 = 1');
             }
         });
+
+        return app(ClientScopeService::class)->applyIncidentScope($query, $user);
     }
 
     /**

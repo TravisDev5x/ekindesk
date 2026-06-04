@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\ClientScopeService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -21,6 +22,7 @@ class Incident extends Model
         'assigned_user_id',
         'area_id',
         'sede_id',
+        'client_id',
         'incident_type_id',
         'incident_severity_id',
         'incident_status_id',
@@ -38,6 +40,19 @@ class Incident extends Model
     public function assignedUser(): BelongsTo { return $this->belongsTo(User::class, 'assigned_user_id'); }
     public function area(): BelongsTo { return $this->belongsTo(Area::class, 'area_id'); }
     public function sede(): BelongsTo { return $this->belongsTo(Sede::class, 'sede_id'); }
+    public function client(): BelongsTo { return $this->belongsTo(Cliente::class, 'client_id'); }
+
+    protected static function booted(): void
+    {
+        static::saving(function (Incident $incident) {
+            if (! $incident->sede_id) {
+                return;
+            }
+            if ($incident->isDirty('sede_id') || $incident->client_id === null) {
+                $incident->client_id = app(ClientScopeService::class)->syncClientIdFromSede((int) $incident->sede_id);
+            }
+        });
+    }
     public function incidentType(): BelongsTo { return $this->belongsTo(IncidentType::class, 'incident_type_id'); }
     public function incidentSeverity(): BelongsTo { return $this->belongsTo(IncidentSeverity::class, 'incident_severity_id'); }
     public function incidentStatus(): BelongsTo { return $this->belongsTo(IncidentStatus::class, 'incident_status_id'); }

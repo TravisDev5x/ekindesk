@@ -2,10 +2,12 @@
 
 namespace Database\Seeders;
 
+use Database\Seeders\Concerns\AssignsTenantToSites;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
 {
+    use AssignsTenantToSites;
     /**
      * Seed de datos mínimos de la aplicación.
      *
@@ -20,6 +22,11 @@ class DatabaseSeeder extends Seeder
             FullDemoSeeder::class,       // Configuración mínima (catálogos, roles, admin)
             PriorityMatrixSeeder::class, // Matriz Impacto x Urgencia -> Prioridad (requiere priorities)
             EmpresaSedeSeeder::class,    // 2 sedes (Toluca, CDMX) y 5 campañas
+        ]);
+
+        $this->ensureSitesHaveTenantClient();
+
+        $this->call([
             FakerFullSeeder::class,      // Admin + usuarios, tickets e incidencias (Faker)
         ]);
     }

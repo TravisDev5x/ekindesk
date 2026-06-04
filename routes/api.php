@@ -22,11 +22,15 @@ use App\Http\Controllers\Api\UbicacionController;
 |--------------------------------------------------------------------------
 | API Routes
 |--------------------------------------------------------------------------
-| AQUÍ NO SE VALIDAN SESIONES.
-| Las rutas API usan autenticación por token (auth:sanctum / auth:api).
-| La verificación de sesión (cookies) vive en rutas web: GET /check-auth.
-| Si un endpoint intenta usar sesión para "verificar login", migrarlo a web.
-| Principio: "Sesión y API no se cruzan. Si lo hacen, el 401 es el síntoma."
+| JSON para Inertia + Axios. auth:sanctum con cookies stateful (Sanctum SPA).
+| Sesión inicial: props Inertia (HandleInertiaRequests) o GET /check-auth (web).
+|
+| Multi-tenant (auditoría 2026-06-05): docs/API_TENANCY_AUDIT.md
+| - Middleware: EnforceTenantBoundary + ApplyPgsqlTenantRls (si TENANCY_PGSQL_RLS)
+| - Tickets/incidents/my-tickets: Policy + ClientScopeService (nivel A)
+| - Catálogos CRUD: OperatorScope / ManagesOperatorCatalog (nivel B; varios pendientes)
+| - Roles/permissions: globales Spatie (nivel C)
+| Cookies/subdominios: docs/SANCTUM_TENANCY.md
 */
 
 // ==========================
@@ -42,10 +46,6 @@ Route::post('logout', [AuthController::class, 'logout'])
     ->middleware(['auth:sanctum','locale']);
 Route::get('ping', [AuthController::class, 'ping'])
     ->middleware(['auth:sanctum','locale']);
-
-// Hub principal (página de inicio: RESOLBEB)
-Route::get('dashboard/hub-summary', [\App\Http\Controllers\Api\MainDashboardController::class, 'getHubSummary'])
-    ->middleware(['auth:sanctum', 'locale']);
 
 // PASSWORD RESET
 Route::post('password/forgot', [PasswordResetController::class, 'forgot'])

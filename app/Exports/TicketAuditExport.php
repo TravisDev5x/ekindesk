@@ -4,6 +4,8 @@ namespace App\Exports;
 
 use App\Models\AuditLog;
 use App\Models\Ticket;
+use App\Models\User;
+use App\Services\OperatorScopeService;
 use Carbon\Carbon;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -26,6 +28,7 @@ class TicketAuditExport
         private ?string $startDate = null,
         private ?string $endDate = null,
         private ?array $ticketIds = null,
+        private ?User $scopeUser = null,
     ) {}
 
     public function query()
@@ -33,6 +36,10 @@ class TicketAuditExport
         $query = AuditLog::query()
             ->where('auditable_type', Ticket::class)
             ->with('user:id,name,email');
+
+        if ($this->scopeUser) {
+            $query = app(OperatorScopeService::class)->applyOnAuditLogs($query, $this->scopeUser);
+        }
 
         if ($this->startDate) {
             $query->where('created_at', '>=', Carbon::parse($this->startDate)->startOfDay());

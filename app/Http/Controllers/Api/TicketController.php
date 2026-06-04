@@ -44,10 +44,10 @@ class TicketController extends Controller
             return response()->json(['message' => 'No autorizado'], 401);
         }
 
-        // Mensaje claro si falta área para permisos de área (no aplica a manage_all)
-        if (!$user->can('tickets.manage_all') && $user->can('tickets.view_area') && !$user->area_id) {
+        if ($blocked = $this->clientScope->guardOperationalModuleAccess($user, 'tickets')) {
             Log::warning('tickets.view_area sin area_id', ['user_id' => $user->id]);
-            return response()->json(['message' => 'Asigna tu área para acceder a tickets'], 403);
+
+            return $blocked;
         }
 
         Gate::authorize('viewAny', Ticket::class);
@@ -121,9 +121,10 @@ class TicketController extends Controller
         }
 
         // Mensaje claro si falta area para permisos de area (no aplica a manage_all)
-        if (!$user->can('tickets.manage_all') && $user->can('tickets.view_area') && !$user->area_id) {
+        if ($blocked = $this->clientScope->guardOperationalModuleAccess($user, 'tickets')) {
             Log::warning('tickets.view_area sin area_id', ['user_id' => $user->id]);
-            return response()->json(['message' => 'Asigna tu area para acceder a tickets'], 403);
+
+            return $blocked;
         }
 
         Gate::authorize('viewAny', Ticket::class);
@@ -284,9 +285,10 @@ class TicketController extends Controller
     public function show(Ticket $ticket)
     {
         $user = Auth::user();
-        if ($user && !$user->can('tickets.manage_all') && $user->can('tickets.view_area') && !$user->area_id) {
+        if ($user && ($blocked = $this->clientScope->guardOperationalModuleAccess($user, 'tickets'))) {
             Log::warning('tickets.show sin area_id', ['user_id' => $user->id, 'ticket_id' => $ticket->id]);
-            return response()->json(['message' => 'Asigna tu área para acceder a tickets'], 403);
+
+            return $blocked;
         }
         Gate::authorize('view', $ticket);
         $ticket->load([
@@ -340,9 +342,13 @@ class TicketController extends Controller
             return response()->json(['message' => 'Solo administradores pueden acceder al centro de auditoría'], 403);
         }
 
-        $query = AuditLog::query()
-            ->where('auditable_type', Ticket::class)
-            ->with('user:id,name,email');
+        $query = app(\App\Services\OperatorScopeService::class)
+            ->applyOnAuditLogs(
+                AuditLog::query()
+                    ->where('auditable_type', Ticket::class)
+                    ->with('user:id,name,email'),
+                $user
+            );
 
         $from = $request->input('from');
         $to = $request->input('to');
@@ -390,7 +396,7 @@ class TicketController extends Controller
             $ticketIds = array_filter(array_map('intval', explode(',', (string) $ticketIdsRaw)));
         }
 
-        $export = new TicketAuditExport($startDate, $endDate, $ticketIds ?: null);
+        $export = new TicketAuditExport($startDate, $endDate, $ticketIds ?: null, $user);
         $filename = 'auditoria_tickets_' . now()->format('Ymd_His') . '.xlsx';
         $tempName = 'audit_export_' . substr(uniqid('', true), -8) . '.xlsx';
         $path = storage_path('app' . DIRECTORY_SEPARATOR . $tempName);
@@ -412,9 +418,10 @@ class TicketController extends Controller
     public function audit(Ticket $ticket)
     {
         $user = Auth::user();
-        if ($user && !$user->can('tickets.manage_all') && $user->can('tickets.view_area') && !$user->area_id) {
+        if ($user && ($blocked = $this->clientScope->guardOperationalModuleAccess($user, 'tickets'))) {
             Log::warning('tickets.audit sin area_id', ['user_id' => $user->id, 'ticket_id' => $ticket->id]);
-            return response()->json(['message' => 'Asigna tu área para acceder a tickets'], 403);
+
+            return $blocked;
         }
         Gate::authorize('view', $ticket);
 
@@ -509,9 +516,10 @@ class TicketController extends Controller
     {
         $user = Auth::user();
         if (!$user) return response()->json(['message' => 'No autorizado'], 401);
-        if (!$user->can('tickets.manage_all') && $user->can('tickets.view_area') && !$user->area_id) {
+        if ($blocked = $this->clientScope->guardOperationalModuleAccess($user, 'tickets')) {
             Log::warning('tickets.update sin area_id', ['user_id' => $user->id, 'ticket_id' => $ticket->id]);
-            return response()->json(['message' => 'Asigna tu área para acceder a tickets'], 403);
+
+            return $blocked;
         }
         Gate::authorize('update', $ticket);
 
@@ -967,9 +975,11 @@ class TicketController extends Controller
         if ($ticket->assigned_user_id && (int) $ticket->assigned_user_id !== (int) $user->id) {
             $recipientIds->push($ticket->assigned_user_id);
         }
-        $recipientIds = $recipientIds->merge(
-            User::permission('tickets.manage_all')->pluck('id')
-        )->unique()->filter(fn ($id) => (int) $id !== (int) $user->id)->values();
+        $manageAllIds = User::permission('tickets.manage_all')->get()
+            ->filter(fn (User $u) => app(\App\Services\OperatorScopeService::class)->userInTicketOperatorScope($u, $ticket))
+            ->pluck('id');
+        $recipientIds = $recipientIds->merge($manageAllIds)
+            ->unique()->filter(fn ($id) => (int) $id !== (int) $user->id)->values();
 
         $notification = new TicketRequesterAlertNotification($ticket->id, $message, $user->id);
         foreach (User::whereIn('id', $recipientIds)->get() as $recipient) {

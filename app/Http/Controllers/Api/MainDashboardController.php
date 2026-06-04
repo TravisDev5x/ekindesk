@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Ticket;
+use App\Support\Database\SqlDialect;
 use App\Models\TicketState;
 use App\Models\User;
 use App\Policies\TicketPolicy;
@@ -63,7 +64,7 @@ class MainDashboardController extends Controller
                     $q1->whereNotNull('due_at')->where('due_at', '<=', now());
                 })->orWhere(function ($q2) {
                     $q2->whereNull('due_at')
-                        ->whereRaw('DATE_ADD(created_at, INTERVAL ? HOUR) <= ?', [Ticket::SLA_LIMIT_HOURS, now()]);
+                        ->whereRaw(SqlDialect::createdAtPlusHoursLte('created_at', Ticket::SLA_LIMIT_HOURS), [now()]);
                 });
             })
             ->count();
@@ -73,7 +74,7 @@ class MainDashboardController extends Controller
         $mttrHoy = (clone $base)
             ->whereNotNull('resolved_at')
             ->whereBetween('resolved_at', [$hoyInicio, $hoyFin])
-            ->selectRaw('AVG(TIMESTAMPDIFF(SECOND, created_at, resolved_at)) / 3600 as avg_hours')
+            ->selectRaw(SqlDialect::avgHoursBetween('created_at', 'resolved_at').' as avg_hours')
             ->value('avg_hours');
         $mttrHoy = $mttrHoy !== null ? round((float) $mttrHoy, 1) : null;
 
@@ -125,7 +126,7 @@ class MainDashboardController extends Controller
             $criticos = (clone $base)
                 ->whereNotIn('ticket_state_id', $finalStateIds)
                 ->with(['priority:id,name', 'state:id,name'])
-                ->orderByRaw('COALESCE(due_at, DATE_ADD(created_at, INTERVAL '.Ticket::SLA_LIMIT_HOURS.' HOUR)) ASC')
+                ->orderBy(SqlDialect::coalesceDueOrSlaDeadline('due_at', 'created_at', Ticket::SLA_LIMIT_HOURS))
                 ->limit(5)
                 ->get();
             foreach ($criticos as $t) {

@@ -8,6 +8,7 @@ use App\Models\OperatorProfile;
 use App\Models\Plan;
 use App\Models\Sede;
 use App\Services\OnboardingRedirectService;
+use App\Services\TenantContextService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -175,6 +176,7 @@ class OperatorOnboardingController extends Controller
                 'contact_email' => $validated['contact_email'] ?? null,
                 'contact_phone' => $validated['phone'] ?? null,
                 'operator_user_id' => $user->id,
+                'portal_slug' => TenantContextService::generateUniquePortalSlug($validated['business_name']),
                 'is_active' => true,
             ]);
 

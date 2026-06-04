@@ -119,7 +119,7 @@ class TicketPolicy
     {
         $scope = $this->scopeType($user);
         if ($scope === 'all') {
-            return $query;
+            return app(\App\Services\ClientScopeService::class)->applyTicketScope($query, $user);
         }
 
         $areaId = $user->area_id;
@@ -131,6 +131,8 @@ class TicketPolicy
                 }
             } elseif ($scope === 'own') {
                 $q->where('requester_id', $user->id);
+            } else {
+                $q->whereRaw('0 = 1');
             }
         });
 

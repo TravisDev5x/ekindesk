@@ -10,6 +10,7 @@ import {
     mockAvatarRing,
     mockTicketRow,
 } from "@/lib/marketingTheme";
+import { badgeStatusFlat, mockTicketAccentBorder } from "@/lib/badgeStyles";
 
 export default function Hero() {
     return (
@@ -62,39 +63,33 @@ export default function Hero() {
                             </Badge>
                         </div>
 
-                        <div className={`${mockTicketRow} border-l-2 border-l-red-500`}>
+                        <div className={`${mockTicketRow} ${mockTicketAccentBorder.danger}`}>
                             <div className="flex justify-between gap-2">
                                 <div>
                                     <p className="text-foreground text-sm">Servidor caído — Alfa Retail CDMX</p>
                                     <p className="text-muted-foreground text-xs mt-0.5">Hace 5 min · Crítico</p>
                                 </div>
-                                <Badge className="bg-red-500/15 text-red-700 dark:text-red-400 border-0 shrink-0">
-                                    Abierto
-                                </Badge>
+                                <Badge className={badgeStatusFlat.danger}>Abierto</Badge>
                             </div>
                         </div>
 
-                        <div className={`${mockTicketRow} border-l-2 border-l-yellow-500`}>
+                        <div className={`${mockTicketRow} ${mockTicketAccentBorder.warning}`}>
                             <div className="flex justify-between gap-2">
                                 <div>
                                     <p className="text-foreground text-sm">VPN sin acceso — Beta Logística MTY</p>
                                     <p className="text-muted-foreground text-xs mt-0.5">Hace 23 min · Alto</p>
                                 </div>
-                                <Badge className="bg-yellow-500/15 text-yellow-800 dark:text-yellow-400 border-0 shrink-0">
-                                    En proceso
-                                </Badge>
+                                <Badge className={badgeStatusFlat.warning}>En proceso</Badge>
                             </div>
                         </div>
 
-                        <div className={`${mockTicketRow} border-l-2 border-l-green-500`}>
+                        <div className={`${mockTicketRow} ${mockTicketAccentBorder.success}`}>
                             <div className="flex justify-between gap-2">
                                 <div>
                                     <p className="text-foreground text-sm">Impresora offline — Gamma Servicios GDL</p>
                                     <p className="text-muted-foreground text-xs mt-0.5">Hace 1 hr · Medio</p>
                                 </div>
-                                <Badge className="bg-green-500/15 text-green-800 dark:text-green-400 border-0 shrink-0">
-                                    Resuelto
-                                </Badge>
+                                <Badge className={badgeStatusFlat.success}>Resuelto</Badge>
                             </div>
                         </div>
 
@@ -104,7 +99,9 @@ export default function Hero() {
                                 <div
                                     className={`h-6 w-6 rounded-full bg-[hsl(var(--brand))] ${mockAvatarRing}`}
                                 />
-                                <div className={`h-6 w-6 rounded-full bg-blue-600 ${mockAvatarRing}`} />
+                                <div
+                                    className={`h-6 w-6 rounded-full bg-[hsl(var(--chart-1))] ${mockAvatarRing}`}
+                                />
                                 <div
                                     className={`h-6 w-6 rounded-full bg-muted-foreground ${mockAvatarRing}`}
                                 />

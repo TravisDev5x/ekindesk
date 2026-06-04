@@ -19,13 +19,13 @@ class UserInvitation extends Mailable
 
     public function build()
     {
-        $acceptUrl = url('/register/accept?token=' . $this->invitation->token);
+        $acceptUrl = url('/register/accept?token='.$this->invitation->token);
 
         return $this->subject('Invitación a HelpDesk')
             ->view('emails.user-invitation')
             ->with([
                 'inviterName' => $this->invitation->invitedBy?->name ?? 'Un administrador',
-                'roleName' => $this->invitation->role?->name ?? 'Usuario',
+                'roleName' => $this->invitation->role?->name,
                 'clientName' => $this->invitation->client?->name,
                 'acceptUrl' => $acceptUrl,
                 'expiresAt' => $this->invitation->expires_at,

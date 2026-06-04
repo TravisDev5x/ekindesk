@@ -22,6 +22,8 @@ createInertiaApp({
     resolve: (name) =>
         resolvePageComponent(`./Inertia/Pages/${name}.jsx`, pages),
     setup({ el, App, props }) {
+        const initialAuthUser = props.initialPage?.props?.auth?.user ?? null;
+
         createRoot(el).render(
             <Suspense
                 fallback={
@@ -30,7 +32,7 @@ createInertiaApp({
                     </div>
                 }
             >
-                <AuthProvider>
+                <AuthProvider initialAuthUser={initialAuthUser}>
                     <InertiaThemeProvider>
                         <ThemeAuthSync />
                         <InertiaI18nProvider>

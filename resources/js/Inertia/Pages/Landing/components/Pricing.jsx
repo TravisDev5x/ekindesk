@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { PlanTypeBadge } from "@/components/badges/EntityBadges";
 import {
     brandBadgeSm,
+    brandGradientFill,
     btnBrand,
     btnBrandOutline,
     infoBadge,
@@ -84,7 +85,12 @@ function PlanCard({ plan, billingCycle }) {
             className={cn(planCard, highlighted && planCardHighlighted)}
         >
             {highlighted && (
-                <Badge className="absolute -top-3.5 left-1/2 -translate-x-1/2 whitespace-nowrap border-0 bg-gradient-to-r from-[hsl(var(--brand))] to-blue-600 px-4 py-1 text-xs font-bold text-brand-foreground">
+                <Badge
+                    className={cn(
+                        "absolute -top-3.5 left-1/2 -translate-x-1/2 whitespace-nowrap border-0 px-4 py-1 text-xs font-bold text-brand-foreground",
+                        brandGradientFill
+                    )}
+                >
                     Más popular
                 </Badge>
             )}
