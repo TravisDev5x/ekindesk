@@ -29,6 +29,11 @@ import { Sidebar } from "@/components/Sidebar";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { NotificationBell } from "@/components/NotificationBell";
 import { MobileBottomBar } from "@/components/MobileBottomBar";
+import { TenantBrandMark } from "@/components/TenantBrand";
+import {
+    isClientPortalTenant,
+    resolveTenantBrandCssVars,
+} from "@/lib/tenantBranding";
 
 const TITLE_MAP = {
     "/": "Inicio",
@@ -78,6 +83,9 @@ export default function AuthenticatedLayout({ children, title: titleProp }) {
             ? pageProps.unread_notifications_count
             : 0;
     const inertiaUser = pageProps.auth?.user;
+    const tenant = pageProps.tenant ?? {};
+    const isPortalBrand = isClientPortalTenant(tenant);
+    const tenantBrandStyle = resolveTenantBrandCssVars(tenant);
 
     const [collapsed, setCollapsed] = useState(() => {
         if (typeof window === "undefined") return false;
@@ -141,6 +149,24 @@ export default function AuthenticatedLayout({ children, title: titleProp }) {
         hoverTempExpandRef.current = false;
         setCollapsed((v) => !v);
     }, []);
+
+    useEffect(() => {
+        if (!tenantBrandStyle?.["--brand"]) {
+            return undefined;
+        }
+
+        const root = document.documentElement;
+        const previous = root.style.getPropertyValue("--brand");
+        root.style.setProperty("--brand", tenantBrandStyle["--brand"]);
+
+        return () => {
+            if (previous) {
+                root.style.setProperty("--brand", previous);
+            } else {
+                root.style.removeProperty("--brand");
+            }
+        };
+    }, [tenantBrandStyle]);
 
     useEffect(() => {
         if (localStorage.getItem("sidebar-collapsed") !== null) return;
@@ -393,18 +419,48 @@ export default function AuthenticatedLayout({ children, title: titleProp }) {
                                     sidebarPosition === "right" && "justify-end"
                                 )}
                             >
-                                <span className="uppercase tracking-wider font-semibold opacity-70">{t("layout.panel")}</span>
-                                <ChevronRight className={cn("h-3 w-3", sidebarPosition === "right" && "rotate-180")} />
+                                {isPortalBrand ? (
+                                    <>
+                                        <TenantBrandMark tenant={tenant} className="h-5 w-5 rounded-md" />
+                                        <span className="truncate font-medium normal-case tracking-normal opacity-90">
+                                            {tenant.name}
+                                        </span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <span className="uppercase tracking-wider font-semibold opacity-70">
+                                            {t("layout.panel")}
+                                        </span>
+                                        <ChevronRight
+                                            className={cn("h-3 w-3", sidebarPosition === "right" && "rotate-180")}
+                                        />
+                                    </>
+                                )}
                             </div>
-                            <Head title={pageTitle} />
-                            <h1
+                            <div
                                 className={cn(
-                                    "text-lg font-bold tracking-tight text-foreground truncate",
-                                    sidebarPosition === "right" && "text-right"
+                                    "flex items-center gap-2 min-w-0",
+                                    sidebarPosition === "right" && "justify-end"
                                 )}
                             >
-                                {pageTitle}
-                            </h1>
+                                {isPortalBrand ? (
+                                    <TenantBrandMark
+                                        tenant={tenant}
+                                        className="h-8 w-8 shrink-0 md:hidden"
+                                    />
+                                ) : null}
+                                <div className="min-w-0 flex flex-col gap-0.5">
+                                    <Head title={pageTitle} />
+                                    <h1
+                                        className={cn(
+                                            "text-lg font-bold tracking-tight text-foreground truncate",
+                                            sidebarPosition === "right" && "text-right"
+                                        )}
+                                    >
+                                        {pageTitle}
+                                    </h1>
+                                </div>
+                            </div>
                         </div>
 
                         <div

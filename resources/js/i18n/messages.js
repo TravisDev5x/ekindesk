@@ -59,6 +59,7 @@ const messages = {
 
         'brand.title': 'EkinDesk',
         'brand.subtitle': 'Acceso al panel',
+        'brand.portalSubtitle': 'Portal de soporte',
         'layout.skip': 'Saltar al contenido principal',
         'layout.panel': 'Panel / Administrador',
         'layout.section.default': 'Panel',
@@ -188,6 +189,7 @@ const messages = {
 
         'brand.title': 'HelpDesk',
         'brand.subtitle': 'Enterprise',
+        'brand.portalSubtitle': 'Support portal',
         'layout.skip': 'Skip to main content',
         'layout.panel': 'Panel / Administrator',
         'layout.section.default': 'Dashboard',
@@ -315,6 +317,7 @@ const messages = {
 
         'brand.title': 'HelpDesk',
         'brand.subtitle': 'エンタープライズ',
+        'brand.portalSubtitle': 'サポートポータル',
         'layout.skip': 'メインコンテンツへ',
         'layout.panel': 'パネル / 管理',
         'layout.section.default': 'ダッシュボード',
