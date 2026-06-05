@@ -38,6 +38,17 @@ jobs:
       - name: Install dependencies
         run: composer install --no-interaction --prefer-dist --optimize-autoloader
 
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install frontend and build assets
+        run: |
+          npm ci
+          npm run build
+
       - name: Prepare application
         run: |
           cp .env.example .env
@@ -113,6 +124,17 @@ jobs:
 
       - name: Install dependencies
         run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install frontend and build assets
+        run: |
+          npm ci
+          npm run build
 
       - name: Prepare application
         run: |
