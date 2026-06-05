@@ -1,0 +1,158 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\Sede;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Support\CreatesMspTwinClientFixtures;
+use Tests\TestCase;
+
+/**
+ * Aislamiento API entre dos clientes del mismo operador MSP (fase 2.1).
+ */
+class TenantApiIsolationTest extends TestCase
+{
+    use CreatesMspTwinClientFixtures;
+    use RefreshDatabase;
+
+    public function test_portal_tickets_index_and_show_isolate_client_data(): void
+    {
+        if (! \Schema::hasColumn('clients', 'portal_slug')) {
+            $this->markTestSkipped('Migración portal_slug no aplicada.');
+        }
+
+        $world = $this->createTwinClientIsolationWorld();
+        $this->resetTenantContext();
+
+        $index = $this->actingAs($world['agentA'], 'web')
+            ->getJson($this->portalApiUrl($world['clientA'], '/api/tickets'));
+
+        $index->assertOk();
+        $subjects = collect($index->json('data'))->pluck('subject');
+        $this->assertTrue($subjects->contains('Ticket Alpha'));
+        $this->assertFalse($subjects->contains('Ticket Beta'));
+
+        $showOwn = $this->actingAs($world['agentA'], 'web')
+            ->getJson($this->portalApiUrl($world['clientA'], '/api/tickets/'.$world['ticketA']->id));
+        $showOwn->assertOk()->assertJsonPath('subject', 'Ticket Alpha');
+
+        $showForeign = $this->actingAs($world['agentA'], 'web')
+            ->getJson($this->portalApiUrl($world['clientA'], '/api/tickets/'.$world['ticketB']->id));
+        $showForeign->assertForbidden();
+    }
+
+    public function test_portal_incidents_index_and_show_isolate_client_data(): void
+    {
+        if (! \Schema::hasColumn('clients', 'portal_slug')) {
+            $this->markTestSkipped('Migración portal_slug no aplicada.');
+        }
+
+        $world = $this->createTwinClientIsolationWorld();
+        $this->resetTenantContext();
+
+        $index = $this->actingAs($world['agentA'], 'web')
+            ->getJson($this->portalApiUrl($world['clientA'], '/api/incidents'));
+
+        $index->assertOk();
+        $subjects = collect($index->json('data'))->pluck('subject');
+        $this->assertTrue($subjects->contains('Incidencia Alpha'));
+        $this->assertFalse($subjects->contains('Incidencia Beta'));
+
+        $this->actingAs($world['agentA'], 'web')
+            ->getJson($this->portalApiUrl($world['clientA'], '/api/incidents/'.$world['incidentA']->id))
+            ->assertOk();
+
+        $this->actingAs($world['agentA'], 'web')
+            ->getJson($this->portalApiUrl($world['clientA'], '/api/incidents/'.$world['incidentB']->id))
+            ->assertForbidden();
+    }
+
+    public function test_portal_sedes_and_clientes_lists_are_scoped_to_portal_client(): void
+    {
+        if (! \Schema::hasColumn('clients', 'portal_slug')) {
+            $this->markTestSkipped('Migración portal_slug no aplicada.');
+        }
+
+        $world = $this->createTwinClientIsolationWorld();
+        $this->resetTenantContext();
+
+        $sedes = $this->actingAs($world['agentA'], 'web')
+            ->getJson($this->portalApiUrl($world['clientA'], '/api/sedes'));
+        $sedes->assertOk();
+        $siteClientIds = collect($sedes->json())->pluck('client_id')->unique()->filter()->values();
+        $this->assertSame([(int) $world['clientA']->id], $siteClientIds->all());
+
+        $clientes = $this->actingAs($world['agentA'], 'web')
+            ->getJson($this->portalApiUrl($world['clientA'], '/api/clientes'));
+        $clientes->assertOk();
+        $clientIds = collect($clientes->json())->pluck('id');
+        $this->assertTrue($clientIds->contains($world['clientA']->id));
+        $this->assertFalse($clientIds->contains($world['clientB']->id));
+    }
+
+    public function test_agent_cannot_mutate_foreign_client_or_site(): void
+    {
+        if (! \Schema::hasColumn('clients', 'portal_slug')) {
+            $this->markTestSkipped('Migración portal_slug no aplicada.');
+        }
+
+        $world = $this->createTwinClientIsolationWorld();
+        $this->resetTenantContext();
+
+        $this->actingAs($world['agentA'], 'web')
+            ->putJson('/api/clientes/'.$world['clientB']->id, ['name' => 'Hackeado'])
+            ->assertForbidden();
+
+        $this->actingAs($world['agentA'], 'web')
+            ->putJson('/api/sedes/'.$world['siteB'], ['name' => 'Sede hackeada'])
+            ->assertForbidden();
+    }
+
+    public function test_other_msp_operator_cannot_access_foreign_client_ticket(): void
+    {
+        $world = $this->createTwinClientIsolationWorld();
+
+        $foreignClient = \App\Models\Cliente::create([
+            'name' => 'Cliente ajeno',
+            'operator_user_id' => $world['otherOperator']->id,
+            'is_active' => true,
+        ]);
+        $foreignSite = Sede::create([
+            'name' => 'Sede ajena',
+            'code' => 'FOR-'.random_int(1000, 9999),
+            'type' => 'physical',
+            'is_active' => true,
+            'client_id' => $foreignClient->id,
+        ]);
+        $world['otherOperator']->update(['sede_id' => $foreignSite->id]);
+        $world['otherOperator']->givePermissionTo('tickets.manage_all');
+
+        $this->actingAs($world['otherOperator'], 'web')
+            ->getJson('/api/tickets/'.$world['ticketA']->id)
+            ->assertForbidden();
+    }
+
+    public function test_msp_operator_on_root_sees_both_clients_but_portal_still_isolates(): void
+    {
+        if (! \Schema::hasColumn('clients', 'portal_slug')) {
+            $this->markTestSkipped('Migración portal_slug no aplicada.');
+        }
+
+        $world = $this->createTwinClientIsolationWorld();
+        $world['operator']->givePermissionTo('catalogs.manage');
+
+        $clientes = $this->actingAs($world['operator'], 'web')->getJson('/api/clientes');
+        $clientes->assertOk();
+        $names = collect($clientes->json())->pluck('name');
+        $this->assertTrue($names->contains('Empresa Alpha'));
+        $this->assertTrue($names->contains('Empresa Beta'));
+
+        $this->resetTenantContext();
+        $portalTickets = $this->actingAs($world['operator'], 'web')
+            ->getJson($this->portalApiUrl($world['clientA'], '/api/tickets'));
+        $portalTickets->assertOk();
+        $subjects = collect($portalTickets->json('data'))->pluck('subject');
+        $this->assertTrue($subjects->contains('Ticket Alpha'));
+        $this->assertFalse($subjects->contains('Ticket Beta'));
+    }
+}

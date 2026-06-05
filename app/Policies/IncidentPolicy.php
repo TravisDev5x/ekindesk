@@ -26,22 +26,34 @@ class IncidentPolicy
         }
 
         $scope = $this->scopeType($user);
-        if ($scope === 'all') return true;
+        if ($scope === 'all') {
+            return true;
+        }
         $areaId = $user->area_id;
         $own = $incident->reporter_id === $user->id;
         $inArea = $areaId ? $incident->area_id === $areaId : false;
-        if ($scope === 'area+own') return $inArea || $own;
-        if ($scope === 'area') return $inArea;
-        if ($scope === 'own') return $own;
+        if ($scope === 'area+own') {
+            return $inArea || $own;
+        }
+        if ($scope === 'area') {
+            return $inArea;
+        }
+        if ($scope === 'own') {
+            return $own;
+        }
+
         return false;
     }
 
     public function update(User $user, Incident $incident): bool
     {
-        if ($user->can('incidents.manage_all')) return true;
-        if (!$this->isCurrentArea($user, $incident) && !$this->isAssignee($user, $incident)) {
+        if ($user->can('incidents.manage_all')) {
+            return true;
+        }
+        if (! $this->isCurrentArea($user, $incident) && ! $this->isAssignee($user, $incident)) {
             return false;
         }
+
         return $this->hasAnyManagePermission($user);
     }
 
@@ -97,13 +109,21 @@ class IncidentPolicy
      */
     protected function scopeType(User $user): ?string
     {
-        if ($user->can('incidents.manage_all')) return 'all';
+        if ($user->is_operator || $user->can('incidents.manage_all')) {
+            return 'all';
+        }
         $hasAreaPerm = $user->can('incidents.view_area') && $user->area_id;
         $hasOwnPerm = $user->can('incidents.view_own');
 
-        if ($hasAreaPerm && $hasOwnPerm) return 'area+own';
-        if ($hasAreaPerm) return 'area';
-        if ($hasOwnPerm) return 'own';
+        if ($hasAreaPerm && $hasOwnPerm) {
+            return 'area+own';
+        }
+        if ($hasAreaPerm) {
+            return 'area';
+        }
+        if ($hasOwnPerm) {
+            return 'own';
+        }
 
         return null;
     }
@@ -127,8 +147,13 @@ class IncidentPolicy
 
     protected function canManageAction(User $user, Incident $incident, string $permission): bool
     {
-        if ($user->can('incidents.manage_all')) return true;
-        if (!$user->can($permission)) return false;
+        if ($user->can('incidents.manage_all')) {
+            return true;
+        }
+        if (! $user->can($permission)) {
+            return false;
+        }
+
         return $this->isCurrentArea($user, $incident) || $this->isAssignee($user, $incident);
     }
 }

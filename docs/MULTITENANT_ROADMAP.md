@@ -28,7 +28,7 @@ Estado base (2026-06): aislamiento en aplicación (MSP + portal + login tenant-a
 
 | # | Tarea | Criterio de hecho |
 |---|--------|-------------------|
-| 2.1 | Suite `TenantApiIsolationTest` (2 clientes, mismo MSP) | tickets, incidents, sedes, clientes |
+| 2.1 | Suite `TenantApiIsolationTest` (2 clientes, mismo MSP) | ✅ tickets, incidents, sedes, clientes; portal estricto + `usesOperatorMspWideScope` |
 | 2.2 | Job CI con PostgreSQL + `TENANCY_PGSQL_RLS=true` | Pipeline verde |
 | 2.3 | `php artisan tenant:client-id verify` en CI post-migrate | Falla build si huérfanos |
 | 2.4 | Checklist release en `API_TENANCY_AUDIT.md` | Obligatorio en cada deploy |

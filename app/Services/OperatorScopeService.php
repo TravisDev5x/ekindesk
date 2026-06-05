@@ -37,6 +37,22 @@ class OperatorScopeService
     }
 
     /**
+     * Acceso transversal a todos los clientes del operador MSP (no solo el tenant vinculado por sede/client_id).
+     */
+    public function usesOperatorMspWideScope(User $user): bool
+    {
+        if ($this->bypassesOperatorScope($user) || ! $this->hasMspWideAccess($user)) {
+            return false;
+        }
+
+        if ($user->is_operator) {
+            return true;
+        }
+
+        return $this->tenantResolver->resolve($user) === null;
+    }
+
+    /**
      * Usuario dueño del MSP cuyos clientes (clients.operator_user_id) aplican.
      */
     /**
@@ -115,7 +131,7 @@ class OperatorScopeService
             return $query;
         }
 
-        if ($this->hasMspWideAccess($user)) {
+        if ($this->usesOperatorMspWideScope($user)) {
             $operatorId = $this->resolveOperatorUserId($user);
             if (! $operatorId) {
                 return $this->usesLegacyMspWideAccess($user) ? $query : $query->whereRaw('0 = 1');
@@ -134,11 +150,15 @@ class OperatorScopeService
 
     public function applyOnSites(Builder $query, User $user): Builder
     {
+        if ($enforced = $this->tenantContext->enforcedClientId()) {
+            return $query->where('client_id', $enforced);
+        }
+
         if ($this->bypassesOperatorScope($user)) {
             return $query;
         }
 
-        if ($this->hasMspWideAccess($user)) {
+        if ($this->usesOperatorMspWideScope($user)) {
             $operatorId = $this->resolveOperatorUserId($user);
             if (! $operatorId) {
                 return $this->usesLegacyMspWideAccess($user) ? $query : $query->whereRaw('0 = 1');
@@ -170,7 +190,7 @@ class OperatorScopeService
             return $query;
         }
 
-        if ($this->hasMspWideAccess($user)) {
+        if ($this->usesOperatorMspWideScope($user)) {
             $operatorId = $this->resolveOperatorUserId($user);
             if (! $operatorId) {
                 return $this->usesLegacyMspWideAccess($user) ? $query : $query->whereRaw('0 = 1');
@@ -210,7 +230,7 @@ class OperatorScopeService
             return $query;
         }
 
-        if ($this->hasMspWideAccess($user)) {
+        if ($this->usesOperatorMspWideScope($user)) {
             $operatorId = $this->resolveOperatorUserId($user);
             if (! $operatorId) {
                 return $this->usesLegacyMspWideAccess($user) ? $query : $query->whereRaw('0 = 1');
@@ -241,7 +261,7 @@ class OperatorScopeService
             return true;
         }
 
-        if ($this->hasMspWideAccess($user)) {
+        if ($this->usesOperatorMspWideScope($user)) {
             if ($this->usesLegacyMspWideAccess($user)) {
                 return true;
             }
@@ -251,7 +271,7 @@ class OperatorScopeService
             return $operatorId && (int) $client->operator_user_id === $operatorId;
         }
 
-        $clientId = $this->resolveSingleClientId($user);
+        $clientId = $this->tenantResolver->resolve($user);
 
         return $clientId && (int) $client->id === $clientId;
     }
@@ -414,7 +434,7 @@ class OperatorScopeService
             return $query;
         }
 
-        if ($this->hasMspWideAccess($user)) {
+        if ($this->usesOperatorMspWideScope($user)) {
             $operatorId = $this->resolveOperatorUserId($user);
             if (! $operatorId) {
                 return $this->usesLegacyMspWideAccess($user) ? $query : $query->whereRaw('0 = 1');
@@ -425,7 +445,7 @@ class OperatorScopeService
             });
         }
 
-        $clientId = app(TenantClientResolver::class)->resolve($user);
+        $clientId = $this->tenantResolver->resolve($user);
         if ($clientId) {
             return $query->where('client_id', $clientId);
         }

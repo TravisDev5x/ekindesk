@@ -64,8 +64,6 @@ class ClientScopeService
 
     /**
      * Bloquea acceso operativo si tiene permiso de área sin area_id (config incompleta).
-     *
-     * @return \Illuminate\Http\JsonResponse|null
      */
     public function guardOperationalModuleAccess(User $user, string $module): ?\Illuminate\Http\JsonResponse
     {
@@ -124,34 +122,40 @@ class ClientScopeService
 
     public function incidentVisibleToUser(User $user, \App\Models\Incident $incident): bool
     {
+        if ($enforced = $this->tenantContext->enforcedClientId()) {
+            return $this->incidentBelongsToClient($incident, $enforced);
+        }
+
         if ($this->operatorScope->bypassesOperatorScope($user)) {
             return true;
         }
 
         if ($this->operatorScope->hasMspWideAccess($user)) {
-            if ($this->operatorScope->usesLegacyMspWideAccess($user)) {
-                return true;
-            }
+            if ($this->operatorScope->usesOperatorMspWideScope($user)) {
+                if ($this->operatorScope->usesLegacyMspWideAccess($user)) {
+                    return true;
+                }
 
-            $operatorId = $this->operatorScope->resolveOperatorUserId($user);
-            if (! $operatorId) {
+                $operatorId = $this->operatorScope->resolveOperatorUserId($user);
+                if (! $operatorId) {
+                    return false;
+                }
+                $incident->loadMissing('sede:id,client_id', 'client:id,operator_user_id');
+
+                if ($incident->client_id) {
+                    $op = Cliente::query()->where('id', $incident->client_id)->value('operator_user_id');
+
+                    return (int) $op === $operatorId;
+                }
+
+                if ($incident->sede?->client_id) {
+                    $op = Cliente::where('id', $incident->sede->client_id)->value('operator_user_id');
+
+                    return (int) $op === $operatorId;
+                }
+
                 return false;
             }
-            $incident->loadMissing('sede:id,client_id', 'client:id,operator_user_id');
-
-            if ($incident->client_id) {
-                $op = Cliente::query()->where('id', $incident->client_id)->value('operator_user_id');
-
-                return (int) $op === $operatorId;
-            }
-
-            if ($incident->sede?->client_id) {
-                $op = Cliente::where('id', $incident->sede->client_id)->value('operator_user_id');
-
-                return (int) $op === $operatorId;
-            }
-
-            return false;
         }
 
         $clientId = $this->resolveUserClientId($user);
@@ -197,7 +201,7 @@ class ClientScopeService
             return $query;
         }
 
-        if ($this->operatorScope->hasMspWideAccess($user)) {
+        if ($this->operatorScope->usesOperatorMspWideScope($user)) {
             if ($this->operatorScope->usesLegacyMspWideAccess($user)) {
                 return $query;
             }
@@ -225,34 +229,40 @@ class ClientScopeService
 
     public function ticketVisibleToUser(User $user, \App\Models\Ticket $ticket): bool
     {
+        if ($enforced = $this->tenantContext->enforcedClientId()) {
+            return $this->ticketBelongsToClient($ticket, $enforced);
+        }
+
         if ($this->operatorScope->bypassesOperatorScope($user)) {
             return true;
         }
 
         if ($this->operatorScope->hasMspWideAccess($user)) {
-            if ($this->operatorScope->usesLegacyMspWideAccess($user)) {
-                return true;
-            }
+            if ($this->operatorScope->usesOperatorMspWideScope($user)) {
+                if ($this->operatorScope->usesLegacyMspWideAccess($user)) {
+                    return true;
+                }
 
-            $operatorId = $this->operatorScope->resolveOperatorUserId($user);
-            if (! $operatorId) {
+                $operatorId = $this->operatorScope->resolveOperatorUserId($user);
+                if (! $operatorId) {
+                    return false;
+                }
+                $ticket->loadMissing('sede:id,client_id', 'cliente:id,operator_user_id');
+
+                if ($ticket->client_id) {
+                    $op = \App\Models\Cliente::where('id', $ticket->client_id)->value('operator_user_id');
+
+                    return (int) $op === $operatorId;
+                }
+
+                if ($ticket->sede?->client_id) {
+                    $op = \App\Models\Cliente::where('id', $ticket->sede->client_id)->value('operator_user_id');
+
+                    return (int) $op === $operatorId;
+                }
+
                 return false;
             }
-            $ticket->loadMissing('sede:id,client_id', 'cliente:id,operator_user_id');
-
-            if ($ticket->client_id) {
-                $op = \App\Models\Cliente::where('id', $ticket->client_id)->value('operator_user_id');
-
-                return (int) $op === $operatorId;
-            }
-
-            if ($ticket->sede?->client_id) {
-                $op = \App\Models\Cliente::where('id', $ticket->sede->client_id)->value('operator_user_id');
-
-                return (int) $op === $operatorId;
-            }
-
-            return false;
         }
 
         $clientId = $this->resolveUserClientId($user);
@@ -275,7 +285,7 @@ class ClientScopeService
             return Sede::where('id', $sedeId)->exists();
         }
 
-        if ($this->operatorScope->hasMspWideAccess($user)) {
+        if ($this->operatorScope->usesOperatorMspWideScope($user)) {
             if ($this->operatorScope->usesLegacyMspWideAccess($user)) {
                 return Sede::where('id', $sedeId)->exists();
             }
@@ -523,5 +533,27 @@ class ClientScopeService
         return function ($sub) use ($clientId) {
             $sub->select('id')->from('sites')->where('client_id', $clientId);
         };
+    }
+
+    private function ticketBelongsToClient(\App\Models\Ticket $ticket, int $clientId): bool
+    {
+        if ($ticket->client_id) {
+            return (int) $ticket->client_id === $clientId;
+        }
+
+        $ticket->loadMissing('sede:id,client_id');
+
+        return $ticket->sede && (int) $ticket->sede->client_id === $clientId;
+    }
+
+    private function incidentBelongsToClient(\App\Models\Incident $incident, int $clientId): bool
+    {
+        if ($incident->client_id) {
+            return (int) $incident->client_id === $clientId;
+        }
+
+        $incident->loadMissing('sede:id,client_id');
+
+        return $incident->sede && (int) $incident->sede->client_id === $clientId;
     }
 }

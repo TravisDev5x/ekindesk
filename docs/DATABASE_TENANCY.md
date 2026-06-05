@@ -61,12 +61,14 @@ DB_SSLMODE=prefer
 | Rol / permiso | Alcance de `clients` |
 |---------------|----------------------|
 | `super_admin` | Toda la plataforma |
-| `is_operator`, `clients.view_all`, `tickets.manage_all`, `incidents.manage_all` | Solo `clients.operator_user_id` = su operador |
+| `is_operator`, `clients.view_all`, `tickets.manage_all`, `incidents.manage_all` **sin** tenant vinculado (sede/client_id) | Todos los `clients.operator_user_id` = su operador |
+| `tickets.manage_all` / `incidents.manage_all` **con** sede o `users.client_id` | Un solo tenant (`usesOperatorMspWideScope` = false) |
 | Staff en sede | Un solo `client_id` (vía sede) |
 
 - API/Web clientes: `OperatorScopeService::applyOnClients()` + validación `name`/`code` por operador.
 - Catálogos Inertia/API: `clientsForCatalog()`, `applyOnSites()`.
-- Tickets/incidencias con `manage_all`: ya no ven toda la plataforma; `TicketPolicy`/`IncidentPolicy` aplican scope de operador.
+- Tickets/incidencias con `manage_all`: ya no ven toda la plataforma; `TicketPolicy`/`IncidentPolicy` aplican scope de operador o tenant vinculado.
+- Portal estricto: `enforcedClientId()` filtra listados **y** `show` (`ticketVisibleToUser` / `incidentVisibleToUser`); sedes vía `applyOnSites()`.
 
 ### Cliente final (`TenantClientResolver` + `ClientScopeService`)
 

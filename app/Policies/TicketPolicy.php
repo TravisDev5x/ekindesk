@@ -29,23 +29,35 @@ class TicketPolicy
         }
 
         $scope = $this->scopeType($user);
-        if ($scope === 'all') return true;
+        if ($scope === 'all') {
+            return true;
+        }
         $areaId = $user->area_id;
         $own = (int) $ticket->requester_id === (int) $user->id;
         $inCurrentArea = $areaId && (int) $ticket->area_current_id === (int) $areaId;
-        if ($scope === 'area+own') return $inCurrentArea || $own;
-        if ($scope === 'area') return $inCurrentArea;
-        if ($scope === 'own') return $own;
+        if ($scope === 'area+own') {
+            return $inCurrentArea || $own;
+        }
+        if ($scope === 'area') {
+            return $inCurrentArea;
+        }
+        if ($scope === 'own') {
+            return $own;
+        }
+
         return false;
     }
 
     /** Solo agentes con área/asignación pueden modificar. El solicitante no actualiza ni comenta; usa alertas como observaciones. */
     public function update(User $user, Ticket $ticket): bool
     {
-        if ($user->can('tickets.manage_all')) return true;
-        if (!$this->isCurrentArea($user, $ticket) && !$this->isAssignee($user, $ticket)) {
+        if ($user->can('tickets.manage_all')) {
+            return true;
+        }
+        if (! $this->isCurrentArea($user, $ticket) && ! $this->isAssignee($user, $ticket)) {
             return false;
         }
+
         return $this->hasAnyManagePermission($user);
     }
 
@@ -68,29 +80,42 @@ class TicketPolicy
     /** Solo el responsable actual (o admin) puede reasignar; si no hay responsable, cualquiera con permiso en el área puede tomar/reasignar. */
     public function assign(User $user, Ticket $ticket): bool
     {
-        if ($user->can('tickets.manage_all')) return true;
-        if (!$user->can('tickets.assign')) return false;
+        if ($user->can('tickets.manage_all')) {
+            return true;
+        }
+        if (! $user->can('tickets.assign')) {
+            return false;
+        }
         if ($ticket->assigned_user_id) {
             return $this->isAssignee($user, $ticket);
         }
+
         return $this->isCurrentArea($user, $ticket) || $this->isAssignee($user, $ticket);
     }
 
     /** Solo el responsable actual (o admin) puede liberar el ticket para otros agentes. */
     public function release(User $user, Ticket $ticket): bool
     {
-        if ($user->can('tickets.manage_all')) return true;
-        if (!$ticket->assigned_user_id) return false;
+        if ($user->can('tickets.manage_all')) {
+            return true;
+        }
+        if (! $ticket->assigned_user_id) {
+            return false;
+        }
+
         return $this->isAssignee($user, $ticket);
     }
 
     /** Solo el responsable actual (o admin) puede escalar cuando el ticket está asignado; evita conflictos. */
     public function escalate(User $user, Ticket $ticket): bool
     {
-        if ($user->can('tickets.manage_all')) return true;
-        if ($ticket->assigned_user_id && !$this->isAssignee($user, $ticket)) {
+        if ($user->can('tickets.manage_all')) {
+            return true;
+        }
+        if ($ticket->assigned_user_id && ! $this->isAssignee($user, $ticket)) {
             return false;
         }
+
         return $this->canManageAction($user, $ticket, 'tickets.escalate');
     }
 
@@ -107,7 +132,8 @@ class TicketPolicy
             return false;
         }
         $ticket->loadMissing('state');
-        return !($ticket->state && $ticket->state->is_final);
+
+        return ! ($ticket->state && $ticket->state->is_final);
     }
 
     /**
@@ -149,13 +175,21 @@ class TicketPolicy
      */
     protected function scopeType(User $user): ?string
     {
-        if ($user->can('tickets.manage_all')) return 'all';
+        if ($user->is_operator || $user->can('tickets.manage_all')) {
+            return 'all';
+        }
         $hasAreaPerm = $user->can('tickets.view_area') && $user->area_id;
         $hasOwnPerm = $user->can('tickets.view_own');
 
-        if ($hasAreaPerm && $hasOwnPerm) return 'area+own';
-        if ($hasAreaPerm) return 'area';
-        if ($hasOwnPerm) return 'own';
+        if ($hasAreaPerm && $hasOwnPerm) {
+            return 'area+own';
+        }
+        if ($hasAreaPerm) {
+            return 'area';
+        }
+        if ($hasOwnPerm) {
+            return 'own';
+        }
 
         return null;
     }
@@ -180,8 +214,13 @@ class TicketPolicy
 
     protected function canManageAction(User $user, Ticket $ticket, string $permission): bool
     {
-        if ($user->can('tickets.manage_all')) return true;
-        if (!$user->can($permission)) return false;
+        if ($user->can('tickets.manage_all')) {
+            return true;
+        }
+        if (! $user->can($permission)) {
+            return false;
+        }
+
         return $this->isCurrentArea($user, $ticket) || $this->isAssignee($user, $ticket);
     }
 }
