@@ -1,5 +1,7 @@
 <div align="center">
 
+> **Rama experimental** — Esta rama incluye módulos y cambios en evaluación. No está pensada para producción; usa `main` para releases estables.
+
 # EkinDesk
 
 **Plataforma de mesa de ayuda y gestión operativa para equipos de soporte TI**  
