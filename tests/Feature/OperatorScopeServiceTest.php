@@ -83,10 +83,52 @@ class OperatorScopeServiceTest extends TestCase
         $legacyAdmin = $this->createUser(['email' => 'legacy-admin@test.local']);
         $legacyAdmin->givePermissionTo('tickets.manage_all');
 
-        config(['tenancy.strict_client_portal' => true]);
+        config([
+            'tenancy.strict_client_portal' => true,
+            'tenancy.legacy_msp_wide_access' => true,
+        ]);
 
         $this->assertTrue($this->scope->usesLegacyMspWideAccess($legacyAdmin));
         $this->assertGreaterThanOrEqual(2, count($this->scope->clientsForCatalog($legacyAdmin, false)));
+    }
+
+    public function test_legacy_msp_wide_access_disabled_by_default(): void
+    {
+        Cliente::create(['name' => 'Legacy Corp', 'is_active' => true]);
+
+        $legacyAdmin = $this->createUser(['email' => 'legacy-admin-off@test.local']);
+        $legacyAdmin->givePermissionTo('tickets.manage_all');
+
+        config([
+            'tenancy.strict_client_portal' => true,
+            'tenancy.legacy_msp_wide_access' => false,
+        ]);
+
+        $this->assertFalse($this->scope->usesLegacyMspWideAccess($legacyAdmin));
+        $this->assertSame(0, count($this->scope->clientsForCatalog($legacyAdmin, false)));
+    }
+
+    public function test_promote_legacy_operators_command(): void
+    {
+        Cliente::create(['name' => 'Orphan Corp', 'is_active' => true]);
+
+        $legacyAdmin = $this->createUser(['email' => 'promote-me@test.local']);
+        $legacyAdmin->givePermissionTo('tickets.manage_all');
+
+        $this->artisan('tenant:promote-legacy-operators')
+            ->assertSuccessful()
+            ->expectsOutputToContain('promote-me@test.local');
+
+        $this->assertFalse($legacyAdmin->fresh()->is_operator);
+
+        $this->artisan('tenant:promote-legacy-operators', [
+            '--apply' => true,
+            '--assign-orphan-clients' => true,
+        ])->assertSuccessful();
+
+        $legacyAdmin->refresh();
+        $this->assertTrue($legacyAdmin->is_operator);
+        $this->assertSame($legacyAdmin->id, (int) Cliente::where('name', 'Orphan Corp')->value('operator_user_id'));
     }
 
     public function test_super_admin_sees_all_clients(): void

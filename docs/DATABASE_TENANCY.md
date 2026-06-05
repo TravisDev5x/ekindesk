@@ -95,6 +95,18 @@ Migración `2026_06_03_100000_add_operator_scope_to_catalogs_and_audit`:
 - API catálogos: `PriorityController`, `AreaController`, `CatalogController`, etc.
 - Roles/permisos Spatie siguen **globales** (fase posterior: `operator_user_id` en roles o teams).
 
+### Consola legacy (`TENANCY_LEGACY_MSP_WIDE_ACCESS`)
+
+Por defecto **`false`** (producción). Si `true`, usuarios con `tickets.manage_all` / `clients.view_all` sin `is_operator` ni sede vinculada a un operador ven **todos** los clientes en dominio raíz.
+
+Migración recomendada antes de prod:
+
+```bash
+php artisan tenant:promote-legacy-operators          # dry-run
+php artisan tenant:promote-legacy-operators --apply --assign-orphan-clients
+# .env: TENANCY_LEGACY_MSP_WIDE_ACCESS=false
+```
+
 ---
 
 ## Auditoría (`audit_logs`)

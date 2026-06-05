@@ -31,4 +31,10 @@ return [
 
     'pgsql_rls_enabled' => env('TENANCY_PGSQL_RLS', false),
 
+    /*
+    | true: en consola raíz, usuarios manage_all sin operador MSP vinculado ven todos los clientes.
+    | false (prod): exige is_operator o sede/cliente con operator_user_id. Solo habilitar en local/staging legacy.
+    */
+    'legacy_msp_wide_access' => env('TENANCY_LEGACY_MSP_WIDE_ACCESS', false),
+
 ];

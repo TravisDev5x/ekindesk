@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Area;
 use App\Models\Campaign;
+use App\Models\Cliente;
 use App\Models\Position;
 use App\Models\Priority;
 use App\Models\Sede;
@@ -71,11 +72,23 @@ class TicketApiTest extends TestCase
             'status' => 'active',
             'email_verified_at' => now(),
             'password' => Hash::make('password123'),
+            'is_operator' => true,
+            'onboarding_completed' => true,
         ]);
 
         $adminRole = Role::where('name', 'admin')->where('guard_name', 'web')->first();
         if ($adminRole) {
             $this->user->assignRole($adminRole);
+        }
+
+        $client = Cliente::create([
+            'name' => 'Cliente ticket test',
+            'operator_user_id' => $this->user->id,
+            'is_active' => true,
+        ]);
+
+        if ($this->sede) {
+            $this->sede->update(['client_id' => $client->id]);
         }
     }
 
@@ -138,6 +151,7 @@ class TicketApiTest extends TestCase
             'area_origin_id' => $this->areaOrigin->id,
             'area_current_id' => $this->areaCurrent->id,
             'sede_id' => $this->sede->id,
+            'client_id' => $this->sede?->client_id,
             'requester_id' => $this->user->id,
             'ticket_type_id' => $this->ticketType->id,
             'priority_id' => $this->priority->id,

@@ -45,6 +45,10 @@ class OperatorScopeService
      */
     public function usesLegacyMspWideAccess(User $user): bool
     {
+        if (! config('tenancy.legacy_msp_wide_access', false)) {
+            return false;
+        }
+
         if ($this->tenantContext->isStrictClientPortal()) {
             return false;
         }
@@ -54,6 +58,27 @@ class OperatorScopeService
         }
 
         return $this->resolveOperatorUserId($user) === null;
+    }
+
+    /**
+     * Usuarios MSP-wide sin operador resuelto (candidatos a is_operator antes de desactivar legacy).
+     *
+     * @return \Illuminate\Support\Collection<int, User>
+     */
+    public function legacyOperatorCandidates(): \Illuminate\Support\Collection
+    {
+        return User::query()
+            ->where('is_operator', false)
+            ->where('status', 'active')
+            ->get()
+            ->filter(function (User $user) {
+                if ($this->bypassesOperatorScope($user) || ! $this->hasMspWideAccess($user)) {
+                    return false;
+                }
+
+                return $this->resolveOperatorUserId($user) === null;
+            })
+            ->values();
     }
 
     public function resolveOperatorUserId(User $user): ?int

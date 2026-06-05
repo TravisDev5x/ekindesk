@@ -20,7 +20,7 @@ Estado base (2026-06): aislamiento en aplicación (MSP + portal + login tenant-a
 | 1.2 | Modelo catálogos operador+plataforma (no por `client_id`) | ✅ `docs/CATALOG_TENANCY_MODEL.md`, `TENANCY_CATALOG_PER_CLIENT`, `CatalogPortalTenancyTest` |
 | 1.3 | `SessionMonitorController` + exports/jobs con scope | ✅ `SessionMonitorScopeTest`, scope en `applyUserScope` / audit export |
 | 1.4 | Invitaciones: validar `client_id` vs host del portal | ✅ Flujo B + `InvitationFlowTest`, Google OAuth opcional |
-| 1.5 | Eliminar `usesLegacyMspWideAccess` en prod (migrar admins a `is_operator`) | Flag o config solo en `local` |
+| 1.5 | Eliminar `usesLegacyMspWideAccess` en prod (migrar admins a `is_operator`) | ✅ `TENANCY_LEGACY_MSP_WIDE_ACCESS` (default false) + `tenant:promote-legacy-operators` |
 | 1.6 | Branding `tenant` en layout autenticado | ✅ Sidebar, header móvil, acento `--brand`; consola MSP sin cambios |
 | 1.7 | Comando `tenant:seed-catalogs {operator_user_id}` | ✅ Idempotente; plantilla fallback; herencia compatible con filas plataforma |
 
