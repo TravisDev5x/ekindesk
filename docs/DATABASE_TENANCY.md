@@ -209,6 +209,15 @@ php artisan migrate:fresh --seed
 php artisan tenant:client-id verify
 ```
 
+### CI (GitHub Actions)
+
+Workflow `.github/workflows/tests.yml`:
+
+- **SQLite** — suite rápida en cada push/PR (`composer test`).
+- **PostgreSQL + RLS** — `TENANCY_PGSQL_RLS=true`, usuario `ekindesk_app` (no superuser), `composer test:pgsql` con `phpunit.pgsql.xml`.
+
+Local con PG: crear rol sin superuser, activar RLS y ejecutar `composer test:pgsql`.
+
 ## Integridad `client_id` NOT NULL
 
 La migración `2026_06_02_100000_enforce_tenant_client_id_not_null`:

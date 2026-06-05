@@ -54,6 +54,10 @@
             "@php artisan config:clear --ansi",
             "@php artisan test"
         ],
+        "test:pgsql": [
+            "@php artisan config:clear --ansi",
+            "@php artisan test --configuration=phpunit.pgsql.xml"
+        ],
         "optimize": [
             "@php artisan config:cache",
             "@php artisan view:cache",
