@@ -7,11 +7,13 @@ import { getApiErrorMessage } from "@/lib/apiErrors";
 import { registerFormSchema } from "@/lib/passwordSchema";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { AuthBrandingPanel } from "@/components/auth/AuthBrandingPanel";
+import { RegisterBrandingPanel } from "@/components/auth/AuthBrandingPresets";
 import { AuthFormAlert } from "@/components/auth/AuthFormAlert";
 import { AuthFormField } from "@/components/auth/AuthFormField";
 import { AuthGoogleSection } from "@/components/auth/AuthGoogleSection";
+import { AuthPageHeader } from "@/components/auth/AuthPageHeader";
 import { AuthSplitLayout } from "@/components/auth/AuthSplitLayout";
+import { focusFirstFormError } from "@/lib/focusFirstFormError";
 import { PasswordField, PasswordMatchHint } from "@/components/auth/PasswordField";
 import { PasswordRequirements } from "@/components/auth/PasswordRequirements";
 import {
@@ -30,6 +32,16 @@ const defaultValues = {
     password: "",
     password_confirmation: "",
 };
+
+const REGISTER_FIELD_ORDER = [
+    "first_name",
+    "paternal_last_name",
+    "maternal_last_name",
+    "email",
+    "phone",
+    "password",
+    "password_confirmation",
+];
 
 function FormSection({ title, children }) {
     return (
@@ -128,37 +140,14 @@ export default function Register() {
                     href: "/login",
                     label: "Inicia sesión",
                 }}
-                brandingPanel={
-                    <AuthBrandingPanel
-                        badgeLabel="Registro MSP"
-                        title={
-                            <>
-                                Crea tu cuenta
-                                <br />
-                                en minutos
-                            </>
-                        }
-                        description="Registra tu empresa de soporte, verifica tu correo y configura tu primer cliente. Pensado para equipos MSP que quieren operar con orden desde el día uno."
-                        bullets={[
-                            { text: "Registro en 3 minutos · Sin tarjeta de crédito." },
-                            { text: "Verificación por correo antes de activar la cuenta." },
-                            {
-                                text: "Datos aislados por cliente desde el inicio.",
-                                dotClassName: "bg-muted-foreground",
-                            },
-                        ]}
-                    />
-                }
+                brandingPanel={<RegisterBrandingPanel />}
             >
-                <div className="mb-6">
-                    <h1 className="text-2xl font-bold tracking-tight text-foreground">
-                        Registro de operador
-                    </h1>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                        Completa tus datos para crear la cuenta de administrador.
-                    </p>
+                <AuthPageHeader
+                    title="Registro de operador"
+                    description="Completa tus datos para crear la cuenta de administrador."
+                >
                     <RegisterTrustLine className="mt-3" />
-                </div>
+                </AuthPageHeader>
 
                 <div className="space-y-6">
                     <RegisterPlanSummary plan={selectedPlan} planSlug={planSlug} />
@@ -170,7 +159,13 @@ export default function Register() {
                         disabled={loading}
                     />
 
-                    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" noValidate>
+                    <form
+                        onSubmit={handleSubmit(onSubmit, (fieldErrors) =>
+                            focusFirstFormError(fieldErrors, REGISTER_FIELD_ORDER)
+                        )}
+                        className="space-y-6"
+                        noValidate
+                    >
                     <FormSection title="Identidad">
                         <div className="grid gap-4 sm:grid-cols-2">
                             <AuthFormField

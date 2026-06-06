@@ -19,8 +19,14 @@ export function AuthSplitLayout({
         <div className={`${surfaceAuth} flex`}>
             {brandingPanel}
 
-            <div className="flex min-h-screen flex-1 items-center justify-center bg-muted/20 p-8 lg:p-16">
-                <div className={cn(authCard, formClassName)}>
+            <div className="flex min-h-[100dvh] flex-1 items-center justify-center bg-muted/20 px-4 py-8 sm:px-8 lg:px-16">
+                <div
+                    className={cn(
+                        authCard,
+                        "w-full pb-[max(1rem,env(safe-area-inset-bottom))]",
+                        formClassName
+                    )}
+                >
                     <div className="mb-6 flex items-start justify-between">
                         <div className="flex items-center gap-3 lg:hidden">
                             <TenantBrandLoginMark tenant={tenant} className="h-9 w-9" />
