@@ -30,8 +30,8 @@ Estado base (2026-06): aislamiento en aplicación (MSP + portal + login tenant-a
 |---|--------|-------------------|
 | 2.1 | Suite `TenantApiIsolationTest` (2 clientes, mismo MSP) | ✅ tickets, incidents, sedes, clientes; portal estricto + `usesOperatorMspWideScope` |
 | 2.2 | Job CI con PostgreSQL + `TENANCY_PGSQL_RLS=true` | ✅ `.github/workflows/tests.yml` (SQLite + PG/RLS), `phpunit.pgsql.xml`, `PgsqlTenantRlsTest` |
-| 2.3 | `php artisan tenant:client-id verify` en CI post-migrate | Falla build si huérfanos |
-| 2.4 | Checklist release en `API_TENANCY_AUDIT.md` | Obligatorio en cada deploy |
+| 2.3 | `php artisan tenant:client-id verify --strict` en CI post-migrate | ✅ Falla build si huérfanos o `client_id` NULL |
+| 2.4 | Checklist release en `API_TENANCY_AUDIT.md` | ✅ Obligatorio en cada deploy |
 
 ## Fase 3 — Identidad y autorización (2 semanas)
 

@@ -128,9 +128,60 @@
 3. ~~`SessionMonitorController`: filtrar sesiones por operador/cliente.~~ — **Hecho (fase 1.3)**. Tests: `SessionMonitorScopeTest`.
 4. SIGUA: rutas en `routes/sigua.php` — **sin tenant** (despliegue separado o fase 2).
 
-## Checklist manual por release
+## Checklist obligatorio por release
 
-- [ ] `php artisan tenant:client-id verify` en staging  
+Ejecutar en **staging** antes de producción y repetir en prod tras `migrate`. Cualquier paso fallido bloquea el deploy.
+
+### 1. Base de datos
+
+```bash
+php artisan migrate --force
+php artisan tenant:client-id verify --strict
+```
+
+| Paso | Criterio |
+|------|----------|
+| Migraciones | Sin errores; batch actualizado |
+| `verify --strict` | Exit code 0; 0 huérfanos y 0 filas con `client_id` NULL en tickets/incidencias |
+
+Si `verify --strict` falla en datos legacy: `php artisan tenant:client-id sync --assign-sites` en staging, validar de nuevo y documentar en el ticket de release.
+
+### 2. Smoke test multi-tenant
+
+- [ ] Login en consola MSP (`/` o dominio operador) con usuario operador → dashboard OK  
+- [ ] Login en `{portal_slug}.{TENANCY_BASE_DOMAIN}/login` con usuario del cliente → 200 y datos solo de ese tenant  
+- [ ] Mismo portal con usuario de **otro** cliente → **403** (portal estricto)  
+- [ ] `GET /api/tickets` autenticado como operador: no aparecen tickets de clientes fuera de su MSP  
+
+### 3. PostgreSQL RLS (solo si `TENANCY_PGSQL_RLS=true`)
+
+- [ ] Usuario BD de aplicación **no superuser** (`ekindesk_app` o equivalente)  
+- [ ] Listar tickets/incidencias/sedes solo del tenant de sesión (probar con 2 portales distintos)  
+- [ ] `php artisan tenant:client-id verify --strict` con usuario app (no bypass de consola en prod)
+
+### 4. Sesión y Sanctum
+
+- [ ] `SANCTUM_STATEFUL_DOMAINS` incluye raíz y subdominios de portal  
+- [ ] Cookie de sesión válida en portal tras login (sin bucle a `/login`)  
+- [ ] Logout invalida sesión en portal y consola según política elegida  
+
+### 5. Rollback (runbook)
+
+1. Activar modo mantenimiento si aplica: `php artisan down`  
+2. Restaurar backup BD del punto anterior al deploy  
+3. Desplegar artefacto/commit anterior (código)  
+4. `php artisan migrate:status` — confirmar coherencia con backup  
+5. `php artisan tenant:client-id verify --strict`  
+6. Smoke test mínimo (login portal + listado tickets)  
+7. `php artisan up`  
+
+Documentar hora del backup, commit desplegado y resultado de `verify --strict` en el registro de release.
+
+---
+
+## Checklist manual rápido (referencia)
+
+- [ ] `php artisan tenant:client-id verify --strict` en staging y prod post-migrate  
 - [ ] Probar login en `{slug}.base_domain` con usuario ajeno → 403  
 - [ ] Con `TENANCY_PGSQL_RLS=true`, listar tickets solo del tenant esperado  
 - [ ] `SANCTUM_STATEFUL_DOMAINS` incluye subdominios de portal  

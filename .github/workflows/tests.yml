@@ -53,6 +53,9 @@ jobs:
         run: |
           cp .env.example .env
           php artisan key:generate
+          touch database/database.sqlite
+          php artisan migrate --force
+          php artisan tenant:client-id verify --strict
 
       - name: Run tests
         run: composer test
@@ -140,6 +143,8 @@ jobs:
         run: |
           cp .env.example .env
           php artisan key:generate
+          php artisan migrate --force
+          php artisan tenant:client-id verify --strict
 
       - name: Run tests (PostgreSQL + TENANCY_PGSQL_RLS)
         run: composer test:pgsql

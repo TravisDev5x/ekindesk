@@ -1,3 +1,5 @@
+import { redirectToLogin } from "@/lib/authNavigation";
+
 /**
  * Helpers para manejo de errores de API.
  * Compatible con respuestas Laravel (message, errors.root, errors.campo).
@@ -6,15 +8,14 @@
 /**
  * Si el error es de autenticación (401) o sesión caducada (419),
  * redirige a login y devuelve true. El interceptor de axios también
- * dispara "navigate-to-login"; esta función unifica el fallback con
- * window.location para garantizar redirección.
+ * dispara "navigate-to-login"; esta función unifica el fallback.
  * @param {unknown} error - Error de axios (error.response?.status)
  * @returns {boolean} true si se manejó como auth error (redirigir), false si no
  */
 export function handleAuthError(error) {
     const status = error?.response?.status;
     if (status === 401 || status === 419) {
-        window.location.href = "/login";
+        redirectToLogin();
         return true;
     }
     return false;
