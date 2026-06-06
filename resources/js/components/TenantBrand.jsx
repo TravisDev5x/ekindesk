@@ -107,8 +107,8 @@ export function TenantBrandLoginMark({ tenant, className }) {
     }
 
     return (
-        <div className={cn("h-10 w-10 rounded-xl", brandLogo, className)}>
-            <span className="font-black text-lg">{name.charAt(0).toUpperCase()}</span>
+        <div className={cn("flex h-10 w-10 items-center justify-center rounded-xl", brandLogo, className)}>
+            <span className="text-lg font-black">{name.charAt(0).toUpperCase()}</span>
         </div>
     );
 }

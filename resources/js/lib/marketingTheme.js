@@ -41,7 +41,7 @@ export const btnBrandOutline =
 export const authCard = "w-full max-w-md mkt-elevated rounded-2xl p-8";
 
 export const authPanelSide =
-    "hidden lg:flex lg:w-2/5 flex-col justify-between p-12 relative overflow-hidden bg-secondary/80 mkt-dots";
+    "hidden lg:sticky lg:top-0 lg:flex lg:h-[100dvh] lg:max-h-[100dvh] lg:w-2/5 flex-col p-12 relative overflow-hidden bg-secondary/80 mkt-dots";
 
 export const linkBrand = "text-brand-muted hover:text-brand font-semibold transition-colors";
 
