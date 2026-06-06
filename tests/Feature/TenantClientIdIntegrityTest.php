@@ -61,6 +61,40 @@ class TenantClientIdIntegrityTest extends TestCase
         $this->assertSame(0, TenantIntegrity::orphanTicketCount());
     }
 
+    public function test_artisan_verify_strict_fails_on_orphan_ticket(): void
+    {
+        $fixture = $this->createTenantFixtureSet();
+        $this->insertTicket($fixture, null);
+
+        $this->artisan('tenant:client-id', ['action' => 'verify', '--strict' => true])
+            ->assertFailed();
+    }
+
+    public function test_artisan_verify_strict_passes_after_sync(): void
+    {
+        $fixture = $this->createTenantFixtureSet();
+        $this->insertTicket($fixture, null);
+
+        $this->artisan('tenant:client-id', ['action' => 'sync'])
+            ->assertSuccessful();
+
+        $this->artisan('tenant:client-id', ['action' => 'verify', '--strict' => true])
+            ->assertSuccessful();
+    }
+
+    public function test_artisan_verify_non_strict_warns_but_succeeds_with_null_client_on_orphan_site(): void
+    {
+        $fixture = $this->createTenantFixtureSet();
+        DB::table('sites')->where('id', $fixture['site_id'])->update(['client_id' => null]);
+        $this->insertTicket($fixture, null);
+
+        $this->artisan('tenant:client-id', ['action' => 'verify'])
+            ->assertSuccessful();
+
+        $this->artisan('tenant:client-id', ['action' => 'verify', '--strict' => true])
+            ->assertFailed();
+    }
+
     public function test_no_tickets_without_client_id_after_migrations(): void
     {
         if (! \Schema::hasColumn('tickets', 'client_id')) {

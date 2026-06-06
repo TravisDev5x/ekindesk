@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import { router } from "@inertiajs/react";
 import axios from "@/lib/axios";
 import { notify } from "@/lib/notify";
+import { isGuestOnlyPath, redirectToLogin } from "@/lib/authNavigation";
 
 function showSessionFlash(flash) {
     const hasFlash = Object.values(flash ?? {}).some(Boolean);
@@ -13,21 +14,6 @@ function showSessionFlash(flash) {
 }
 
 const AuthContext = createContext(null);
-
-/** Rutas donde NUNCA se debe llamar /check-auth (siempre 401; no es un bug). */
-const GUEST_ONLY_PATHS = [
-    "/login",
-    "/register",
-    "/register/accept",
-    "/forgot-password",
-    "/reset-password",
-    "/verify-email",
-];
-
-function isGuestOnlyPath() {
-    const path = typeof window !== "undefined" ? window.location.pathname : "";
-    return GUEST_ONLY_PATHS.some((p) => path === p || path.startsWith(p + "/"));
-}
 
 function mapAuthPayload(payload) {
     if (!payload?.user) return null;
@@ -90,12 +76,18 @@ export const AuthProvider = ({ children, initialAuthUser = null }) => {
             if (nextUser) {
                 setUser(mapInertiaAuthUser(nextUser));
                 window.__auth_user_id = nextUser.id;
-            } else if (!isGuestOnlyPath()) {
+            } else {
                 setUser(null);
                 delete window.__auth_user_id;
             }
         });
         return () => off();
+    }, []);
+
+    useEffect(() => {
+        const onNavigateToLogin = () => redirectToLogin();
+        window.addEventListener("navigate-to-login", onNavigateToLogin);
+        return () => window.removeEventListener("navigate-to-login", onNavigateToLogin);
     }, []);
 
     const login = useCallback(async (credentials) => {
@@ -113,14 +105,13 @@ export const AuthProvider = ({ children, initialAuthUser = null }) => {
 
     const logout = useCallback(async () => {
         try {
-            await axios.get('/sanctum/csrf-cookie');
-            await axios.post('/api/logout');
+            await axios.post("/api/logout");
         } catch (error) {
-            console.error('Logout error', error);
+            console.error("Logout error", error);
         } finally {
             setUser(null);
             delete window.__auth_user_id;
-            window.dispatchEvent(new CustomEvent('navigate-to-login'));
+            redirectToLogin();
         }
     }, []);
 

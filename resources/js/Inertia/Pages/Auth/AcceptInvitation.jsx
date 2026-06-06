@@ -1,28 +1,20 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect } from "react";
 import { Head, Link, useForm } from "@inertiajs/react";
 import axios from "@/lib/axios";
+import { AcceptInvitationBrandingPanel } from "@/components/auth/AuthBrandingPresets";
+import { AuthBackToLoginLink } from "@/components/auth/AuthFormSection";
+import { AuthFormAlert } from "@/components/auth/AuthFormAlert";
+import { AuthFormField } from "@/components/auth/AuthFormField";
+import { AuthFormSection } from "@/components/auth/AuthFormSection";
+import { AuthPageHeader } from "@/components/auth/AuthPageHeader";
+import { AuthSplitLayout } from "@/components/auth/AuthSplitLayout";
+import { PasswordField, PasswordMatchHint } from "@/components/auth/PasswordField";
+import { PasswordRequirements } from "@/components/auth/PasswordRequirements";
+import { btnBrand, btnBrandOutline, linkBrand } from "@/lib/marketingTheme";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
-import { AuthSimpleShell } from "@/components/auth/AuthSimpleShell";
-import { authSimpleCard, btnBrand, passwordStrengthClass } from "@/lib/marketingTheme";
-import { cn } from "@/lib/utils";
-
-function passwordStrength(password) {
-    if (!password) return { label: "", score: 0 };
-    let score = 0;
-    if (password.length >= 12) score++;
-    if (/[a-z]/.test(password)) score++;
-    if (/[A-Z]/.test(password)) score++;
-    if (/[0-9]/.test(password)) score++;
-    if (/[^A-Za-z0-9]/.test(password)) score++;
-    if (score <= 2) return { label: "Débil", score: 1 };
-    if (score <= 4) return { label: "Media", score: 2 };
-    return { label: "Fuerte", score: 3 };
-}
+import { Loader2 } from "lucide-react";
 
 function formatExpiry(iso) {
     if (!iso) return "";
@@ -36,15 +28,26 @@ function formatExpiry(iso) {
     }
 }
 
-function InvitationCard({ children, title, description }) {
+function GoogleIcon() {
     return (
-        <Card className={cn(authSimpleCard, "max-w-lg")}>
-            <CardHeader className="space-y-2">
-                <CardTitle className="text-2xl">{title}</CardTitle>
-                {description ? <CardDescription>{description}</CardDescription> : null}
-            </CardHeader>
-            <CardContent>{children}</CardContent>
-        </Card>
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden className="shrink-0">
+            <path
+                fill="#4285F4"
+                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+            />
+            <path
+                fill="#34A853"
+                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+            />
+            <path
+                fill="#FBBC05"
+                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+            />
+            <path
+                fill="#EA4335"
+                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+            />
+        </svg>
     );
 }
 
@@ -70,14 +73,9 @@ export default function AcceptInvitation({
         password_confirmation: "",
     });
 
-    const [showPassword, setShowPassword] = useState(false);
-    const [showConfirm, setShowConfirm] = useState(false);
-
     useEffect(() => {
         axios.get("/sanctum/csrf-cookie", { withCredentials: true }).catch(() => {});
     }, []);
-
-    const strength = useMemo(() => passwordStrength(data.password), [data.password]);
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -86,25 +84,45 @@ export default function AcceptInvitation({
         });
     };
 
+    const formError = errors.token || errors.root;
+
     if (isInvalid) {
         return (
             <>
                 <Head title="Invitación no válida" />
-                <AuthSimpleShell maxWidth="max-w-md">
-                    <InvitationCard title="Invitación no válida" description={pageError}>
-                        <p className="text-sm text-muted-foreground mb-4">
-                            Solicita una nueva invitación al administrador de tu organización.
-                        </p>
-                        <div className="flex flex-col gap-2 sm:flex-row">
-                            <Button asChild variant="outline" className="flex-1">
-                                <a href="mailto:soporte@helpdesk.local">Contactar soporte</a>
-                            </Button>
-                            <Button asChild className={cn("flex-1", btnBrand)}>
-                                <Link href="/login">Ir al inicio de sesión</Link>
-                            </Button>
+                <AuthSplitLayout
+                    topLink={{
+                        prompt: "¿Ya tienes cuenta?",
+                        href: "/login",
+                        label: "Inicia sesión",
+                    }}
+                    brandingPanel={<AcceptInvitationBrandingPanel />}
+                >
+                    <AuthPageHeader
+                        title="Invitación no válida"
+                        description={pageError || "Esta invitación no es válida o ha expirado."}
+                    />
+
+                    <div className="space-y-6">
+                        <div className="space-y-4 rounded-xl border border-border/60 bg-muted/30 p-5">
+                            <p className="text-sm text-muted-foreground">
+                                Solicita una nueva invitación al administrador de tu organización.
+                            </p>
+                            <div className="flex flex-col gap-2 sm:flex-row">
+                                <Button asChild variant="outline" className={`h-11 flex-1 rounded-lg ${btnBrandOutline}`}>
+                                    <a href="mailto:soporte@helpdesk.local">Contactar soporte</a>
+                                </Button>
+                                <Button asChild className={`h-11 flex-1 rounded-lg ${btnBrand}`}>
+                                    <Link href="/login">Ir al inicio de sesión</Link>
+                                </Button>
+                            </div>
+                            <Link href="/" className={`${linkBrand} inline-block text-sm`}>
+                                Volver a la landing
+                            </Link>
                         </div>
-                    </InvitationCard>
-                </AuthSimpleShell>
+                        <AuthBackToLoginLink />
+                    </div>
+                </AuthSplitLayout>
             </>
         );
     }
@@ -112,12 +130,22 @@ export default function AcceptInvitation({
     return (
         <>
             <Head title="Configura tu cuenta" />
-            <AuthSimpleShell maxWidth="max-w-lg">
-                <InvitationCard
+            <AuthSplitLayout
+                formClassName="max-w-lg"
+                topLink={{
+                    prompt: "¿Ya tienes cuenta?",
+                    href: "/login",
+                    label: "Inicia sesión",
+                }}
+                brandingPanel={<AcceptInvitationBrandingPanel />}
+            >
+                <AuthPageHeader
                     title="Configura tu cuenta"
                     description="Completa tus datos para entrar. Un administrador te asignará el rol y permisos según tu puesto."
-                >
-                    <div className="rounded-lg border border-border/60 bg-muted/40 p-3 text-sm space-y-1 mb-4">
+                />
+
+                <div className="space-y-6">
+                    <div className="rounded-lg border border-border/60 bg-muted/40 p-3 text-sm space-y-1">
                         <p>
                             Fuiste invitado
                             {client_name ? (
@@ -136,138 +164,157 @@ export default function AcceptInvitation({
                         </p>
                         {!assigns_role_on_accept && (
                             <p className="text-muted-foreground text-xs">
-                                Tras activar tu cuenta verás un aviso hasta que un administrador confirme tu rol.
+                                Tras activar tu cuenta verás un aviso hasta que un administrador confirme
+                                tu rol.
                             </p>
                         )}
-                        {expires_at && (
+                        {expires_at ? (
                             <Badge variant="outline" className="text-xs font-normal">
                                 Invitación válida hasta {formatExpiry(expires_at)}
                             </Badge>
-                        )}
+                        ) : null}
                     </div>
 
                     {google_enabled && google_url ? (
                         <>
-                            <Button type="button" variant="outline" className="w-full mb-4" asChild>
-                                <a href={google_url}>Continuar con Google</a>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className={`h-11 w-full rounded-lg ${btnBrandOutline}`}
+                                asChild
+                            >
+                                <a href={google_url}>
+                                    <GoogleIcon />
+                                    <span className="ml-2">Continuar con Google</span>
+                                </a>
                             </Button>
-                            <p className="text-center text-xs text-muted-foreground mb-4">
+                            <p className="text-center text-xs text-muted-foreground">
                                 O completa el formulario con contraseña
                             </p>
                         </>
                     ) : null}
 
-                    <form onSubmit={handleSubmit} className="space-y-4">
+                    <form onSubmit={handleSubmit} className="space-y-6" noValidate>
                         <input type="hidden" name="token" value={data.token} readOnly />
 
-                        <div className="space-y-2">
-                            <Label htmlFor="email">Correo</Label>
-                            <Input id="email" type="email" value={email} disabled readOnly className="bg-muted" />
-                        </div>
+                        <AuthFormSection title="Identidad">
+                            <AuthFormField
+                                id="inv-email"
+                                label="Correo"
+                                className="sm:col-span-2"
+                            >
+                                <Input
+                                    id="inv-email"
+                                    type="email"
+                                    value={email}
+                                    disabled
+                                    readOnly
+                                    className="h-11 bg-muted"
+                                />
+                            </AuthFormField>
 
-                        <div className="grid gap-4 sm:grid-cols-2">
-                            <div className="space-y-2 sm:col-span-2">
-                                <Label htmlFor="first_name">Nombre(s)</Label>
-                                <Input
-                                    id="first_name"
-                                    value={data.first_name}
-                                    onChange={(e) => setData("first_name", e.target.value)}
-                                    required
-                                    autoComplete="given-name"
-                                />
-                                {errors.first_name && (
-                                    <p className="text-xs text-destructive">{errors.first_name}</p>
-                                )}
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="paternal_last_name">Apellido paterno</Label>
-                                <Input
-                                    id="paternal_last_name"
-                                    value={data.paternal_last_name}
-                                    onChange={(e) => setData("paternal_last_name", e.target.value)}
-                                    required
-                                    autoComplete="family-name"
-                                />
-                                {errors.paternal_last_name && (
-                                    <p className="text-xs text-destructive">{errors.paternal_last_name}</p>
-                                )}
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="maternal_last_name">Apellido materno (opcional)</Label>
-                                <Input
-                                    id="maternal_last_name"
-                                    value={data.maternal_last_name}
-                                    onChange={(e) => setData("maternal_last_name", e.target.value)}
-                                    autoComplete="additional-name"
-                                />
-                            </div>
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="password">Contraseña</Label>
-                            <div className="relative">
-                                <Input
-                                    id="password"
-                                    type={showPassword ? "text" : "password"}
-                                    value={data.password}
-                                    onChange={(e) => setData("password", e.target.value)}
-                                    required
-                                    autoComplete="new-password"
-                                    className="pr-10"
-                                />
-                                <button
-                                    type="button"
-                                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                                    onClick={() => setShowPassword((v) => !v)}
-                                    tabIndex={-1}
+                            <div className="grid gap-4 sm:grid-cols-2">
+                                <AuthFormField
+                                    id="inv-first-name"
+                                    label="Nombre(s)"
+                                    error={errors.first_name}
+                                    className="sm:col-span-2"
                                 >
-                                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                                </button>
-                            </div>
-                            {data.password && (
-                                <p className={cn("text-xs", passwordStrengthClass(strength.score))}>
-                                    Seguridad: {strength.label}
-                                </p>
-                            )}
-                            {errors.password && (
-                                <p className="text-xs text-destructive">{errors.password}</p>
-                            )}
-                        </div>
+                                    <Input
+                                        id="inv-first-name"
+                                        value={data.first_name}
+                                        onChange={(e) => setData("first_name", e.target.value)}
+                                        required
+                                        autoComplete="given-name"
+                                        disabled={processing}
+                                        className="h-11"
+                                        aria-invalid={Boolean(errors.first_name)}
+                                    />
+                                </AuthFormField>
 
-                        <div className="space-y-2">
-                            <Label htmlFor="password_confirmation">Confirmar contraseña</Label>
-                            <div className="relative">
-                                <Input
-                                    id="password_confirmation"
-                                    type={showConfirm ? "text" : "password"}
+                                <AuthFormField
+                                    id="inv-paternal"
+                                    label="Apellido paterno"
+                                    error={errors.paternal_last_name}
+                                >
+                                    <Input
+                                        id="inv-paternal"
+                                        value={data.paternal_last_name}
+                                        onChange={(e) => setData("paternal_last_name", e.target.value)}
+                                        required
+                                        autoComplete="family-name"
+                                        disabled={processing}
+                                        className="h-11"
+                                        aria-invalid={Boolean(errors.paternal_last_name)}
+                                    />
+                                </AuthFormField>
+
+                                <AuthFormField
+                                    id="inv-maternal"
+                                    label="Apellido materno (opcional)"
+                                    error={errors.maternal_last_name}
+                                >
+                                    <Input
+                                        id="inv-maternal"
+                                        value={data.maternal_last_name}
+                                        onChange={(e) => setData("maternal_last_name", e.target.value)}
+                                        autoComplete="additional-name"
+                                        disabled={processing}
+                                        className="h-11"
+                                    />
+                                </AuthFormField>
+                            </div>
+                        </AuthFormSection>
+
+                        <AuthFormSection title="Acceso">
+                            <PasswordField
+                                id="inv-password"
+                                label="Contraseña"
+                                value={data.password}
+                                onChange={(e) => setData("password", e.target.value)}
+                                required
+                                autoComplete="new-password"
+                                disabled={processing}
+                                error={errors.password}
+                            />
+                            <PasswordRequirements password={data.password} />
+
+                            <div className="space-y-2">
+                                <PasswordField
+                                    id="inv-password-confirmation"
+                                    label="Confirmar contraseña"
                                     value={data.password_confirmation}
                                     onChange={(e) => setData("password_confirmation", e.target.value)}
                                     required
                                     autoComplete="new-password"
-                                    className="pr-10"
+                                    disabled={processing}
                                 />
-                                <button
-                                    type="button"
-                                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                                    onClick={() => setShowConfirm((v) => !v)}
-                                    tabIndex={-1}
-                                >
-                                    {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                                </button>
+                                <PasswordMatchHint
+                                    password={data.password}
+                                    confirmation={data.password_confirmation}
+                                />
                             </div>
-                        </div>
+                        </AuthFormSection>
 
-                        {(errors.token || errors.root) && (
-                            <p className="text-sm text-destructive">{errors.token || errors.root}</p>
-                        )}
+                        {formError ? (
+                            <AuthFormAlert error={formError} />
+                        ) : null}
 
-                        <Button type="submit" className={cn("w-full", btnBrand)} disabled={processing}>
-                            {processing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Crear mi cuenta
+                        <Button
+                            type="submit"
+                            className={`h-11 w-full gap-2 rounded-lg ${btnBrand}`}
+                            disabled={processing}
+                        >
+                            {processing ? (
+                                <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                            ) : null}
+                            <span>{processing ? "Creando cuenta..." : "Crear mi cuenta"}</span>
                         </Button>
+
+                        <AuthBackToLoginLink />
                     </form>
-                </InvitationCard>
-            </AuthSimpleShell>
+                </div>
+            </AuthSplitLayout>
         </>
     );
 }

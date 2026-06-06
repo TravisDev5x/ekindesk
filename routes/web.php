@@ -58,7 +58,17 @@ Route::get('/auth/google/callback', [\App\Http\Controllers\Auth\GoogleAuthContro
 Route::get('/register', function () {
     return Inertia::render('Auth/Register', [
         'plans' => Plan::activePublic()->get([
-            'id', 'name', 'slug', 'type', 'price_monthly', 'trial_days', 'highlighted',
+            'id',
+            'name',
+            'slug',
+            'type',
+            'price_monthly',
+            'price_yearly',
+            'max_clients',
+            'max_users',
+            'max_agents',
+            'highlighted',
+            'trial_days',
         ]),
     ]);
 })->middleware('guest')->name('register');

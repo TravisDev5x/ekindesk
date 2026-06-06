@@ -1,18 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { Head, Link } from "@inertiajs/react";
 import axios from "@/lib/axios";
+import { VerifyEmailBrandingPanel } from "@/components/auth/AuthBrandingPresets";
+import { AuthPageHeader } from "@/components/auth/AuthPageHeader";
+import { AuthSplitLayout } from "@/components/auth/AuthSplitLayout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardFooter,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
-import { AuthSimpleShell } from "@/components/auth/AuthSimpleShell";
-import { authSimpleCard } from "@/lib/marketingTheme";
+import { btnBrand, btnBrandOutline } from "@/lib/marketingTheme";
 import { badgeStatus } from "@/lib/badgeStyles";
 import { cn } from "@/lib/utils";
 
@@ -66,7 +60,12 @@ export default function VerifyEmail() {
 
     const isSuccess = status === STATUS.success;
     const isError = status === STATUS.error;
-    const title = isSuccess ? "Correo verificado" : isError ? "No se pudo verificar" : "Verificando correo";
+    const isLoading = status === STATUS.loading;
+    const title = isSuccess
+        ? "Correo verificado"
+        : isError
+          ? "No se pudo verificar"
+          : "Verificando correo";
 
     const statusBadgeClass = isSuccess
         ? badgeStatus.success
@@ -77,35 +76,54 @@ export default function VerifyEmail() {
     return (
         <>
             <Head title="Verificar correo" />
-            <AuthSimpleShell maxWidth="max-w-[440px]">
-                <Card className={authSimpleCard}>
-                    <CardHeader className="space-y-3">
-                        <Badge variant="outline" className={cn("w-fit text-xs", statusBadgeClass)}>
-                            {isSuccess ? "Verificación completa" : isError ? "Verificación fallida" : "Verificando"}
-                        </Badge>
-                        <CardTitle className="text-center">{title}</CardTitle>
-                        <CardDescription className="text-center">{message}</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-3 text-sm text-muted-foreground">
-                        <p>
-                            Si ya verificaste tu correo, puedes iniciar sesión con tus credenciales.
+            <AuthSplitLayout
+                topLink={{
+                    prompt: "¿Ya verificaste?",
+                    href: "/login",
+                    label: "Inicia sesión",
+                }}
+                brandingPanel={<VerifyEmailBrandingPanel />}
+            >
+                <AuthPageHeader title={title} description={message}>
+                    <Badge
+                        variant="outline"
+                        className={cn("mt-3 w-fit text-xs", statusBadgeClass)}
+                    >
+                        {isSuccess
+                            ? "Verificación completa"
+                            : isError
+                              ? "Verificación fallida"
+                              : "Verificando"}
+                    </Badge>
+                </AuthPageHeader>
+
+                <div className="space-y-6">
+                    <p className="text-sm text-muted-foreground">
+                        Si ya verificaste tu correo, puedes iniciar sesión con tus credenciales.
+                    </p>
+
+                    {isError ? (
+                        <p className="text-sm text-muted-foreground">
+                            El enlace puede haber expirado. Puedes intentar registrarte de nuevo o
+                            solicitar ayuda al administrador.
                         </p>
-                        {isError ? (
-                            <p>
-                                El enlace puede haber expirado. Puedes intentar registrarte de nuevo o solicitar ayuda al administrador.
-                            </p>
-                        ) : null}
-                    </CardContent>
-                    <CardFooter className="flex flex-col gap-2">
-                        <Button asChild className="w-full">
+                    ) : null}
+
+                    <div className="flex flex-col gap-2">
+                        <Button asChild className={`h-11 w-full rounded-lg ${btnBrand}`}>
                             <Link href="/login">Ir a iniciar sesión</Link>
                         </Button>
-                        <Button asChild variant="outline" className="w-full">
+                        <Button
+                            asChild
+                            variant="outline"
+                            className={`h-11 w-full rounded-lg ${btnBrandOutline}`}
+                            disabled={isLoading}
+                        >
                             <Link href="/register">Crear cuenta</Link>
                         </Button>
-                    </CardFooter>
-                </Card>
-            </AuthSimpleShell>
+                    </div>
+                </div>
+            </AuthSplitLayout>
         </>
     );
 }

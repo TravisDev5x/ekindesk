@@ -1,13 +1,26 @@
-import { useMemo, useState } from "react";
-import { Head, Link } from "@inertiajs/react";
+import { useEffect, useMemo, useState } from "react";
+import { Head } from "@inertiajs/react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import axios from "@/lib/axios";
+import { getApiErrorMessage } from "@/lib/apiErrors";
+import { focusFirstFormError } from "@/lib/focusFirstFormError";
+import { resetPasswordFormSchema } from "@/lib/passwordSchema";
+import { ResetPasswordBrandingPanel } from "@/components/auth/AuthBrandingPresets";
+import { AuthInvalidResetLinkCard } from "@/components/auth/AuthInvalidResetLinkCard";
+import { AuthBackToLoginLink, AuthFormSection } from "@/components/auth/AuthFormSection";
+import { AuthFormAlert } from "@/components/auth/AuthFormAlert";
+import { AuthFormField } from "@/components/auth/AuthFormField";
+import { AuthPageHeader } from "@/components/auth/AuthPageHeader";
+import { AuthSplitLayout } from "@/components/auth/AuthSplitLayout";
+import { PasswordField, PasswordMatchHint } from "@/components/auth/PasswordField";
+import { PasswordRequirements } from "@/components/auth/PasswordRequirements";
+import { btnBrand } from "@/lib/marketingTheme";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import axios from "@/lib/axios";
-import { strongPasswordSchema } from "@/lib/passwordSchema";
-import { AuthHeroShell } from "@/components/auth/AuthHeroShell";
-import { authHeroCard, authLinkGhost, authMessageError, authMessageSuccess } from "@/lib/marketingTheme";
+import { Loader2 } from "lucide-react";
+
+const RESET_FIELD_ORDER = ["password", "password_confirmation"];
 
 export default function ResetPassword() {
     const { token, email } = useMemo(() => {
@@ -19,103 +32,141 @@ export default function ResetPassword() {
         };
     }, []);
 
-    const [password, setPassword] = useState("");
-    const [confirm, setConfirm] = useState("");
-    const [message, setMessage] = useState("");
-    const [error, setError] = useState("");
-    const [loading, setLoading] = useState(false);
+    const [success, setSuccess] = useState("");
+    const [serverError, setServerError] = useState("");
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setError("");
-        setMessage("");
+    const {
+        register,
+        handleSubmit,
+        watch,
+        formState: { errors, isSubmitting },
+    } = useForm({
+        resolver: zodResolver(resetPasswordFormSchema),
+        defaultValues: {
+            password: "",
+            password_confirmation: "",
+        },
+        mode: "onBlur",
+    });
 
-        if (!password || !confirm) {
-            setError("La contraseña y confirmación son obligatorias.");
-            return;
-        }
+    const password = watch("password");
+    const passwordConfirmation = watch("password_confirmation");
+    const loading = isSubmitting;
+    const invalidLink = !token || !email;
+    const formError = serverError || errors.root?.message;
 
-        const pwdCheck = strongPasswordSchema.safeParse(password);
-        if (!pwdCheck.success) {
-            const first = pwdCheck.error?.issues?.[0] ?? pwdCheck.error?.errors?.[0];
-            setError(first?.message ?? "Revisa la contraseña.");
-            return;
-        }
+    useEffect(() => {
+        axios.get("/sanctum/csrf-cookie", { withCredentials: true }).catch(() => {});
+    }, []);
 
-        if (password !== confirm) {
-            setError("Las contraseñas no coinciden.");
-            return;
-        }
+    const onSubmit = async (values) => {
+        setServerError("");
+        setSuccess("");
 
-        setLoading(true);
         try {
             await axios.post("/api/password/reset", {
                 token,
                 email,
-                password,
-                password_confirmation: confirm,
+                password: values.password,
+                password_confirmation: values.password_confirmation,
             });
-            setMessage("Contraseña actualizada, puedes iniciar sesión.");
-            setTimeout(() => {
+            setSuccess("Contraseña actualizada. Redirigiendo al inicio de sesión…");
+            window.setTimeout(() => {
                 window.location.href = "/login";
             }, 1200);
         } catch (err) {
-            setError(err?.response?.data?.message || "No se pudo restablecer la contraseña.");
-        } finally {
-            setLoading(false);
+            setServerError(getApiErrorMessage(err, "No se pudo restablecer la contraseña."));
         }
     };
 
     return (
         <>
-            <Head title="Nueva contraseña" />
-            <AuthHeroShell>
-                <Card className={`${authHeroCard} flex-shrink-0`}>
-                    <CardHeader>
-                        <CardTitle className="text-center">Nueva contraseña</CardTitle>
-                    </CardHeader>
-                    <CardContent className="pb-20 md:pb-6">
-                        <form onSubmit={handleSubmit} className="space-y-4">
-                            <div className="space-y-2">
-                                <Label>Correo</Label>
-                                <Input type="email" value={email} disabled />
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Contraseña nueva</Label>
+            <Head title="Nueva contraseña — EkinDesk" />
+            <AuthSplitLayout
+                formClassName="max-w-lg"
+                topLink={{
+                    prompt: "¿Ya la recuerdas?",
+                    href: "/login",
+                    label: "Inicia sesión",
+                }}
+                brandingPanel={<ResetPasswordBrandingPanel />}
+            >
+                <AuthPageHeader
+                    title="Nueva contraseña"
+                    description="Define una contraseña segura para tu cuenta."
+                />
+
+                {invalidLink ? (
+                    <div className="space-y-6">
+                        <AuthFormAlert error="El enlace de restablecimiento no es válido o expiró." />
+                        <AuthInvalidResetLinkCard />
+                        <AuthBackToLoginLink />
+                    </div>
+                ) : (
+                    <form
+                        onSubmit={handleSubmit(onSubmit, (fieldErrors) =>
+                            focusFirstFormError(fieldErrors, RESET_FIELD_ORDER)
+                        )}
+                        className="space-y-6"
+                        noValidate
+                    >
+                        <AuthFormSection title="Cuenta">
+                            <AuthFormField id="reset-email" label="Correo electrónico">
                                 <Input
-                                    type="password"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
+                                    id="reset-email"
+                                    type="email"
+                                    value={email}
+                                    disabled
+                                    readOnly
+                                    className="h-11 bg-muted"
+                                />
+                            </AuthFormField>
+                        </AuthFormSection>
+
+                        <AuthFormSection title="Acceso">
+                            <PasswordField
+                                id="reset-password"
+                                label="Contraseña nueva"
+                                disabled={loading}
+                                error={errors.password?.message}
+                                autoComplete="new-password"
+                                {...register("password")}
+                            />
+                            <PasswordRequirements password={password} />
+
+                            <div className="space-y-2">
+                                <PasswordField
+                                    id="reset-password-confirmation"
+                                    label="Confirmar contraseña"
                                     disabled={loading}
+                                    error={errors.password_confirmation?.message}
+                                    autoComplete="new-password"
+                                    {...register("password_confirmation")}
+                                />
+                                <PasswordMatchHint
+                                    password={password}
+                                    confirmation={passwordConfirmation}
                                 />
                             </div>
-                            <div className="space-y-2">
-                                <Label>Confirmar contraseña</Label>
-                                <Input
-                                    type="password"
-                                    value={confirm}
-                                    onChange={(e) => setConfirm(e.target.value)}
-                                    disabled={loading}
-                                />
-                            </div>
+                        </AuthFormSection>
 
-                            {message ? <p className={authMessageSuccess}>{message}</p> : null}
-                            {error ? <p className={authMessageError}>{error}</p> : null}
+                        <AuthFormAlert error={formError} success={success} />
 
-                            <Button
-                                type="submit"
-                                className="w-full min-h-[44px] md:min-h-0"
-                                disabled={loading || !token || !email}
-                            >
-                                {loading ? "Guardando..." : "Restablecer"}
-                            </Button>
-                            <Link href="/login" className={authLinkGhost} aria-disabled={loading}>
-                                Volver al inicio de sesión
-                            </Link>
-                        </form>
-                    </CardContent>
-                </Card>
-            </AuthHeroShell>
+                        <Button
+                            type="submit"
+                            disabled={loading}
+                            className={`h-11 w-full gap-2 rounded-lg ${btnBrand}`}
+                        >
+                            {loading ? (
+                                <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                            ) : null}
+                            <span>{loading ? "Guardando..." : "Restablecer contraseña"}</span>
+                        </Button>
+
+                        <AuthBackToLoginLink />
+                    </form>
+                )}
+            </AuthSplitLayout>
         </>
     );
 }

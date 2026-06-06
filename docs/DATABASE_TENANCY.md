@@ -196,6 +196,7 @@ php artisan migrate:fresh --seed   # solo entornos locales / CI
 
 # Verificar / reparar client_id denormalizado
 php artisan tenant:client-id verify
+php artisan tenant:client-id verify --strict   # CI/release: falla si huérfanos o client_id NULL
 php artisan tenant:client-id sync
 php artisan tenant:client-id sync --assign-sites   # asigna cliente PLATFORM a sedes sin client_id
 ```
@@ -207,7 +208,17 @@ docker compose -f docker-compose.postgres.yml up -d
 # .env → DB_CONNECTION=pgsql, DB_DATABASE=ekindesk, DB_USERNAME=ekindesk, DB_PASSWORD=secret
 php artisan migrate:fresh --seed
 php artisan tenant:client-id verify
+php artisan tenant:client-id verify --strict   # CI/release: falla si huérfanos o client_id NULL
 ```
+
+### CI (GitHub Actions)
+
+Workflow `.github/workflows/tests.yml`:
+
+- **SQLite** — suite rápida en cada push/PR (`composer test`).
+- **PostgreSQL + RLS** — `TENANCY_PGSQL_RLS=true`, usuario `ekindesk_app` (no superuser), `composer test:pgsql` con `phpunit.pgsql.xml`.
+
+Local con PG: crear rol sin superuser, activar RLS y ejecutar `composer test:pgsql`.
 
 ## Integridad `client_id` NOT NULL
 

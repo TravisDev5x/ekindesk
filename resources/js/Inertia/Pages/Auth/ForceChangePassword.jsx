@@ -1,14 +1,17 @@
 import { useState } from "react";
 import { Head, usePage } from "@inertiajs/react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
 import axios from "@/lib/axios";
 import { strongPasswordSchema } from "@/lib/passwordSchema";
-import { AuthSimpleShell } from "@/components/auth/AuthSimpleShell";
-import { authSimpleCard, authMessageError, authMessageSuccess, btnBrand } from "@/lib/marketingTheme";
-import { cn } from "@/lib/utils";
+import { ForceChangePasswordBrandingPanel } from "@/components/auth/AuthBrandingPresets";
+import { AuthFormAlert } from "@/components/auth/AuthFormAlert";
+import { AuthFormSection } from "@/components/auth/AuthFormSection";
+import { AuthPageHeader } from "@/components/auth/AuthPageHeader";
+import { AuthSplitLayout } from "@/components/auth/AuthSplitLayout";
+import { PasswordField, PasswordMatchHint } from "@/components/auth/PasswordField";
+import { PasswordRequirements } from "@/components/auth/PasswordRequirements";
+import { btnBrand } from "@/lib/marketingTheme";
+import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 
 export default function ForceChangePassword() {
     const { auth } = usePage().props;
@@ -58,59 +61,65 @@ export default function ForceChangePassword() {
         }
     };
 
+    const description = user?.name
+        ? `${user.name}, por seguridad debes cambiar la contraseña antes de continuar.`
+        : "Por seguridad debes cambiar la contraseña antes de continuar.";
+
     return (
         <>
             <Head title="Actualizar contraseña" />
-            <AuthSimpleShell maxWidth="max-w-[420px]">
-                <Card className={authSimpleCard}>
-                    <CardHeader>
-                        <CardTitle className="text-center">Actualiza tu contraseña</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <p className="text-sm text-muted-foreground mb-4">
-                            {user?.name ? `${user.name}, ` : ""}por seguridad debes cambiar la contraseña antes de continuar.
-                        </p>
-                        <form onSubmit={submit} className="space-y-4">
-                            <div className="space-y-2">
-                                <Label>Contraseña actual</Label>
-                                <Input
-                                    type="password"
-                                    value={current}
-                                    onChange={(e) => setCurrent(e.target.value)}
-                                    disabled={loading}
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Nueva contraseña</Label>
-                                <Input
-                                    type="password"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    disabled={loading}
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Confirmar contraseña</Label>
-                                <Input
-                                    type="password"
-                                    value={confirm}
-                                    onChange={(e) => setConfirm(e.target.value)}
-                                    disabled={loading}
-                                />
-                            </div>
-                            {error ? <p className={authMessageError}>{error}</p> : null}
-                            {message ? <p className={authMessageSuccess}>{message}</p> : null}
-                            <Button
-                                type="submit"
-                                className={cn("w-full", btnBrand)}
+            <AuthSplitLayout
+                formClassName="max-w-lg"
+                brandingPanel={<ForceChangePasswordBrandingPanel />}
+            >
+                <AuthPageHeader title="Actualiza tu contraseña" description={description} />
+
+                <form onSubmit={submit} className="space-y-6" noValidate>
+                    <AuthFormSection title="Seguridad">
+                        <PasswordField
+                            id="force-current-password"
+                            label="Contraseña actual"
+                            autoComplete="current-password"
+                            disabled={loading}
+                            value={current}
+                            onChange={(e) => setCurrent(e.target.value)}
+                        />
+
+                        <PasswordField
+                            id="force-new-password"
+                            label="Nueva contraseña"
+                            autoComplete="new-password"
+                            disabled={loading}
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                        />
+                        <PasswordRequirements password={password} />
+
+                        <div className="space-y-2">
+                            <PasswordField
+                                id="force-confirm-password"
+                                label="Confirmar contraseña"
+                                autoComplete="new-password"
                                 disabled={loading}
-                            >
-                                {loading ? "Guardando..." : "Guardar y continuar"}
-                            </Button>
-                        </form>
-                    </CardContent>
-                </Card>
-            </AuthSimpleShell>
+                                value={confirm}
+                                onChange={(e) => setConfirm(e.target.value)}
+                            />
+                            <PasswordMatchHint password={password} confirmation={confirm} />
+                        </div>
+                    </AuthFormSection>
+
+                    <AuthFormAlert error={error} success={message} />
+
+                    <Button
+                        type="submit"
+                        className={`h-11 w-full gap-2 rounded-lg ${btnBrand}`}
+                        disabled={loading}
+                    >
+                        {loading ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : null}
+                        <span>{loading ? "Guardando..." : "Guardar y continuar"}</span>
+                    </Button>
+                </form>
+            </AuthSplitLayout>
         </>
     );
 }
