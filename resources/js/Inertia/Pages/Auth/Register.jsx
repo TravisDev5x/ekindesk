@@ -8,8 +8,9 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/com
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { PlanTypeBadge } from "@/components/badges/EntityBadges";
-import { AuthHeroShell } from "@/components/auth/AuthHeroShell";
-import { authHeroCard, authMessageError, authMessageSuccess, passwordStrengthClass } from "@/lib/marketingTheme";
+import { AuthBrandingPanel } from "@/components/auth/AuthBrandingPanel";
+import { AuthSplitLayout } from "@/components/auth/AuthSplitLayout";
+import { authMessageError, authMessageSuccess, linkBrand, passwordStrengthClass } from "@/lib/marketingTheme";
 import { cn } from "@/lib/utils";
 import { Eye, EyeOff, Check, X } from "lucide-react";
 
@@ -149,16 +150,44 @@ export default function Register() {
 
     return (
         <>
-            <Head title="Registro de usuario" />
-            <AuthHeroShell contentClassName="max-w-[460px]">
-                <Card
-                    className={`${authHeroCard} max-h-[90dvh] flex flex-col overflow-hidden`}
-                >
-                    <CardHeader className="shrink-0">
-                        <CardTitle className="text-center">Registro de operador</CardTitle>
-                    </CardHeader>
-                    <CardContent className="min-h-0 overflow-y-auto pb-20 md:pb-[max(1rem,env(safe-area-inset-bottom))]">
-                        <form onSubmit={handleSubmit} className="space-y-4">
+            <Head title="Registro de operador — EkinDesk" />
+            <AuthSplitLayout
+                tenant={{}}
+                formClassName="max-w-lg"
+                topLink={{
+                    prompt: "¿Ya tienes cuenta?",
+                    href: "/login",
+                    label: "Inicia sesión",
+                }}
+                brandingPanel={
+                    <AuthBrandingPanel
+                        badgeLabel="Registro MSP"
+                        title={
+                            <>
+                                Crea tu cuenta
+                                <br />
+                                en minutos
+                            </>
+                        }
+                        description="Registra tu empresa de soporte, verifica tu correo y configura tu primer cliente. Pensado para equipos MSP que quieren operar con orden desde el día uno."
+                        bullets={[
+                            { text: "Registro en 3 minutos · Sin tarjeta de crédito." },
+                            { text: "Verificación por correo antes de activar la cuenta." },
+                            { text: "Datos aislados por cliente desde el inicio.", dotClassName: "bg-muted-foreground" },
+                        ]}
+                    />
+                }
+            >
+                <div className="mb-6">
+                    <h1 className="text-2xl font-bold tracking-tight text-foreground">
+                        Registro de operador
+                    </h1>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                        Completa tus datos para crear la cuenta de administrador.
+                    </p>
+                </div>
+
+                <form onSubmit={handleSubmit} className="space-y-4">
                             {selectedPlan && (
                                 <Card className="border-primary/30 bg-primary/5 shadow-none">
                                     <CardHeader className="py-3 px-4">
@@ -181,12 +210,12 @@ export default function Register() {
                                                 <Badge variant="secondary">Recomendado</Badge>
                                             )}
                                         </div>
-                                        <a
-                                            href="/landing#pricing"
-                                            className="text-xs text-primary hover:underline inline-block mt-2"
+                                        <Link
+                                            href="/#pricing"
+                                            className={`${linkBrand} mt-2 inline-block text-xs`}
                                         >
                                             Cambiar plan
-                                        </a>
+                                        </Link>
                                     </CardHeader>
                                 </Card>
                             )}
@@ -363,16 +392,8 @@ export default function Register() {
                             <Button type="submit" className="w-full min-h-[44px]" disabled={loading}>
                                 {loading ? "Registrando..." : "Crear cuenta"}
                             </Button>
-                            <p className="text-center text-xs text-muted-foreground">
-                                ¿Ya tienes cuenta?{" "}
-                                <Link href="/login" className="text-primary hover:underline">
-                                    Inicia sesión
-                                </Link>
-                            </p>
-                        </form>
-                    </CardContent>
-                </Card>
-            </AuthHeroShell>
+                </form>
+            </AuthSplitLayout>
         </>
     );
 }

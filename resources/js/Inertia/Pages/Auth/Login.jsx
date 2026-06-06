@@ -6,26 +6,16 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { Loader2, Eye, EyeOff } from "lucide-react";
+import { AuthBrandingPanel } from "@/components/auth/AuthBrandingPanel";
+import { AuthSplitLayout } from "@/components/auth/AuthSplitLayout";
 import {
-    authCard,
-    authPanelSide,
-    brandBadgeSm,
-    brandPanelGlow,
     btnBrand,
     btnBrandOutline,
     linkBrand,
-    surfaceAuth,
 } from "@/lib/marketingTheme";
-import {
-    getTenantBrandName,
-    isClientPortalTenant,
-    resolveTenantBrandCssVars,
-} from "@/lib/tenantBranding";
-import { TenantBrandLoginMark } from "@/components/TenantBrand";
+import { getTenantBrandName, isClientPortalTenant } from "@/lib/tenantBranding";
 import { statusDotInfo } from "@/lib/badgeStyles";
-import { cn } from "@/lib/utils";
 
 function GoogleIcon() {
     return (
@@ -50,69 +40,6 @@ function GoogleIcon() {
     );
 }
 
-function LoginBrandingColumn({ tenant }) {
-    const brandName = getTenantBrandName(tenant, "EkinDesk");
-    const isPortal = isClientPortalTenant(tenant);
-    const welcome =
-        tenant?.portal_welcome_message ||
-        (isPortal
-            ? `Accede al portal de ${brandName}.`
-            : "Inicia sesión con el correo de tu cuenta para entrar al panel de tu negocio.");
-
-    return (
-        <aside
-            className={authPanelSide}
-            style={resolveTenantBrandCssVars(tenant)}
-        >
-            <div className={brandPanelGlow} aria-hidden />
-
-            <div className="flex items-center gap-3 relative z-10">
-                <TenantBrandLoginMark tenant={tenant} />
-                <span className="text-foreground font-bold text-xl tracking-tight">{brandName}</span>
-            </div>
-
-            <div className="relative z-10 my-auto">
-                <div className={`inline-flex items-center gap-2 ${brandBadgeSm} mb-6`}>
-                    <span className="h-2 w-2 rounded-full bg-brand animate-pulse" />
-                    {isPortal ? "Portal de tu organización" : "Acceso seguro"}
-                </div>
-
-                <h2 className="text-4xl font-black text-foreground leading-tight">
-                    Bienvenido
-                    <br />
-                    de nuevo
-                </h2>
-
-                <p className="text-muted-foreground text-base mt-4 max-w-sm leading-relaxed">{welcome}</p>
-
-                <ul className="mt-8 space-y-3">
-                    <li className="flex items-center gap-3 text-sm text-muted-foreground">
-                        <span className="h-2 w-2 shrink-0 rounded-full bg-brand" />
-                        Misma cuenta para todas las pantallas.
-                    </li>
-                    <li className="flex items-center gap-3 text-sm text-muted-foreground">
-                        <span className={cn("h-2 w-2 shrink-0", statusDotInfo)} />
-                        Roles y permisos según tu equipo.
-                    </li>
-                    <li className="flex items-center gap-3 text-sm text-muted-foreground">
-                        <span className="h-2 w-2 shrink-0 rounded-full bg-muted-foreground" />
-                        Tus datos seguros y aislados.
-                    </li>
-                </ul>
-            </div>
-
-            <div className="relative z-10 flex gap-4 text-xs text-muted-foreground">
-                <Link href="/privacidad" className="hover:text-foreground transition-colors">
-                    Aviso de privacidad
-                </Link>
-                <Link href="/terminos" className="hover:text-foreground transition-colors">
-                    Términos del servicio
-                </Link>
-            </div>
-        </aside>
-    );
-}
-
 export default function Login() {
     const { tenant = {}, authProviders = {}, flash = {} } = usePage().props;
     const pageTitle = useMemo(() => {
@@ -120,6 +47,17 @@ export default function Login() {
             return `Iniciar sesión — ${tenant.name}`;
         }
         return "Iniciar sesión — EkinDesk";
+    }, [tenant]);
+
+    const loginWelcome = useMemo(() => {
+        const brandName = getTenantBrandName(tenant, "EkinDesk");
+        const isPortal = isClientPortalTenant(tenant);
+        return (
+            tenant?.portal_welcome_message ||
+            (isPortal
+                ? `Accede al portal de ${brandName}.`
+                : "Inicia sesión con el correo de tu cuenta para entrar al panel de tu negocio.")
+        );
     }, [tenant]);
 
     const [form, setForm] = useState({ email: "", password: "" });
@@ -217,32 +155,41 @@ export default function Login() {
     return (
         <>
             <Head title={pageTitle} />
-            <div className={`${surfaceAuth} flex`}>
-                <LoginBrandingColumn tenant={tenant} />
-
-                <div className="flex-1 flex items-center justify-center p-8 lg:p-16 bg-muted/20 min-h-screen">
-                    <div className={authCard}>
-                        <div className="flex justify-between items-start mb-6">
-                            <div className="lg:hidden flex items-center gap-3">
-                                <TenantBrandLoginMark tenant={tenant} className="h-9 w-9" />
-                                <span className="text-foreground font-bold text-lg">
-                                    {getTenantBrandName(tenant, "EkinDesk")}
-                                </span>
-                            </div>
-                            <div className="ml-auto">
-                                <ThemeToggle variant="icon" />
-                            </div>
-                        </div>
-
-                        {tenant?.mode !== "client_portal" ? (
-                            <div className="flex justify-end items-center text-sm mb-6">
-                                <span className="text-muted-foreground">¿Aún no tienes cuenta?</span>
-                                <Link href="/register" className={`${linkBrand} ml-1`}>
-                                    Crear cuenta gratis
-                                </Link>
-                            </div>
-                        ) : null}
-
+            <AuthSplitLayout
+                tenant={tenant}
+                topLink={
+                    tenant?.mode !== "client_portal"
+                        ? {
+                              prompt: "¿Aún no tienes cuenta?",
+                              href: "/register",
+                              label: "Crear cuenta gratis",
+                          }
+                        : null
+                }
+                brandingPanel={
+                    <AuthBrandingPanel
+                        tenant={tenant}
+                        badgeLabel={
+                            isClientPortalTenant(tenant)
+                                ? "Portal de tu organización"
+                                : "Acceso seguro"
+                        }
+                        title={
+                            <>
+                                Bienvenido
+                                <br />
+                                de nuevo
+                            </>
+                        }
+                        description={loginWelcome}
+                        bullets={[
+                            { text: "Misma cuenta para todas las pantallas." },
+                            { text: "Roles y permisos según tu equipo.", dotClassName: statusDotInfo },
+                            { text: "Tus datos seguros y aislados.", dotClassName: "bg-muted-foreground" },
+                        ]}
+                    />
+                }
+            >
                         <div>
                             {authProviders?.google ? (
                                 <Button
@@ -374,9 +321,7 @@ export default function Login() {
                                 <span>{loading ? "Entrando..." : "Entrar al panel"}</span>
                             </Button>
                         </form>
-                    </div>
-                </div>
-            </div>
+            </AuthSplitLayout>
         </>
     );
 }
