@@ -1,13 +1,14 @@
 import { useEffect, useRef, useState } from "react";
-import { Head, Link } from "@inertiajs/react";
+import { Head } from "@inertiajs/react";
 import axios from "@/lib/axios";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { ForgotPasswordBrandingPanel } from "@/components/auth/AuthBrandingPresets";
+import { AuthBackToLoginLink, AuthFormSection } from "@/components/auth/AuthFormSection";
 import { AuthFormAlert } from "@/components/auth/AuthFormAlert";
 import { AuthFormField } from "@/components/auth/AuthFormField";
 import { AuthPageHeader } from "@/components/auth/AuthPageHeader";
 import { AuthSplitLayout } from "@/components/auth/AuthSplitLayout";
-import { btnBrand, linkBrand } from "@/lib/marketingTheme";
+import { btnBrand } from "@/lib/marketingTheme";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader2 } from "lucide-react";
@@ -103,32 +104,34 @@ export default function ForgotPassword() {
                     description="Indica tu correo o número de empleado. Te guiaremos para recuperar el acceso."
                 />
 
-                <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-                    <AuthFormField
-                        id="forgot-identifier"
-                        label="Correo o número de empleado"
-                        hint="Si no tienes correo institucional, escribe tu número de empleado. Un administrador puede restablecer tu contraseña por WhatsApp empresarial, teléfono o en persona."
-                    >
-                        <Input
-                            ref={identifierRef}
+                <form onSubmit={handleSubmit} className="space-y-6" noValidate>
+                    <AuthFormSection title="Recuperación">
+                        <AuthFormField
                             id="forgot-identifier"
-                            name="identifier"
-                            type="text"
-                            value={identifier}
-                            onChange={(e) => setIdentifier(e.target.value)}
-                            placeholder="correo@empresa.com o 12345"
-                            autoComplete="username"
-                            disabled={loading}
-                            className="h-11"
-                            aria-invalid={Boolean(error)}
-                        />
-                    </AuthFormField>
+                            label="Correo o número de empleado"
+                            hint="Si no tienes correo institucional, escribe tu número de empleado. Un administrador puede restablecer tu contraseña por WhatsApp empresarial, teléfono o en persona."
+                        >
+                            <Input
+                                ref={identifierRef}
+                                id="forgot-identifier"
+                                name="identifier"
+                                type="text"
+                                value={identifier}
+                                onChange={(e) => setIdentifier(e.target.value)}
+                                placeholder="correo@empresa.com o 12345"
+                                autoComplete="username"
+                                disabled={loading}
+                                className="h-11"
+                                aria-invalid={Boolean(error)}
+                            />
+                        </AuthFormField>
 
-                    {sitekey ? (
-                        <div className="rounded-md border border-border/60 bg-muted/30 p-3">
-                            <div className="h-captcha" ref={captchaElRef} />
-                        </div>
-                    ) : null}
+                        {sitekey ? (
+                            <div className="rounded-md border border-border/60 bg-muted/30 p-3">
+                                <div className="h-captcha" ref={captchaElRef} />
+                            </div>
+                        ) : null}
+                    </AuthFormSection>
 
                     <AuthFormAlert error={error} success={message} />
 
@@ -141,12 +144,7 @@ export default function ForgotPassword() {
                         <span>{loading ? "Enviando..." : "Enviar solicitud"}</span>
                     </Button>
 
-                    <Link
-                        href="/login"
-                        className={`${linkBrand} inline-flex h-11 w-full items-center justify-center text-sm`}
-                    >
-                        Volver al inicio de sesión
-                    </Link>
+                    <AuthBackToLoginLink />
                 </form>
             </AuthSplitLayout>
         </>

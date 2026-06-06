@@ -20,6 +20,7 @@ import {
     RegisterPlanSummary,
     RegisterTrustLine,
 } from "@/components/auth/RegisterPlanSummary";
+import { AuthFormSection } from "@/components/auth/AuthFormSection";
 import { btnBrand } from "@/lib/marketingTheme";
 import { Loader2 } from "lucide-react";
 
@@ -42,19 +43,6 @@ const REGISTER_FIELD_ORDER = [
     "password",
     "password_confirmation",
 ];
-
-function FormSection({ title, children }) {
-    return (
-        <div className="space-y-4">
-            {title ? (
-                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    {title}
-                </p>
-            ) : null}
-            {children}
-        </div>
-    );
-}
 
 export default function Register() {
     const { plans = [], authProviders = {} } = usePage().props;
@@ -166,7 +154,7 @@ export default function Register() {
                         className="space-y-6"
                         noValidate
                     >
-                    <FormSection title="Identidad">
+                    <AuthFormSection title="Identidad">
                         <div className="grid gap-4 sm:grid-cols-2">
                             <AuthFormField
                                 id="reg-first-name"
@@ -216,9 +204,9 @@ export default function Register() {
                                 />
                             </AuthFormField>
                         </div>
-                    </FormSection>
+                    </AuthFormSection>
 
-                    <FormSection title="Contacto">
+                    <AuthFormSection title="Contacto">
                         <div className="grid gap-4 sm:grid-cols-2">
                             <AuthFormField
                                 id="reg-email"
@@ -259,9 +247,9 @@ export default function Register() {
                                 />
                             </AuthFormField>
                         </div>
-                    </FormSection>
+                    </AuthFormSection>
 
-                    <FormSection title="Acceso">
+                    <AuthFormSection title="Acceso">
                         <PasswordField
                             id="reg-password"
                             label="Contraseña"
@@ -284,7 +272,7 @@ export default function Register() {
                                 confirmation={passwordConfirmation}
                             />
                         </div>
-                    </FormSection>
+                    </AuthFormSection>
 
                     <p className="text-xs text-muted-foreground">
                         Recibirás un enlace de verificación en tu correo para activar la cuenta y
