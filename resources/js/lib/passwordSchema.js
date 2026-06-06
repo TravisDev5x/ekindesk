@@ -62,3 +62,5 @@ export const registerFormSchema = z
         message: "Las contraseñas no coinciden",
         path: ["password_confirmation"],
     });
+
+export const resetPasswordFormSchema = passwordWithConfirmationSchema;
