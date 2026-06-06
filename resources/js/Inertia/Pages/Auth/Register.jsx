@@ -1,22 +1,24 @@
 import { useEffect, useMemo, useState } from "react";
-import { Head, Link, usePage } from "@inertiajs/react";
+import { Head, usePage } from "@inertiajs/react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import axios from "@/lib/axios";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { registerFormSchema } from "@/lib/passwordSchema";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { PlanTypeBadge } from "@/components/badges/EntityBadges";
+import { Button } from "@/components/ui/button";
 import { AuthBrandingPanel } from "@/components/auth/AuthBrandingPanel";
 import { AuthFormAlert } from "@/components/auth/AuthFormAlert";
 import { AuthFormField } from "@/components/auth/AuthFormField";
+import { AuthGoogleSection } from "@/components/auth/AuthGoogleSection";
 import { AuthSplitLayout } from "@/components/auth/AuthSplitLayout";
 import { PasswordField, PasswordMatchHint } from "@/components/auth/PasswordField";
 import { PasswordRequirements } from "@/components/auth/PasswordRequirements";
-import { btnBrand, linkBrand } from "@/lib/marketingTheme";
+import {
+    RegisterPlanSummary,
+    RegisterTrustLine,
+} from "@/components/auth/RegisterPlanSummary";
+import { btnBrand } from "@/lib/marketingTheme";
 import { Loader2 } from "lucide-react";
 
 const defaultValues = {
@@ -28,12 +30,6 @@ const defaultValues = {
     password: "",
     password_confirmation: "",
 };
-
-function formatPlanPrice(value) {
-    const n = Number(value);
-    if (!n) return "A medida";
-    return new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(n);
-}
 
 function FormSection({ title, children }) {
     return (
@@ -49,7 +45,7 @@ function FormSection({ title, children }) {
 }
 
 export default function Register() {
-    const { plans = [] } = usePage().props;
+    const { plans = [], authProviders = {} } = usePage().props;
 
     const planSlug = useMemo(() => {
         if (typeof window === "undefined") return null;
@@ -161,41 +157,20 @@ export default function Register() {
                     <p className="mt-1 text-sm text-muted-foreground">
                         Completa tus datos para crear la cuenta de administrador.
                     </p>
+                    <RegisterTrustLine className="mt-3" />
                 </div>
 
-                <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" noValidate>
-                    {selectedPlan ? (
-                        <Card className="border-brand/30 bg-brand/5 shadow-none">
-                            <CardHeader className="px-4 py-3">
-                                <div className="flex items-start justify-between gap-2">
-                                    <div>
-                                        <div className="flex flex-wrap items-center gap-2">
-                                            <CardTitle className="text-base">
-                                                Plan {selectedPlan.name}
-                                            </CardTitle>
-                                            <PlanTypeBadge type={selectedPlan.type} />
-                                        </div>
-                                        <CardDescription className="text-xs">
-                                            {formatPlanPrice(selectedPlan.price_monthly)}/mes
-                                            {selectedPlan.trial_days > 0
-                                                ? ` · ${selectedPlan.trial_days} días de prueba`
-                                                : ""}
-                                        </CardDescription>
-                                    </div>
-                                    {selectedPlan.highlighted ? (
-                                        <Badge variant="secondary">Recomendado</Badge>
-                                    ) : null}
-                                </div>
-                                <Link
-                                    href="/#pricing"
-                                    className={`${linkBrand} mt-2 inline-block text-xs`}
-                                >
-                                    Cambiar plan
-                                </Link>
-                            </CardHeader>
-                        </Card>
-                    ) : null}
+                <div className="space-y-6">
+                    <RegisterPlanSummary plan={selectedPlan} planSlug={planSlug} />
 
+                    <AuthGoogleSection
+                        enabled={Boolean(authProviders?.google)}
+                        href="/auth/google/redirect?intent=login"
+                        mode="register"
+                        disabled={loading}
+                    />
+
+                    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" noValidate>
                     <FormSection title="Identidad">
                         <div className="grid gap-4 sm:grid-cols-2">
                             <AuthFormField
@@ -331,7 +306,8 @@ export default function Register() {
                         {loading ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : null}
                         <span>{loading ? "Registrando..." : "Crear cuenta"}</span>
                     </Button>
-                </form>
+                    </form>
+                </div>
             </AuthSplitLayout>
         </>
     );
