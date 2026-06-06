@@ -65,3 +65,66 @@ export function ResetPasswordBrandingPanel() {
         />
     );
 }
+
+export function VerifyEmailBrandingPanel() {
+    return (
+        <AuthBrandingPanel
+            badgeLabel="Verificación"
+            title={
+                <>
+                    Confirma tu
+                    <br />
+                    correo
+                </>
+            }
+            description="Validamos tu dirección para activar la cuenta y continuar con la configuración de tu empresa."
+            bullets={[
+                { text: "Enlace de un solo uso con expiración." },
+                { text: "Tras verificar, podrás iniciar sesión." },
+                { text: "Si expiró, regístrate de nuevo o pide ayuda.", dotClassName: "bg-muted-foreground" },
+            ]}
+        />
+    );
+}
+
+export function ForceChangePasswordBrandingPanel() {
+    return (
+        <AuthBrandingPanel
+            badgeLabel="Seguridad"
+            title={
+                <>
+                    Actualiza tu
+                    <br />
+                    contraseña
+                </>
+            }
+            description="Por política de seguridad debes definir una clave nueva antes de acceder al panel."
+            bullets={[
+                { text: "Misma política de complejidad que registro." },
+                { text: "Tu sesión actual se mantiene activa." },
+                { text: "Tras guardar, entrarás al panel principal.", dotClassName: "bg-muted-foreground" },
+            ]}
+        />
+    );
+}
+
+export function AcceptInvitationBrandingPanel() {
+    return (
+        <AuthBrandingPanel
+            badgeLabel="Invitación"
+            title={
+                <>
+                    Únete a tu
+                    <br />
+                    equipo
+                </>
+            }
+            description="Completa tu perfil con la invitación de tu administrador. Tus permisos se asignarán según tu rol."
+            bullets={[
+                { text: "Invitación personal con fecha de expiración." },
+                { text: "Contraseña segura o acceso con Google." },
+                { text: "Datos aislados por organización.", dotClassName: "bg-muted-foreground" },
+            ]}
+        />
+    );
+}
