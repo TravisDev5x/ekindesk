@@ -24,24 +24,31 @@ class OperatorScopeService
      * Acceso transversal dentro del MSP (todos los clientes del operador).
      * Ya no implica ver toda la plataforma (eso es solo super_admin).
      */
-    public function hasMspWideAccess(User $user): bool
+    public function hasMspWideAccess(User $user, string $module = 'any'): bool
     {
         if ($this->bypassesOperatorScope($user)) {
             return true;
         }
 
-        return $user->is_operator
-            || $user->can('clients.view_all')
-            || $user->can('tickets.manage_all')
-            || $user->can('incidents.manage_all');
+        if ($user->is_operator || $user->can('clients.view_all')) {
+            return true;
+        }
+
+        return match ($module) {
+            'tickets'   => $user->can('tickets.manage_all'),
+            'incidents' => $user->can('incidents.manage_all'),
+            default     => $user->can('tickets.manage_all') || $user->can('incidents.manage_all'),
+        };
     }
 
     /**
      * Acceso transversal a todos los clientes del operador MSP (no solo el tenant vinculado por sede/client_id).
+     * Acepta $module ('tickets'|'incidents'|'any') para evitar que permisos de un módulo
+     * eleven el scope en otro (ej: incidents.manage_all no debe dar MSP-wide en tickets).
      */
-    public function usesOperatorMspWideScope(User $user): bool
+    public function usesOperatorMspWideScope(User $user, string $module = 'any'): bool
     {
-        if ($this->bypassesOperatorScope($user) || ! $this->hasMspWideAccess($user)) {
+        if ($this->bypassesOperatorScope($user) || ! $this->hasMspWideAccess($user, $module)) {
             return false;
         }
 
@@ -190,7 +197,7 @@ class OperatorScopeService
             return $query;
         }
 
-        if ($this->usesOperatorMspWideScope($user)) {
+        if ($this->usesOperatorMspWideScope($user, 'tickets')) {
             $operatorId = $this->resolveOperatorUserId($user);
             if (! $operatorId) {
                 return $this->usesLegacyMspWideAccess($user) ? $query : $query->whereRaw('0 = 1');
@@ -230,7 +237,7 @@ class OperatorScopeService
             return $query;
         }
 
-        if ($this->usesOperatorMspWideScope($user)) {
+        if ($this->usesOperatorMspWideScope($user, 'incidents')) {
             $operatorId = $this->resolveOperatorUserId($user);
             if (! $operatorId) {
                 return $this->usesLegacyMspWideAccess($user) ? $query : $query->whereRaw('0 = 1');

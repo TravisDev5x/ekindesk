@@ -19,18 +19,24 @@ class ResolveTenantContext
         $subdomain = $request->header('X-Tenant-Subdomain');
 
         if (! $subdomain && $request->getHost()) {
-            $host = $request->getHost();
+            $host = strtolower($request->getHost());
             $base = config('tenancy.base_domain');
-            if ($base && str_ends_with($host, '.'.$base)) {
-                $subdomain = substr($host, 0, -strlen('.'.$base));
+            if ($base && str_ends_with($host, '.'.strtolower($base))) {
+                $subdomain = substr($host, 0, -strlen('.'.strtolower($base)));
             } elseif (substr_count($host, '.') >= 2) {
                 $parts = explode('.', $host);
-                $subdomain = $parts[0] !== 'www' ? $parts[0] : null;
+                $first = $parts[0];
+                if (! in_array($first, ['www', 'app', 'api'], true)) {
+                    $subdomain = $first;
+                }
             }
         }
 
-        if (is_string($subdomain) && $subdomain !== '') {
-            $request->attributes->set('tenant_subdomain', strtolower($subdomain));
+        $subdomain = is_string($subdomain) ? strtolower(trim($subdomain)) : null;
+
+        $reserved = config('tenancy.reserved_subdomains', []);
+        if ($subdomain && $subdomain !== '' && ! in_array($subdomain, $reserved, true)) {
+            $request->attributes->set('tenant_subdomain', $subdomain);
         }
 
         return $next($request);

@@ -266,7 +266,7 @@ class UserController extends Controller
 
         $originalEmail = $user->email;
 
-        $user->fill($request->except(['campaign', 'area', 'position', 'password', 'role_id', 'name']));
+        $user->fill($request->except(['campaign', 'area', 'position', 'sede', 'sede_id', 'ubicacion', 'ubicacion_id', 'password', 'role_id', 'name']));
         $user->email = $request->filled('email') ? $request->email : null;
         $user->phone = $request->filled('phone') ? $request->phone : null;
 

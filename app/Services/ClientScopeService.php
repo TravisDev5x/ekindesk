@@ -25,10 +25,6 @@ class ClientScopeService
             return $query;
         }
 
-        if ($this->operatorScope->bypassesOperatorScope($user)) {
-            return $query->where($clientColumn, $enforced);
-        }
-
         return $query->where($clientColumn, $enforced);
     }
 

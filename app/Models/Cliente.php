@@ -41,6 +41,21 @@ class Cliente extends Model
         'is_active' => 'boolean',
     ];
 
+    protected static function booted(): void
+    {
+        static::saved(function (self $client) {
+            if ($client->wasChanged('is_active') || $client->wasChanged('portal_slug')) {
+                if ($client->portal_slug) {
+                    \App\Services\TenantContextService::clearPortalCache($client->portal_slug);
+                }
+                $oldSlug = $client->getOriginal('portal_slug');
+                if ($oldSlug && $oldSlug !== $client->portal_slug) {
+                    \App\Services\TenantContextService::clearPortalCache($oldSlug);
+                }
+            }
+        });
+    }
+
     public function getBusinessNameAttribute(): string
     {
         return (string) ($this->attributes['name'] ?? '');

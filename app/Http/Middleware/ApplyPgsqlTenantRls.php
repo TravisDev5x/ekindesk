@@ -18,6 +18,10 @@ class ApplyPgsqlTenantRls
             return $next($request);
         }
 
+        if (! $request->user()) {
+            return $next($request);
+        }
+
         PgsqlRowLevelSecurity::applyForUser($request->user());
 
         try {

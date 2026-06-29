@@ -139,6 +139,11 @@ class TenantContextService
         return $subdomain;
     }
 
+    public static function clearPortalCache(string $slug): void
+    {
+        Cache::forget("tenant.portal.{$slug}");
+    }
+
     private function findClientByPortalSlug(string $slug): ?Cliente
     {
         if (! Schema::hasColumn('clients', 'portal_slug')) {
