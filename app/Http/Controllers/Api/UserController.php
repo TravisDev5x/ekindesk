@@ -350,6 +350,11 @@ class UserController extends Controller
      */
     public function destroy(Request $request, User $user)
     {
+        $actor = Auth::user();
+        if ($actor && ! $this->clientScope->assertUserAccessible($actor, $user->id)) {
+            return response()->json(['message' => 'No autorizado'], 403);
+        }
+
         $reason = $request->input('reason');
         if (is_string($reason) && strlen(trim($reason)) >= 5) {
             $user->update(['deletion_reason' => trim($reason)]);
@@ -370,8 +375,19 @@ class UserController extends Controller
             'reason' => 'required|string|min:5',
         ]);
 
-        User::whereIn('id', $request->ids)->update(['deletion_reason' => $request->reason]);
-        User::whereIn('id', $request->ids)->delete();
+        $actor = Auth::user();
+        $scopedQuery = User::whereIn('id', $request->ids);
+        if ($actor) {
+            $this->clientScope->applyUserScope($scopedQuery, $actor);
+        }
+        $accessibleIds = $scopedQuery->pluck('id')->toArray();
+
+        if (empty($accessibleIds)) {
+            return response()->json(['message' => 'No se encontraron usuarios válidos para eliminar'], 422);
+        }
+
+        User::whereIn('id', $accessibleIds)->update(['deletion_reason' => $request->reason]);
+        User::whereIn('id', $accessibleIds)->delete();
 
         return response()->json(['message' => 'Usuarios eliminados correctamente']);
     }
@@ -379,6 +395,10 @@ class UserController extends Controller
     public function restore($id)
     {
         $user = User::onlyTrashed()->findOrFail($id);
+        $actor = Auth::user();
+        if ($actor && ! $this->clientScope->assertUserAccessible($actor, $user->id)) {
+            return response()->json(['message' => 'No autorizado'], 403);
+        }
         $user->restore();
         return response()->json(['message' => 'Usuario restaurado']);
     }
@@ -386,6 +406,10 @@ class UserController extends Controller
     public function forceDelete($id)
     {
         $user = User::onlyTrashed()->findOrFail($id);
+        $actor = Auth::user();
+        if ($actor && ! $this->clientScope->assertUserAccessible($actor, $user->id)) {
+            return response()->json(['message' => 'No autorizado'], 403);
+        }
         $user->forceDelete();
         return response()->json(['message' => 'Usuario eliminado permanentemente']);
     }
@@ -395,6 +419,11 @@ class UserController extends Controller
      */
     public function toggleBlacklist(Request $request, User $user)
     {
+        $actor = Auth::user();
+        if ($actor && ! $this->clientScope->assertUserAccessible($actor, $user->id)) {
+            return response()->json(['message' => 'No autorizado'], 403);
+        }
+
         $request->validate([
             'blacklist' => 'required|boolean',
         ]);
