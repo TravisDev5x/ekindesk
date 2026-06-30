@@ -110,7 +110,8 @@ export default function Login() {
                 root.classList.add(resolved);
                 root.style.colorScheme = resolved;
             }
-            window.location.href = data?.onboarding_redirect || "/home";
+            const defaultRedirect = tenant?.mode === "client_portal" ? "/" : "/home";
+            window.location.href = data?.onboarding_redirect || defaultRedirect;
         } catch (err) {
             const status = err?.response?.status;
             const serverMessage = err?.response?.data?.errors?.root;
