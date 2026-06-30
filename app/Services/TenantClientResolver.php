@@ -15,6 +15,8 @@ use Illuminate\Support\Facades\Log;
  */
 class TenantClientResolver
 {
+    private array $validClientCache = [];
+
     public function resolve(User $user): ?int
     {
         $user->loadMissing('sede:id,client_id');
@@ -73,8 +75,14 @@ class TenantClientResolver
 
     private function validClientId(int $clientId): ?int
     {
-        return Cliente::where('id', $clientId)->where('is_active', true)->exists()
-            ? $clientId
-            : null;
+        if (! array_key_exists($clientId, $this->validClientCache)) {
+            $this->validClientCache[$clientId] = Cliente::where('id', $clientId)
+                ->where('is_active', true)
+                ->exists()
+                ? $clientId
+                : null;
+        }
+
+        return $this->validClientCache[$clientId];
     }
 }

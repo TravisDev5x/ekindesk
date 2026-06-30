@@ -169,6 +169,7 @@ class UserController extends Controller
         if ($actor && ! $this->clientScope->assertSedeAccessible($actor, (int) $sedeId)) {
             return response()->json(['message' => 'La sede no pertenece a tu cliente'], 422);
         }
+        $clientId = $sedeId ? \App\Models\Sede::where('id', $sedeId)->value('client_id') : null;
         $ubicacionId = null;
         if ($request->filled('ubicacion')) {
             $ubicacionId = \App\Models\Ubicacion::where('name', $request->ubicacion)
@@ -201,6 +202,7 @@ class UserController extends Controller
             'area_id' => $areaId,
             'position_id' => $positionId,
             'sede_id' => $sedeId,
+            'client_id' => $clientId ? (int) $clientId : null,
             'ubicacion_id' => $ubicacionId,
         ]);
 
