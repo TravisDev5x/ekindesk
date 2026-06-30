@@ -66,6 +66,8 @@ class ProcessInboundTicket implements ShouldQueue
                 'description'      => $this->parsedEmail['body_plain'],
                 'requester_id'     => $requester->id,
                 'sede_id'          => $requester->sede_id,
+                'ticket_type_id'   => $classification['ticket_type_id'] ?? null,
+                'priority_id'      => $classification['priority_id'] ?? null,
             ]);
 
             Log::info('Tikara: ticket creado por email', [
