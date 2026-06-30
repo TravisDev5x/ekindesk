@@ -256,8 +256,23 @@ Route::domain('{tenantSlug}.' . $baseDomain)
             })->name('portal.tickets.index');
 
             Route::get('/tickets/new', function (string $tenantSlug) {
+                $ticketTypes = \DB::table('ticket_types')->orderBy('id')->get(['id', 'name']);
+                $areas = \DB::table('areas')
+                    ->whereNull('client_id')
+                    ->orWhere('client_id', auth()->user()?->client_id)
+                    ->orderBy('id')
+                    ->get(['id', 'name']);
+                $defaultAreaId = $areas->first()?->id;
+                $defaultStateId = (int) (\DB::table('ticket_states')
+                    ->where(fn ($q) => $q->whereNull('is_final')->orWhere('is_final', false))
+                    ->orderBy('id')
+                    ->value('id') ?? 1);
+
                 return Inertia::render('Portal/Tickets/Create', [
-                    'tenantSlug' => $tenantSlug,
+                    'tenantSlug'     => $tenantSlug,
+                    'ticketTypes'    => $ticketTypes,
+                    'defaultAreaId'  => $defaultAreaId,
+                    'defaultStateId' => $defaultStateId,
                 ]);
             })->name('portal.tickets.create');
         });
