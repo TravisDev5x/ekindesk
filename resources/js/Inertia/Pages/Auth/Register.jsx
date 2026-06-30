@@ -119,7 +119,7 @@ export default function Register() {
 
     return (
         <>
-            <Head title="Registro de operador — EkinDesk" />
+            <Head title="Registro de operador — Tikara" />
             <AuthSplitLayout
                 tenant={{}}
                 formClassName="max-w-lg"

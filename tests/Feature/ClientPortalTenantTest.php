@@ -28,8 +28,8 @@ class ClientPortalTenantTest extends TestCase
             'is_active' => true,
         ]);
 
-        $request = Request::create('http://alpha.ekindesk.test/login', 'GET');
-        config(['tenancy.base_domain' => 'ekindesk.test']);
+        $request = Request::create('http://alpha.tikara.test/login', 'GET');
+        config(['tenancy.base_domain' => 'tikara.test']);
 
         $ctx = app(TenantContextService::class)->resolve($request);
 
@@ -54,9 +54,9 @@ class ClientPortalTenantTest extends TestCase
 
         $userB = $this->bareUser(['email' => 'userb@test.local', 'sede_id' => $siteB, 'client_id' => $clientB->id]);
 
-        $request = Request::create('http://client-a.ekindesk.test/dashboard', 'GET');
+        $request = Request::create('http://client-a.tikara.test/dashboard', 'GET');
         $request->setUserResolver(fn () => $userB);
-        config(['tenancy.base_domain' => 'ekindesk.test', 'tenancy.strict_client_portal' => true]);
+        config(['tenancy.base_domain' => 'tikara.test', 'tenancy.strict_client_portal' => true]);
 
         $service = app(TenantContextService::class);
         $service->resolve($request);
@@ -87,9 +87,9 @@ class ClientPortalTenantTest extends TestCase
         ]);
         $userB->forceFill(['email_verified_at' => now()])->save();
 
-        config(['tenancy.base_domain' => 'ekindesk.test', 'tenancy.strict_client_portal' => true]);
+        config(['tenancy.base_domain' => 'tikara.test', 'tenancy.strict_client_portal' => true]);
 
-        $response = $this->postJson('http://client-a.ekindesk.test/api/login', [
+        $response = $this->postJson('http://client-a.tikara.test/api/login', [
             'identifier' => 'portal-user@test.local',
             'password' => 'SecretPass123!',
         ]);

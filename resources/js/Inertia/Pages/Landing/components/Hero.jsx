@@ -29,7 +29,7 @@ export default function Hero() {
                     </h1>
 
                     <p className="mt-6 text-lg text-muted-foreground max-w-lg leading-relaxed">
-                        EkinDesk reúne en un solo lugar todo lo que necesita tu empresa de soporte:
+                        Tikara reúne en un solo lugar todo lo que necesita tu empresa de soporte:
                         tickets, clientes, técnicos y SLAs. Pensado para empresas MSP que quieren menos
                         caos y más control.
                     </p>

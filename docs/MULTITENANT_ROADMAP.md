@@ -56,7 +56,7 @@ Estado base (2026-06): aislamiento en aplicación (MSP + portal + login tenant-a
 | # | Tarea | Criterio de hecho |
 |---|--------|-------------------|
 | 5.1 | SIGUA: aislar por `operator_user_id` o despliegue separado | Documentado + código |
-| 5.2 | Subdominio MSP (`operador.ekindesk.test`) | Modo `msp_console` |
+| 5.2 | Subdominio MSP (`operador.tikara.test`) | Modo `msp_console` |
 | 5.3 | SSO/OIDC por cliente (opcional) | Login federado en portal |
 | 5.4 | Panel “URL de portal” en ficha cliente + copiar enlace | UX operador |
 | 5.5 | Monitoreo: intentos login portal incorrecto, 403 tenant | Alertas |

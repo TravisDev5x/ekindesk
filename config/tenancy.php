@@ -3,7 +3,7 @@
 return [
 
     /*
-    | Dominio base (ej. ekindesk.test). Subdominio = clients.portal_slug
+    | Dominio base (ej. tikara.test). Subdominio = clients.portal_slug
     | URL portal: https://{portal_slug}.{base_domain}/login
     */
     'base_domain' => env('TENANCY_BASE_DOMAIN'),

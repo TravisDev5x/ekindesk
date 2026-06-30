@@ -20,7 +20,7 @@ Con `TENANCY_STRICT_CLIENT_PORTAL=true` (default):
 ## Configuración
 
 ```env
-TENANCY_BASE_DOMAIN=ekindesk.test
+TENANCY_BASE_DOMAIN=tikara.test
 TENANCY_PORTAL_SCHEME=http
 TENANCY_STRICT_CLIENT_PORTAL=true
 TENANCY_ENFORCE_SUBDOMAIN=true
@@ -29,14 +29,14 @@ TENANCY_ENFORCE_SUBDOMAIN=true
 Laragon / hosts:
 
 ```
-127.0.0.1 ekindesk.test
-127.0.0.1 cliente-a.ekindesk.test
+127.0.0.1 tikara.test
+127.0.0.1 cliente-a.tikara.test
 ```
 
 Sanctum:
 
 ```
-SANCTUM_STATEFUL_DOMAINS=localhost,ekindesk.test,cliente-a.ekindesk.test
+SANCTUM_STATEFUL_DOMAINS=localhost,tikara.test,cliente-a.tikara.test
 ```
 
 ## Migración
@@ -85,8 +85,8 @@ Fase futura: `model_has_roles.client_id` o teams por tenant.
 
 | URL | Modo |
 |-----|------|
-| `ekindesk.test` | Plataforma / MSP (varios clientes del operador) |
-| `acme-corp.ekindesk.test` | Portal **solo** empresa Acme Corp |
+| `tikara.test` | Plataforma / MSP (varios clientes del operador) |
+| `acme-corp.tikara.test` | Portal **solo** empresa Acme Corp |
 
 ## Frontend
 
@@ -94,7 +94,7 @@ Props Inertia compartidas: `tenant` (`mode`, `name`, `logo_path`, `portal_primar
 
 - **Login:** panel lateral y formulario móvil (`Auth/Login.jsx`).
 - **App autenticada:** sidebar (`Sidebar.jsx`), breadcrumb/header (`AuthenticatedLayout.jsx`) y variable CSS `--brand` en portal cliente.
-- **Consola MSP** (dominio raíz): sigue mostrando marca EkinDesk; `tenant.mode === "platform"`.
+- **Consola MSP** (dominio raíz): sigue mostrando marca Tikara; `tenant.mode === "platform"`.
 
 Utilidades: `resources/js/lib/tenantBranding.js`, componentes `resources/js/components/TenantBrand.jsx`.
 

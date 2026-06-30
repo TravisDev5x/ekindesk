@@ -27,7 +27,7 @@ function BrandLogo() {
             <div className={`h-8 w-8 ${brandLogo}`}>
                 E
             </div>
-            <span className="text-lg font-bold text-foreground tracking-tight">EkinDesk</span>
+            <span className="text-lg font-bold text-foreground tracking-tight">Tikara</span>
         </Link>
     );
 }

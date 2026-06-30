@@ -16,7 +16,7 @@ trait CreatesMspTwinClientFixtures
     protected function configureTwinClientTenancy(): void
     {
         config([
-            'tenancy.base_domain' => 'ekindesk.test',
+            'tenancy.base_domain' => 'tikara.test',
             'tenancy.strict_client_portal' => true,
             'tenancy.legacy_msp_wide_access' => false,
         ]);
@@ -220,7 +220,7 @@ trait CreatesMspTwinClientFixtures
 
     protected function portalApiUrl(Cliente $client, string $path): string
     {
-        return 'http://'.$client->portal_slug.'.ekindesk.test'.'/'.ltrim($path, '/');
+        return 'http://'.$client->portal_slug.'.tikara.test'.'/'.ltrim($path, '/');
     }
 
     private function createIsolationAgent(int $areaId, int $positionId, int $siteId, int $clientId, string $prefix): User

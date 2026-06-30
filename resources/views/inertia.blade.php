@@ -5,7 +5,7 @@
     (function () {
       try {
         var VALID = ['light', 'dark', 'system'];
-        var stored = localStorage.getItem('ekindesk_theme') || localStorage.getItem('theme');
+        var stored = localStorage.getItem('tikara_theme') || localStorage.getItem('theme');
         var pref = VALID.indexOf(stored) >= 0 ? stored : 'system';
         var resolved = pref === 'system'
           ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')

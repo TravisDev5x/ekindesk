@@ -140,7 +140,7 @@ function PlanCard({ plan, billingCycle }) {
                         variant="outline"
                         className={`h-11 w-full rounded-lg shadow-none transition-all duration-200 ${btnBrandOutline}`}
                         onClick={() => {
-                            window.location.href = "mailto:ventas@ekindesk.com";
+                            window.location.href = "mailto:ventas@tikara.mx";
                         }}
                     >
                         Contactar ventas

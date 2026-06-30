@@ -1,5 +1,5 @@
 /** Preferencia de tema: light | dark | system (sigue OS). */
-export const THEME_STORAGE_KEY = "ekindesk_theme";
+export const THEME_STORAGE_KEY = "tikara_theme";
 export const THEME_LEGACY_KEY = "theme";
 export const THEME_VALUES = ["light", "dark", "system"];
 

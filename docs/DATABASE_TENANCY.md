@@ -2,7 +2,7 @@
 
 ## Modelo de aislamiento
 
-EkinDesk usa un modelo **MSP (operador) → clientes finales (tenant operativo)**:
+Tikara usa un modelo **MSP (operador) → clientes finales (tenant operativo)**:
 
 | Nivel | Tabla / columna | Rol |
 |-------|-----------------|-----|
@@ -26,8 +26,8 @@ En `.env`:
 DB_CONNECTION=pgsql
 DB_HOST=127.0.0.1
 DB_PORT=5432
-DB_DATABASE=ekindesk
-DB_USERNAME=ekindesk
+DB_DATABASE=tikara
+DB_USERNAME=tikara
 DB_PASSWORD=secret
 DB_CHARSET=utf8
 DB_SSLMODE=prefer
@@ -160,7 +160,7 @@ TENANCY_PGSQL_RLS=true
 ```
 
 ```bash
-php artisan migrate   # aplica política ekindesk_tenant_isolation
+php artisan migrate   # aplica política tikara_tenant_isolation
 ```
 
 ### Variables de sesión (por petición HTTP)
@@ -179,9 +179,9 @@ php artisan migrate   # aplica política ekindesk_tenant_isolation
 Con `FORCE ROW LEVEL SECURITY`, el usuario en `.env` **no debe ser superuser** (los superusers ignoran RLS). Crear rol dedicado:
 
 ```sql
-CREATE ROLE ekindesk_app LOGIN PASSWORD '...';
-GRANT USAGE ON SCHEMA public TO ekindesk_app;
-GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO ekindesk_app;
+CREATE ROLE tikara_app LOGIN PASSWORD '...';
+GRANT USAGE ON SCHEMA public TO tikara_app;
+GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO tikara_app;
 ```
 
 ### MySQL / SQLite
@@ -205,7 +205,7 @@ php artisan tenant:client-id sync --assign-sites   # asigna cliente PLATFORM a s
 
 ```bash
 docker compose -f docker-compose.postgres.yml up -d
-# .env → DB_CONNECTION=pgsql, DB_DATABASE=ekindesk, DB_USERNAME=ekindesk, DB_PASSWORD=secret
+# .env → DB_CONNECTION=pgsql, DB_DATABASE=tikara, DB_USERNAME=tikara, DB_PASSWORD=secret
 php artisan migrate:fresh --seed
 php artisan tenant:client-id verify
 php artisan tenant:client-id verify --strict   # CI/release: falla si huérfanos o client_id NULL
@@ -216,7 +216,7 @@ php artisan tenant:client-id verify --strict   # CI/release: falla si huérfanos
 Workflow `.github/workflows/tests.yml`:
 
 - **SQLite** — suite rápida en cada push/PR (`composer test`).
-- **PostgreSQL + RLS** — `TENANCY_PGSQL_RLS=true`, usuario `ekindesk_app` (no superuser), `composer test:pgsql` con `phpunit.pgsql.xml`.
+- **PostgreSQL + RLS** — `TENANCY_PGSQL_RLS=true`, usuario `tikara_app` (no superuser), `composer test:pgsql` con `phpunit.pgsql.xml`.
 
 Local con PG: crear rol sin superuser, activar RLS y ejecutar `composer test:pgsql`.
 

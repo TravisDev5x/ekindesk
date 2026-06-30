@@ -111,7 +111,7 @@ class OperatorOnboardingController extends Controller
             $user->update(['onboarding_completed' => true]);
 
             return redirect('/')
-                ->with('success', '¡Bienvenido a EkinDesk! Tu panel está listo.');
+                ->with('success', '¡Bienvenido a Tikara! Tu panel está listo.');
         }
 
         return redirect()->route('onboarding.clients');
@@ -194,7 +194,7 @@ class OperatorOnboardingController extends Controller
             $user->update(['onboarding_completed' => true]);
         });
 
-        return redirect('/')->with('success', 'Cliente agregado. ¡Bienvenido a EkinDesk!');
+        return redirect('/')->with('success', 'Cliente agregado. ¡Bienvenido a Tikara!');
     }
 
     public function skipClients()

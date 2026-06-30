@@ -155,7 +155,7 @@ Si `verify --strict` falla en datos legacy: `php artisan tenant:client-id sync -
 
 ### 3. PostgreSQL RLS (solo si `TENANCY_PGSQL_RLS=true`)
 
-- [ ] Usuario BD de aplicación **no superuser** (`ekindesk_app` o equivalente)  
+- [ ] Usuario BD de aplicación **no superuser** (`tikara_app` o equivalente)  
 - [ ] Listar tickets/incidencias/sedes solo del tenant de sesión (probar con 2 portales distintos)  
 - [ ] `php artisan tenant:client-id verify --strict` con usuario app (no bypass de consola en prod)
 

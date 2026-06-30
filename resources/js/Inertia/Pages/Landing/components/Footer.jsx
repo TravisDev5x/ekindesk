@@ -6,7 +6,7 @@ function BrandLogo() {
     return (
         <div className="flex items-center gap-2.5">
             <div className={`h-8 w-8 ${brandLogo}`}>E</div>
-            <span className="text-lg font-bold text-foreground">EkinDesk</span>
+            <span className="text-lg font-bold text-foreground">Tikara</span>
         </div>
     );
 }
@@ -108,7 +108,7 @@ export default function Footer() {
                 <Separator className="my-8 bg-border" />
 
                 <div className="flex flex-col sm:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
-                    <p>© {year} EkinDesk. Todos los derechos reservados.</p>
+                    <p>© {year} Tikara. Todos los derechos reservados.</p>
                     <p>Hecho en México 🇲🇽</p>
                 </div>
             </div>

@@ -1,6 +1,6 @@
 <div align="center">
 
-# EkinDesk
+# Tikara
 
 **Plataforma de mesa de ayuda y gestión operativa para equipos de soporte TI**  
 Modelo **MSP → empresas cliente** con aislamiento por tenant, portales por subdominio y control de acceso granular.
@@ -26,7 +26,7 @@ Modelo **MSP → empresas cliente** con aislamiento por tenant, portales por sub
 
 ---
 
-EkinDesk centraliza tickets, incidencias, catálogos, usuarios y permisos en una sola aplicación. Está pensado para MSPs y equipos internos que necesitan trazabilidad, auditoría y portales dedicados por organización.
+Tikara centraliza tickets, incidencias, catálogos, usuarios y permisos en una sola aplicación. Está pensado para MSPs y equipos internos que necesitan trazabilidad, auditoría y portales dedicados por organización.
 
 ---
 
@@ -89,8 +89,8 @@ Detalle completo: [`ARCHITECTURE.md`](ARCHITECTURE.md).
 ## Instalación rápida
 
 ```bash
-git clone https://github.com/TravisDev5x/ekindesk.git
-cd ekindesk
+git clone https://github.com/TravisDev5x/tikara.git
+cd tikara
 
 composer install
 cp .env.example .env
@@ -133,10 +133,10 @@ El login acepta **correo** o **número de empleado**.
 Variables relevantes en `.env` (ver [`docs/SANCTUM_TENANCY.md`](docs/SANCTUM_TENANCY.md)):
 
 ```env
-TENANCY_BASE_DOMAIN=ekindesk.test
+TENANCY_BASE_DOMAIN=tikara.test
 TENANCY_STRICT_CLIENT_PORTAL=true
-SESSION_DOMAIN=.ekindesk.test
-SANCTUM_STATEFUL_DOMAINS=ekindesk.test,cliente-a.ekindesk.test,localhost
+SESSION_DOMAIN=.tikara.test
+SANCTUM_STATEFUL_DOMAINS=tikara.test,cliente-a.tikara.test,localhost
 ```
 
 Cada empresa cliente puede tener un portal en `https://{portal_slug}.{base_domain}/login` con branding y aislamiento de datos.

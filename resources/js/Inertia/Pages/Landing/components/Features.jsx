@@ -54,7 +54,7 @@ export default function Features() {
                         Todo lo que tu equipo de soporte necesita
                     </h2>
                     <p className="mt-3 text-muted-foreground text-center max-w-2xl mx-auto">
-                        Desde el primer ticket hasta el cierre, EkinDesk cubre cada paso del flujo MSP.
+                        Desde el primer ticket hasta el cierre, Tikara cubre cada paso del flujo MSP.
                     </p>
                 </div>
 

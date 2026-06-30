@@ -109,7 +109,7 @@ class SessionMonitorScopeTest extends TestCase
     public function test_strict_portal_sessions_only_show_portal_client_users(): void
     {
         config([
-            'tenancy.base_domain' => 'ekindesk.test',
+            'tenancy.base_domain' => 'tikara.test',
             'tenancy.strict_client_portal' => true,
         ]);
 
@@ -155,7 +155,7 @@ class SessionMonitorScopeTest extends TestCase
         $admin = $this->bareUser(['email' => 'portal-admin@sessions.test', 'sede_id' => $siteA, 'client_id' => $clientA->id]);
         $admin->givePermissionTo('users.manage');
 
-        $request = Request::create('http://sess-portal-a.ekindesk.test/api/sessions', 'GET');
+        $request = Request::create('http://sess-portal-a.tikara.test/api/sessions', 'GET');
         $this->app->forgetInstance(TenantContextService::class);
         $this->app->instance('request', $request);
         app(TenantContextService::class)->resolve($request);

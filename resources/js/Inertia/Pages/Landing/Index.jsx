@@ -11,7 +11,7 @@ import { surfaceRoot } from "@/lib/marketingTheme";
 export default function Index({ plans = [] }) {
     return (
         <>
-            <Head title="EkinDesk — Helpdesk MSP profesional" />
+            <Head title="Tikara — Helpdesk MSP profesional" />
             <div className={surfaceRoot}>
                 <Navbar />
                 <Hero />

@@ -18,7 +18,7 @@ return [
      * IMPORTANTE: con supports_credentials=true el navegador rechaza '*'.
      * Siempre debe ser una lista concreta cuando se usan cookies de sesión.
      *
-     * Prod: CORS_ALLOWED_ORIGINS=https://app.ekindesk.com,https://otro.com
+     * Prod: CORS_ALLOWED_ORIGINS=https://app.tikara.mx,https://otro.com
      */
     'allowed_origins' => array_values(array_filter(
         array_map('trim', explode(',', env('CORS_ALLOWED_ORIGINS', '')))
@@ -26,7 +26,7 @@ return [
 
     /*
      * Patrones regex para portales dinámicos (sin tener que listar cada slug).
-     * Prod: CORS_ALLOWED_ORIGINS_PATTERNS=^https://[a-z0-9-]+\.ekindesk\.com$
+     * Prod: CORS_ALLOWED_ORIGINS_PATTERNS=^https://[a-z0-9-]+\.tikara\.com$
      */
     'allowed_origins_patterns' => array_values(array_filter(
         array_map('trim', explode(',', env('CORS_ALLOWED_ORIGINS_PATTERNS', '')))

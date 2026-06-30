@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Schema;
  */
 return new class extends Migration
 {
-    private const POLICY = 'ekindesk_tenant_isolation';
+    private const POLICY = 'tikara_tenant_isolation';
 
     public function up(): void
     {

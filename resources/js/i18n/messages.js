@@ -57,7 +57,7 @@ const messages = {
         'section.myTickets': 'Mis tickets',
         'section.incidents': 'Gestión de Incidencias',
 
-        'brand.title': 'EkinDesk',
+        'brand.title': 'Tikara',
         'brand.subtitle': 'Acceso al panel',
         'brand.portalSubtitle': 'Portal de soporte',
         'layout.skip': 'Saltar al contenido principal',

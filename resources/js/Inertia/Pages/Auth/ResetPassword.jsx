@@ -81,7 +81,7 @@ export default function ResetPassword() {
 
     return (
         <>
-            <Head title="Nueva contraseña — EkinDesk" />
+            <Head title="Nueva contraseña — Tikara" />
             <AuthSplitLayout
                 formClassName="max-w-lg"
                 topLink={{

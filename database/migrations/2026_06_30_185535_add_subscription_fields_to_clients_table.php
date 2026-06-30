@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('clients', function (Blueprint $table) {
-            // Plan de suscripción que tiene este cliente en la plataforma EkinDesk
+            // Plan de suscripción que tiene este cliente en la plataforma Tikara
             $table->foreignId('plan_id')
                   ->nullable()
                   ->after('is_active')

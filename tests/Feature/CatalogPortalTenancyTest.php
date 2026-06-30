@@ -49,9 +49,9 @@ class CatalogPortalTenancyTest extends TestCase
         Priority::create(['name' => 'Del MSP', 'level' => 4, 'is_active' => true, 'operator_user_id' => $op->id, 'client_id' => null]);
         Priority::create(['name' => 'Otro operador', 'level' => 3, 'is_active' => true, 'operator_user_id' => $otherOp->id, 'client_id' => null]);
 
-        config(['tenancy.base_domain' => 'ekindesk.test', 'tenancy.strict_client_portal' => true]);
+        config(['tenancy.base_domain' => 'tikara.test', 'tenancy.strict_client_portal' => true]);
 
-        $request = Request::create('http://portal-a.ekindesk.test/api/catalogs', 'GET');
+        $request = Request::create('http://portal-a.tikara.test/api/catalogs', 'GET');
         $this->resetTenantContext();
         $this->app->instance('request', $request);
         app(TenantContextService::class)->resolve($request);
@@ -84,9 +84,9 @@ class CatalogPortalTenancyTest extends TestCase
             'is_active' => true,
         ]);
 
-        config(['tenancy.base_domain' => 'ekindesk.test', 'tenancy.strict_client_portal' => true]);
+        config(['tenancy.base_domain' => 'tikara.test', 'tenancy.strict_client_portal' => true]);
 
-        $request = Request::create('http://portal-c.ekindesk.test/', 'GET');
+        $request = Request::create('http://portal-c.tikara.test/', 'GET');
         $this->resetTenantContext();
         $this->app->instance('request', $request);
         app(TenantContextService::class)->resolve($request);
@@ -106,7 +106,7 @@ class CatalogPortalTenancyTest extends TestCase
 
         config([
             'tenancy.catalog_per_client' => true,
-            'tenancy.base_domain' => 'ekindesk.test',
+            'tenancy.base_domain' => 'tikara.test',
             'tenancy.strict_client_portal' => true,
         ]);
 
@@ -117,7 +117,7 @@ class CatalogPortalTenancyTest extends TestCase
         Priority::create(['name' => 'Para A', 'level' => 3, 'is_active' => true, 'operator_user_id' => $op->id, 'client_id' => $clientA->id]);
         Priority::create(['name' => 'Para B', 'level' => 2, 'is_active' => true, 'operator_user_id' => $op->id, 'client_id' => $clientB->id]);
 
-        $request = Request::create('http://pc-a.ekindesk.test/', 'GET');
+        $request = Request::create('http://pc-a.tikara.test/', 'GET');
         $this->resetTenantContext();
         $this->app->instance('request', $request);
         $ctx = app(TenantContextService::class)->resolve($request);

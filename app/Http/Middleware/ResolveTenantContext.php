@@ -9,7 +9,7 @@ use Symfony\Component\HttpFoundation\Response;
 /**
  * Resuelve contexto de tenant MSP desde subdominio o cabecera (preparación SaaS).
  *
- * Ejemplo: acme.ekindesk.test → request attributes['tenant_subdomain'] = acme
+ * Ejemplo: acme.tikara.test → request attributes['tenant_subdomain'] = acme
  * Cabecera opcional: X-Tenant-Subdomain
  */
 class ResolveTenantContext

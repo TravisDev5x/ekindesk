@@ -68,7 +68,7 @@ class InvitationFlowTest extends TestCase
     public function test_create_invitation_on_strict_portal_forces_client_id(): void
     {
         config([
-            'tenancy.base_domain' => 'ekindesk.test',
+            'tenancy.base_domain' => 'tikara.test',
             'tenancy.strict_client_portal' => true,
         ]);
 
@@ -90,7 +90,7 @@ class InvitationFlowTest extends TestCase
         $admin->assignRole('admin');
         $admin->givePermissionTo('users.manage');
 
-        $request = Request::create('http://inv-portal-a.ekindesk.test/api/invitations', 'POST');
+        $request = Request::create('http://inv-portal-a.tikara.test/api/invitations', 'POST');
         $this->app->forgetInstance(TenantContextService::class);
         $this->app->instance('request', $request);
         app(TenantContextService::class)->resolve($request);
@@ -103,7 +103,7 @@ class InvitationFlowTest extends TestCase
 
         Auth::guard('web')->logout();
 
-        $requestB = Request::create('http://inv-portal-a.ekindesk.test/api/invitations', 'POST');
+        $requestB = Request::create('http://inv-portal-a.tikara.test/api/invitations', 'POST');
         $this->app->forgetInstance(TenantContextService::class);
         $this->app->instance('request', $requestB);
         app(TenantContextService::class)->resolve($requestB);
@@ -118,7 +118,7 @@ class InvitationFlowTest extends TestCase
     public function test_accept_invitation_rejects_wrong_portal(): void
     {
         config([
-            'tenancy.base_domain' => 'ekindesk.test',
+            'tenancy.base_domain' => 'tikara.test',
             'tenancy.strict_client_portal' => true,
         ]);
 
@@ -147,7 +147,7 @@ class InvitationFlowTest extends TestCase
             'expires_at' => now()->addDay(),
         ]);
 
-        $request = Request::create('http://accept-b.ekindesk.test/register/accept?token='.$invitation->token, 'GET');
+        $request = Request::create('http://accept-b.tikara.test/register/accept?token='.$invitation->token, 'GET');
         $this->app->forgetInstance(TenantContextService::class);
         $this->app->instance('request', $request);
         app(TenantContextService::class)->resolve($request);

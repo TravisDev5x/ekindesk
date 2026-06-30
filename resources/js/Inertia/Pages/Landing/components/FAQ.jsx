@@ -5,15 +5,15 @@ import { sectionDefault } from "@/lib/marketingTheme";
 const FAQ_ITEMS = [
     {
         value: "1",
-        title: "¿Qué es EkinDesk?",
+        title: "¿Qué es Tikara?",
         content:
-            "EkinDesk es una plataforma de helpdesk diseñada para empresas MSP — equipos de soporte IT que atienden a múltiples clientes. Centraliza tickets, técnicos, SLAs y clientes en un solo lugar.",
+            "Tikara es una plataforma de helpdesk diseñada para empresas MSP — equipos de soporte IT que atienden a múltiples clientes. Centraliza tickets, técnicos, SLAs y clientes en un solo lugar.",
     },
     {
         value: "2",
-        title: "¿Puedo usar EkinDesk si solo tengo un cliente?",
+        title: "¿Puedo usar Tikara si solo tengo un cliente?",
         content:
-            "Sí. EkinDesk funciona igual para una empresa con un cliente que para una con veinte. Empieza con el plan Starter y escala cuando lo necesites.",
+            "Sí. Tikara funciona igual para una empresa con un cliente que para una con veinte. Empieza con el plan Starter y escala cuando lo necesites.",
     },
     {
         value: "3",
@@ -25,7 +25,7 @@ const FAQ_ITEMS = [
         value: "4",
         title: "¿Necesito instalar algo?",
         content:
-            "No. EkinDesk es 100% web. Funciona en cualquier navegador moderno sin instalaciones adicionales.",
+            "No. Tikara es 100% web. Funciona en cualquier navegador moderno sin instalaciones adicionales.",
     },
     {
         value: "5",
@@ -49,7 +49,7 @@ const FAQ_ITEMS = [
         value: "8",
         title: "¿Tienen soporte en español?",
         content:
-            "Sí. EkinDesk está hecho en México, para el mercado hispanohablante. Soporte en español incluido en todos los planes.",
+            "Sí. Tikara está hecho en México, para el mercado hispanohablante. Soporte en español incluido en todos los planes.",
     },
 ];
 

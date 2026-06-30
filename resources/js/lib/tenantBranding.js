@@ -6,7 +6,7 @@ export function isClientPortalTenant(tenant) {
     return tenant?.mode === "client_portal" && Boolean(tenant?.name);
 }
 
-export function getTenantBrandName(tenant, fallback = "EkinDesk") {
+export function getTenantBrandName(tenant, fallback = "Tikara") {
     if (isClientPortalTenant(tenant)) {
         return tenant.name;
     }

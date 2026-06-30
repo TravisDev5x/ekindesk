@@ -7,7 +7,7 @@ import {
     isClientPortalTenant,
 } from "@/lib/tenantBranding";
 
-export function TenantBrandMark({ tenant, className, fallbackName = "EkinDesk" }) {
+export function TenantBrandMark({ tenant, className, fallbackName = "Tikara" }) {
     const name = getTenantBrandName(tenant, fallbackName);
     const logoUrl = getTenantLogoUrl(tenant);
     const isPortal = isClientPortalTenant(tenant);
@@ -59,7 +59,7 @@ export function TenantBrandHeader({
     subtitleClassName,
     markClassName = "h-8 w-8",
 }) {
-    const displayTitle = title ?? getTenantBrandName(tenant, "EkinDesk");
+    const displayTitle = title ?? getTenantBrandName(tenant, "Tikara");
 
     return (
         <div className={cn("flex items-center gap-2 overflow-hidden min-w-0", className)}>
@@ -90,7 +90,7 @@ export function TenantBrandHeader({
 
 /** Marca compacta para login (reutiliza tokens marketing). */
 export function TenantBrandLoginMark({ tenant, className }) {
-    const name = getTenantBrandName(tenant, "EkinDesk");
+    const name = getTenantBrandName(tenant, "Tikara");
     const logoUrl = getTenantLogoUrl(tenant);
 
     if (logoUrl) {

@@ -13,7 +13,7 @@ export function AuthBrandHomeLink({
     className,
     nameClassName,
 }) {
-    const brandName = getTenantBrandName(tenant, "EkinDesk");
+    const brandName = getTenantBrandName(tenant, "Tikara");
 
     return (
         <Link

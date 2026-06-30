@@ -17,7 +17,7 @@ return [
 
     /*
      * Incluye host con puerto si usas php artisan serve o vite dev.
-     * Prod Azure: SANCTUM_STATEFUL_DOMAINS=ekindesk.com,*.ekindesk.com
+     * Prod Azure: SANCTUM_STATEFUL_DOMAINS=tikara.mx,*.tikara.mx
      * El asterisco funciona porque Sanctum usa Str::is() (fnmatch) internamente.
      */
     'stateful' => array_values(array_filter(array_map('trim', explode(',', env(

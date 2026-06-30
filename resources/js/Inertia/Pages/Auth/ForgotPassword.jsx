@@ -90,7 +90,7 @@ export default function ForgotPassword() {
 
     return (
         <>
-            <Head title="Restablecer contraseña — EkinDesk" />
+            <Head title="Restablecer contraseña — Tikara" />
             <AuthSplitLayout
                 topLink={{
                     prompt: "¿Recordaste tu clave?",

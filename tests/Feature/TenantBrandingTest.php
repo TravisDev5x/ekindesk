@@ -14,9 +14,9 @@ class TenantBrandingTest extends TestCase
 
     public function test_platform_branding_exposes_mode_only(): void
     {
-        config(['tenancy.base_domain' => 'ekindesk.test']);
+        config(['tenancy.base_domain' => 'tikara.test']);
 
-        $request = Request::create('http://ekindesk.test/home', 'GET');
+        $request = Request::create('http://tikara.test/home', 'GET');
         $branding = app(TenantContextService::class)->resolve($request)->brandingForFrontend();
 
         $this->assertSame('platform', $branding['mode']);
@@ -38,9 +38,9 @@ class TenantBrandingTest extends TestCase
             'is_active' => true,
         ]);
 
-        config(['tenancy.base_domain' => 'ekindesk.test']);
+        config(['tenancy.base_domain' => 'tikara.test']);
 
-        $request = Request::create('http://alpha.ekindesk.test/home', 'GET');
+        $request = Request::create('http://alpha.tikara.test/home', 'GET');
         $branding = app(TenantContextService::class)->resolve($request)->brandingForFrontend();
 
         $this->assertSame('client_portal', $branding['mode']);

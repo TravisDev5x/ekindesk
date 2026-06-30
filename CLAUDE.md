@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**EkinDesk** is a multi-module CRM/Ticketing System for IT support teams. It uses a **Laravel 12 REST API backend** with a **React 19 + Inertia.js frontend**. Authentication is via Laravel Sanctum (stateful cookies).
+**Tikara** is a multi-module CRM/Ticketing System for IT support teams. It uses a **Laravel 12 REST API backend** with a **React 19 + Inertia.js frontend**. Authentication is via Laravel Sanctum (stateful cookies).
 
 ---
 

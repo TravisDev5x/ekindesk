@@ -22,11 +22,11 @@ export default function Login() {
         if (tenant?.mode === "client_portal" && tenant?.name) {
             return `Iniciar sesión — ${tenant.name}`;
         }
-        return "Iniciar sesión — EkinDesk";
+        return "Iniciar sesión — Tikara";
     }, [tenant]);
 
     const loginWelcome = useMemo(() => {
-        const brandName = getTenantBrandName(tenant, "EkinDesk");
+        const brandName = getTenantBrandName(tenant, "Tikara");
         const isPortal = isClientPortalTenant(tenant);
         return (
             tenant?.portal_welcome_message ||
@@ -98,7 +98,7 @@ export default function Login() {
             }
             const userTheme = data?.user?.theme;
             if (userTheme && ["light", "dark", "system"].includes(userTheme)) {
-                localStorage.setItem("ekindesk_theme", userTheme);
+                localStorage.setItem("tikara_theme", userTheme);
                 const resolved =
                     userTheme === "system"
                         ? window.matchMedia("(prefers-color-scheme: dark)").matches

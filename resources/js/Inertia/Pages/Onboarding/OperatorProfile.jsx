@@ -75,7 +75,7 @@ export default function OperatorProfile({ plans = [], selectedPlan = null, step 
                 <div className="text-center space-y-2">
                     <h1 className="text-2xl font-bold tracking-tight">Configura tu perfil de negocio</h1>
                     <p className="text-muted-foreground text-sm">
-                        Esta información representa a tu empresa en EkinDesk
+                        Esta información representa a tu empresa en Tikara
                     </p>
                 </div>
 

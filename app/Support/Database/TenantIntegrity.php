@@ -105,7 +105,7 @@ class TenantIntegrity
 
         if (! $clientId) {
             $row = [
-                'name' => 'Plataforma EkinDesk',
+                'name' => 'Plataforma Tikara',
                 'code' => self::PLATFORM_CLIENT_CODE,
                 'is_active' => true,
                 'created_at' => now(),
