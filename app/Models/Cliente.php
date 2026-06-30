@@ -82,6 +82,11 @@ class Cliente extends Model
         return $this->hasMany(Ticket::class, 'client_id');
     }
 
+    public function users(): HasMany
+    {
+        return $this->hasMany(User::class, 'client_id');
+    }
+
     public function scopeForOperator(Builder $query, int $userId): Builder
     {
         return $query->where('operator_user_id', $userId);

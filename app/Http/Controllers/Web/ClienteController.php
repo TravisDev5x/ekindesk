@@ -47,25 +47,31 @@ class ClienteController extends Controller
         $user = auth()->user();
         $showOperatorColumn = $this->operatorScope->bypassesOperatorScope($user);
 
-        $counts = ['sedes'];
-        if (\App\Models\Ticket::query()->exists()) {
-            $counts[] = 'tickets';
-        }
+        $clientIds = $this->clientQuery()->pluck('id');
+
+        $summary = [
+            'total'         => $clientIds->count(),
+            'active'        => $this->clientQuery()->where('is_active', true)->count(),
+            'total_users'   => \App\Models\User::whereIn('client_id', $clientIds)->count(),
+            'total_tickets' => \App\Models\Ticket::whereIn('client_id', $clientIds)->count(),
+        ];
 
         $query = $this->clientQuery()
-            ->withCount($counts)
+            ->withCount(['sedes', 'tickets', 'users'])
             ->orderBy('name');
 
         if ($showOperatorColumn) {
             $query->with('operatorUser:id,name');
         }
 
-        $clients = $query->paginate(15);
+        $clients = $query->paginate(20);
 
         return Inertia::render('Clients/Index', [
-            'clients' => $clients,
-            'total' => $clients->total(),
-            'showOperatorColumn' => $showOperatorColumn,
+            'clients'             => $clients,
+            'summary'             => $summary,
+            'showOperatorColumn'  => $showOperatorColumn,
+            'portalBaseDomain'    => config('tenancy.base_domain'),
+            'portalScheme'        => config('tenancy.portal_scheme', 'http'),
         ]);
     }
 

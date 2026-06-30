@@ -34,7 +34,18 @@ import {
 } from "@/components/ui/tooltip";
 import { clientActiveBadge, clientInactiveBadge } from "@/lib/badgeStyles";
 import { cn } from "@/lib/utils";
-import { Building2, Eye, Pencil, Plus, Search, Trash2 } from "lucide-react";
+import {
+    Building2,
+    Eye,
+    ExternalLink,
+    MapPin,
+    Pencil,
+    Plus,
+    Search,
+    Ticket,
+    Trash2,
+    Users,
+} from "lucide-react";
 
 function initials(name) {
     const parts = String(name || "").trim().split(/\s+/).filter(Boolean);
@@ -50,18 +61,51 @@ function logoUrl(path) {
 function matchesSearch(client, query) {
     const q = query.trim().toLowerCase();
     if (!q) return true;
-    const fields = [
+    return [
         client.business_name,
         client.name,
         client.contact_name,
         client.contact_email,
         client.industry,
+        client.portal_slug,
         client.operator_user?.name,
-    ];
-    return fields.some((f) => f && String(f).toLowerCase().includes(q));
+    ].some((f) => f && String(f).toLowerCase().includes(q));
 }
 
-export default function Index({ clients, total, showOperatorColumn = false }) {
+function SummaryCard({ icon: Icon, label, value, color = "text-foreground" }) {
+    return (
+        <Card>
+            <CardContent className="flex items-center gap-4 p-5">
+                <div className="rounded-lg bg-muted p-2.5">
+                    <Icon className={cn("h-5 w-5", color)} />
+                </div>
+                <div>
+                    <p className="text-2xl font-bold leading-none">{value}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{label}</p>
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
+
+function StatBadge({ value, icon: Icon }) {
+    if (value === 0 || value == null)
+        return <span className="text-muted-foreground text-sm">—</span>;
+    return (
+        <span className="inline-flex items-center gap-1 text-sm font-medium">
+            {Icon && <Icon className="h-3.5 w-3.5 text-muted-foreground" />}
+            {value}
+        </span>
+    );
+}
+
+export default function Index({
+    clients,
+    summary,
+    showOperatorColumn = false,
+    portalBaseDomain,
+    portalScheme = "http",
+}) {
     useFlash();
     const rows = clients?.data ?? [];
     const [deleteTarget, setDeleteTarget] = useState(null);
@@ -71,16 +115,18 @@ export default function Index({ clients, total, showOperatorColumn = false }) {
     useEffect(() => {
         const unsubStart = router.on("start", () => setLoading(true));
         const unsubFinish = router.on("finish", () => setLoading(false));
-        return () => {
-            unsubStart();
-            unsubFinish();
-        };
+        return () => { unsubStart(); unsubFinish(); };
     }, []);
 
     const filteredRows = useMemo(
         () => rows.filter((c) => matchesSearch(c, search)),
         [rows, search]
     );
+
+    const portalUrl = (slug) =>
+        slug && portalBaseDomain
+            ? `${portalScheme}://${slug}.${portalBaseDomain}`
+            : null;
 
     const handleDelete = () => {
         if (!deleteTarget) return;
@@ -89,14 +135,17 @@ export default function Index({ clients, total, showOperatorColumn = false }) {
         });
     };
 
+    const colSpan = showOperatorColumn ? 8 : 7;
+
     const tableHeaders = (
         <TableRow>
             <TableHead>Cliente</TableHead>
             {showOperatorColumn && <TableHead>Operador</TableHead>}
-            <TableHead>Industria</TableHead>
-            <TableHead>Sedes</TableHead>
-            <TableHead>Tickets</TableHead>
-            <TableHead>Estado</TableHead>
+            <TableHead>Portal</TableHead>
+            <TableHead className="text-center">Secciones</TableHead>
+            <TableHead className="text-center">Usuarios</TableHead>
+            <TableHead className="text-center">Tickets</TableHead>
+            <TableHead>Estatus</TableHead>
             <TableHead className="text-right">Acciones</TableHead>
         </TableRow>
     );
@@ -105,219 +154,263 @@ export default function Index({ clients, total, showOperatorColumn = false }) {
         <AuthenticatedLayout title="Clientes">
             <Head title="Clientes" />
 
-            <InertiaPageShell className="space-y-0">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-                <div className="flex items-center gap-3">
-                    <Badge variant="secondary">{total} total</Badge>
-                </div>
-                <Button asChild>
-                    <Link href="/clients/create">
-                        <Plus className="h-4 w-4 mr-2" />
-                        Nuevo cliente
-                    </Link>
-                </Button>
-            </div>
+            <InertiaPageShell className="space-y-6">
 
-            {rows.length > 0 && (
-                <div className="relative max-w-sm mb-4">
-                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                        className="pl-9"
-                        placeholder="Buscar por nombre, contacto, email…"
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
+                {/* KPI summary */}
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    <SummaryCard
+                        icon={Building2}
+                        label="Clientes totales"
+                        value={summary?.total ?? 0}
+                    />
+                    <SummaryCard
+                        icon={Building2}
+                        label="Activos"
+                        value={summary?.active ?? 0}
+                        color="text-green-600"
+                    />
+                    <SummaryCard
+                        icon={Users}
+                        label="Usuarios totales"
+                        value={summary?.total_users ?? 0}
+                        color="text-blue-600"
+                    />
+                    <SummaryCard
+                        icon={Ticket}
+                        label="Tickets totales"
+                        value={summary?.total_tickets ?? 0}
+                        color="text-orange-500"
                     />
                 </div>
-            )}
 
-            {rows.length === 0 && !loading ? (
-                <Card className="border-dashed">
-                    <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-                        <Building2 className="h-12 w-12 text-muted-foreground mb-4" />
-                        <h2 className="text-lg font-semibold">Sin clientes registrados</h2>
-                        <p className="text-sm text-muted-foreground mt-2 mb-6 max-w-sm">
-                            Agrega el primer cliente al que prestas servicios de soporte.
-                        </p>
-                        <Button asChild>
-                            <Link href="/clients/create">Nuevo cliente</Link>
-                        </Button>
-                    </CardContent>
-                </Card>
-            ) : (
-                <>
-                    <Card>
-                        {loading ? (
-                            <Table>
-                                <TableHeader>{tableHeaders}</TableHeader>
-                                <TableBody>
-                                    {[...Array(5)].map((_, i) => (
-                                        <TableRow key={i}>
-                                            <TableCell colSpan={showOperatorColumn ? 7 : 6}>
-                                                <Skeleton className="h-10 w-full" />
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        ) : filteredRows.length === 0 ? (
-                            <div className="py-12 text-center text-sm text-muted-foreground">
-                                No hay resultados para &quot;{search}&quot;
-                            </div>
-                        ) : (
-                            <Table>
-                                <TableHeader>{tableHeaders}</TableHeader>
-                                <TableBody>
-                                    {filteredRows.map((client) => (
-                                        <TableRow key={client.id}>
-                                            <TableCell>
-                                                <div className="flex items-center gap-3">
-                                                    {client.logo_path ? (
-                                                        <img
-                                                            src={logoUrl(client.logo_path)}
-                                                            alt=""
-                                                            className="h-9 w-9 rounded-md object-cover border"
-                                                        />
-                                                    ) : (
-                                                        <div className="h-9 w-9 rounded-md bg-muted flex items-center justify-center text-xs font-semibold">
-                                                            {initials(
-                                                                client.business_name || client.name
+                {/* Header + search */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="relative max-w-sm w-full">
+                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            className="pl-9"
+                            placeholder="Buscar por nombre, portal, contacto…"
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                        />
+                    </div>
+                    <Button asChild>
+                        <Link href="/clients/create">
+                            <Plus className="h-4 w-4 mr-2" />
+                            Nuevo cliente
+                        </Link>
+                    </Button>
+                </div>
+
+                {/* Table / empty */}
+                {rows.length === 0 && !loading ? (
+                    <Card className="border-dashed">
+                        <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+                            <Building2 className="h-12 w-12 text-muted-foreground mb-4" />
+                            <h2 className="text-lg font-semibold">Sin clientes registrados</h2>
+                            <p className="text-sm text-muted-foreground mt-2 mb-6 max-w-sm">
+                                Agrega el primer cliente al que prestas servicios de soporte.
+                            </p>
+                            <Button asChild>
+                                <Link href="/clients/create">Nuevo cliente</Link>
+                            </Button>
+                        </CardContent>
+                    </Card>
+                ) : (
+                    <>
+                        <Card>
+                            {loading ? (
+                                <Table>
+                                    <TableHeader>{tableHeaders}</TableHeader>
+                                    <TableBody>
+                                        {[...Array(5)].map((_, i) => (
+                                            <TableRow key={i}>
+                                                <TableCell colSpan={colSpan}>
+                                                    <Skeleton className="h-10 w-full" />
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            ) : filteredRows.length === 0 ? (
+                                <div className="py-12 text-center text-sm text-muted-foreground">
+                                    No hay resultados para &quot;{search}&quot;
+                                </div>
+                            ) : (
+                                <Table>
+                                    <TableHeader>{tableHeaders}</TableHeader>
+                                    <TableBody>
+                                        {filteredRows.map((client) => (
+                                            <TableRow key={client.id}>
+                                                {/* Cliente */}
+                                                <TableCell>
+                                                    <div className="flex items-center gap-3">
+                                                        {client.logo_path ? (
+                                                            <img
+                                                                src={logoUrl(client.logo_path)}
+                                                                alt=""
+                                                                className="h-9 w-9 rounded-md object-cover border shrink-0"
+                                                            />
+                                                        ) : (
+                                                            <div className="h-9 w-9 rounded-md bg-muted flex items-center justify-center text-xs font-semibold shrink-0">
+                                                                {initials(client.business_name || client.name)}
+                                                            </div>
+                                                        )}
+                                                        <div>
+                                                            <p className="font-medium leading-none">
+                                                                {client.business_name || client.name}
+                                                            </p>
+                                                            {client.industry && (
+                                                                <p className="text-xs text-muted-foreground mt-0.5">
+                                                                    {client.industry}
+                                                                </p>
                                                             )}
                                                         </div>
-                                                    )}
-                                                    <span className="font-medium">
-                                                        {client.business_name || client.name}
-                                                    </span>
-                                                </div>
-                                            </TableCell>
-                                            {showOperatorColumn && (
-                                                <TableCell className="text-sm text-muted-foreground">
-                                                    {client.operator_user?.name ?? "—"}
-                                                </TableCell>
-                                            )}
-                                            <TableCell>
-                                                {client.industry ? (
-                                                    client.industry
-                                                ) : (
-                                                    <Badge variant="outline">—</Badge>
-                                                )}
-                                            </TableCell>
-                                            <TableCell>{client.sedes_count ?? 0}</TableCell>
-                                            <TableCell>
-                                                {(client.tickets_count ?? 0) > 0 ? (
-                                                    <Badge variant="destructive">
-                                                        {client.tickets_count}
-                                                    </Badge>
-                                                ) : (
-                                                    <span className="text-muted-foreground">0</span>
-                                                )}
-                                            </TableCell>
-                                            <TableCell>
-                                                <Badge
-                                                    variant="outline"
-                                                    className={cn(
-                                                        "text-xs",
-                                                        client.is_active
-                                                            ? clientActiveBadge
-                                                            : clientInactiveBadge
-                                                    )}
-                                                >
-                                                    {client.is_active ? "Activo" : "Inactivo"}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell className="text-right">
-                                                <TooltipProvider>
-                                                    <div className="flex justify-end gap-1">
-                                                        <Tooltip>
-                                                            <TooltipTrigger asChild>
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    size="icon"
-                                                                    asChild
-                                                                >
-                                                                    <Link
-                                                                        href={`/clients/${client.id}`}
-                                                                    >
-                                                                        <Eye className="h-4 w-4" />
-                                                                    </Link>
-                                                                </Button>
-                                                            </TooltipTrigger>
-                                                            <TooltipContent>
-                                                                Ver cliente
-                                                            </TooltipContent>
-                                                        </Tooltip>
-                                                        <Tooltip>
-                                                            <TooltipTrigger asChild>
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    size="icon"
-                                                                    asChild
-                                                                >
-                                                                    <Link
-                                                                        href={`/clients/${client.id}/edit`}
-                                                                    >
-                                                                        <Pencil className="h-4 w-4" />
-                                                                    </Link>
-                                                                </Button>
-                                                            </TooltipTrigger>
-                                                            <TooltipContent>
-                                                                Editar cliente
-                                                            </TooltipContent>
-                                                        </Tooltip>
-                                                        <Tooltip>
-                                                            <TooltipTrigger asChild>
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    size="icon"
-                                                                    className="text-destructive hover:text-destructive"
-                                                                    onClick={() =>
-                                                                        setDeleteTarget(client)
-                                                                    }
-                                                                >
-                                                                    <Trash2 className="h-4 w-4" />
-                                                                </Button>
-                                                            </TooltipTrigger>
-                                                            <TooltipContent>
-                                                                Eliminar cliente
-                                                            </TooltipContent>
-                                                        </Tooltip>
                                                     </div>
-                                                </TooltipProvider>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        )}
-                    </Card>
+                                                </TableCell>
 
-                    {!loading && clients.last_page > 1 && (
-                        <div className="flex items-center justify-between mt-4 text-sm">
-                            <span className="text-muted-foreground">
-                                Página {clients.current_page} de {clients.last_page}
-                            </span>
-                            <div className="flex gap-2">
-                                {clients.prev_page_url && (
-                                    <Button variant="outline" size="sm" asChild>
-                                        <Link href={clients.prev_page_url}>Anterior</Link>
-                                    </Button>
-                                )}
-                                {clients.next_page_url && (
-                                    <Button variant="outline" size="sm" asChild>
-                                        <Link href={clients.next_page_url}>Siguiente</Link>
-                                    </Button>
-                                )}
+                                                {/* Operador (MSP admins only) */}
+                                                {showOperatorColumn && (
+                                                    <TableCell className="text-sm text-muted-foreground">
+                                                        {client.operator_user?.name ?? "—"}
+                                                    </TableCell>
+                                                )}
+
+                                                {/* Portal */}
+                                                <TableCell>
+                                                    {client.portal_slug ? (
+                                                        portalUrl(client.portal_slug) ? (
+                                                            <a
+                                                                href={portalUrl(client.portal_slug)}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
+                                                            >
+                                                                {client.portal_slug}
+                                                                <ExternalLink className="h-3 w-3" />
+                                                            </a>
+                                                        ) : (
+                                                            <Badge variant="secondary" className="font-mono text-xs">
+                                                                {client.portal_slug}
+                                                            </Badge>
+                                                        )
+                                                    ) : (
+                                                        <span className="text-muted-foreground text-sm">—</span>
+                                                    )}
+                                                </TableCell>
+
+                                                {/* Secciones */}
+                                                <TableCell className="text-center">
+                                                    <StatBadge
+                                                        value={client.sedes_count}
+                                                        icon={MapPin}
+                                                    />
+                                                </TableCell>
+
+                                                {/* Usuarios */}
+                                                <TableCell className="text-center">
+                                                    <StatBadge
+                                                        value={client.users_count}
+                                                        icon={Users}
+                                                    />
+                                                </TableCell>
+
+                                                {/* Tickets */}
+                                                <TableCell className="text-center">
+                                                    <StatBadge
+                                                        value={client.tickets_count}
+                                                        icon={Ticket}
+                                                    />
+                                                </TableCell>
+
+                                                {/* Estatus */}
+                                                <TableCell>
+                                                    <Badge
+                                                        variant="outline"
+                                                        className={cn(
+                                                            "text-xs",
+                                                            client.is_active
+                                                                ? clientActiveBadge
+                                                                : clientInactiveBadge
+                                                        )}
+                                                    >
+                                                        {client.is_active ? "Activo" : "Inactivo"}
+                                                    </Badge>
+                                                </TableCell>
+
+                                                {/* Acciones */}
+                                                <TableCell className="text-right">
+                                                    <TooltipProvider>
+                                                        <div className="flex justify-end gap-1">
+                                                            <Tooltip>
+                                                                <TooltipTrigger asChild>
+                                                                    <Button variant="ghost" size="icon" asChild>
+                                                                        <Link href={`/clients/${client.id}`}>
+                                                                            <Eye className="h-4 w-4" />
+                                                                        </Link>
+                                                                    </Button>
+                                                                </TooltipTrigger>
+                                                                <TooltipContent>Ver cliente</TooltipContent>
+                                                            </Tooltip>
+                                                            <Tooltip>
+                                                                <TooltipTrigger asChild>
+                                                                    <Button variant="ghost" size="icon" asChild>
+                                                                        <Link href={`/clients/${client.id}/edit`}>
+                                                                            <Pencil className="h-4 w-4" />
+                                                                        </Link>
+                                                                    </Button>
+                                                                </TooltipTrigger>
+                                                                <TooltipContent>Editar</TooltipContent>
+                                                            </Tooltip>
+                                                            <Tooltip>
+                                                                <TooltipTrigger asChild>
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="icon"
+                                                                        className="text-destructive hover:text-destructive"
+                                                                        onClick={() => setDeleteTarget(client)}
+                                                                    >
+                                                                        <Trash2 className="h-4 w-4" />
+                                                                    </Button>
+                                                                </TooltipTrigger>
+                                                                <TooltipContent>Eliminar</TooltipContent>
+                                                            </Tooltip>
+                                                        </div>
+                                                    </TooltipProvider>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            )}
+                        </Card>
+
+                        {!loading && clients.last_page > 1 && (
+                            <div className="flex items-center justify-between text-sm">
+                                <span className="text-muted-foreground">
+                                    Página {clients.current_page} de {clients.last_page}
+                                </span>
+                                <div className="flex gap-2">
+                                    {clients.prev_page_url && (
+                                        <Button variant="outline" size="sm" asChild>
+                                            <Link href={clients.prev_page_url}>Anterior</Link>
+                                        </Button>
+                                    )}
+                                    {clients.next_page_url && (
+                                        <Button variant="outline" size="sm" asChild>
+                                            <Link href={clients.next_page_url}>Siguiente</Link>
+                                        </Button>
+                                    )}
+                                </div>
                             </div>
-                        </div>
-                    )}
-                </>
-            )}
+                        )}
+                    </>
+                )}
             </InertiaPageShell>
 
             <AlertDialog
                 open={deleteTarget !== null}
-                onOpenChange={(open) => {
-                    if (!open) setDeleteTarget(null);
-                }}
+                onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
             >
                 <AlertDialogContent>
                     <AlertDialogHeader>
