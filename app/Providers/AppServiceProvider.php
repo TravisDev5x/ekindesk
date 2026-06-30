@@ -108,7 +108,7 @@ class AppServiceProvider extends ServiceProvider
             $host = $request->getHost();
         }
 
-        $port = '5173';
+        $port = (string) (parse_url($content, PHP_URL_PORT) ?? 5173);
         $newOrigin = 'http://' . $host . ':' . $port;
         if (str_starts_with($content, 'https://')) {
             $newOrigin = 'https://' . $host . ':' . $port;
