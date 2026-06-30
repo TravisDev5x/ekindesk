@@ -20,6 +20,9 @@ class Ticket extends Model
     public const SLA_LIMIT_HOURS = 72;
 
     protected $fillable = [
+        'folio',
+        'source',
+        'origin_message_id',
         'subject',
         'description',
         'area_origin_id',

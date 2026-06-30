@@ -46,6 +46,7 @@ class ResolveTenantFromSubdomain
         $cliente = Cache::remember("tenant.portal.{$slug}", 300, function () use ($slug) {
             return Cliente::where('portal_slug', $slug)
                 ->where('is_active', true)
+                ->whereNull('cancelled_at')
                 ->first();
         });
 

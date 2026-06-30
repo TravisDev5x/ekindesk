@@ -36,6 +36,9 @@ class Cliente extends Model
         'subscription_expires_at',
         'billing_email',
         'cancelled_at',
+        'inbound_email',
+        'mode',
+        'ai_classification_enabled',
     ];
 
     protected $appends = [
