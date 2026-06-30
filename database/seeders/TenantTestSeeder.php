@@ -69,11 +69,13 @@ class TenantTestSeeder extends Seeder
                 ])
             );
 
-            // Crear sede por defecto si no existe
-            if (! DB::table('sites')->where('client_id', $cliente->id)->exists()) {
+            // Crear sede por defecto si no existe (name único globalmente en sites)
+            $siteName = $cliente->name . ' — Sede Principal';
+            $siteCode = strtoupper(substr($cliente->portal_slug, 0, 6)) . '01';
+            if (! DB::table('sites')->where('name', $siteName)->exists()) {
                 DB::table('sites')->insert([
-                    'name'       => 'Sede Principal',
-                    'code'       => strtoupper(substr($cliente->portal_slug, 0, 3)) . '01',
+                    'name'       => $siteName,
+                    'code'       => $siteCode,
                     'type'       => 'physical',
                     'is_active'  => true,
                     'client_id'  => $cliente->id,
@@ -101,16 +103,19 @@ class TenantTestSeeder extends Seeder
 
     private function ensureOperatorUser(): User
     {
-        $areaId = DB::table('areas')->insertGetId([
-            'name' => 'Plataforma', 'is_active' => true, 'created_at' => now(), 'updated_at' => now(),
-        ]);
-        $positionId = DB::table('positions')->insertGetId([
-            'name' => 'Administrador', 'is_active' => true, 'created_at' => now(), 'updated_at' => now(),
-        ]);
-        $siteId = DB::table('sites')->insertGetId([
-            'name' => 'Oficina Central', 'code' => 'HQ01', 'type' => 'physical',
-            'is_active' => true, 'created_at' => now(), 'updated_at' => now(),
-        ]);
+        $areaId = DB::table('areas')->where('name', 'Plataforma')->value('id')
+            ?? DB::table('areas')->insertGetId([
+                'name' => 'Plataforma', 'is_active' => true, 'created_at' => now(), 'updated_at' => now(),
+            ]);
+        $positionId = DB::table('positions')->where('name', 'Administrador')->value('id')
+            ?? DB::table('positions')->insertGetId([
+                'name' => 'Administrador', 'is_active' => true, 'created_at' => now(), 'updated_at' => now(),
+            ]);
+        $siteId = DB::table('sites')->where('name', 'Oficina Central')->value('id')
+            ?? DB::table('sites')->insertGetId([
+                'name' => 'Oficina Central', 'code' => 'HQ01', 'type' => 'physical',
+                'is_active' => true, 'created_at' => now(), 'updated_at' => now(),
+            ]);
 
         return User::firstOrCreate(
             ['email' => 'operator@tikara.mx'],
