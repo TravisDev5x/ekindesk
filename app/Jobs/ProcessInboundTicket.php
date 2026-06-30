@@ -57,6 +57,25 @@ class ProcessInboundTicket implements ShouldQueue
 
             $requester = $this->findOrCreateRequester($tenant);
 
+            // Lookup required NOT-NULL catalog IDs
+            $defaultAreaId = DB::table('areas')
+                ->where(fn ($q) => $q->whereNull('client_id')->orWhere('client_id', $this->clientId))
+                ->orderByRaw('client_id IS NULL')  // tenant-specific first, then global
+                ->orderBy('id')
+                ->value('id');
+
+            $defaultStateId = DB::table('ticket_states')
+                ->where(fn ($q) => $q->whereNull('client_id')->orWhere('client_id', $this->clientId))
+                ->where(fn ($q) => $q->whereNull('is_final')->orWhere('is_final', false))
+                ->orderBy('id')
+                ->value('id');
+
+            if (! $defaultAreaId || ! $defaultStateId) {
+                throw new \RuntimeException(
+                    "Tenant {$this->clientId}: sin área o estado disponible para el ticket."
+                );
+            }
+
             $ticket = Ticket::create([
                 'client_id'        => $this->clientId,
                 'folio'            => $folio,
@@ -66,6 +85,9 @@ class ProcessInboundTicket implements ShouldQueue
                 'description'      => $this->parsedEmail['body_plain'],
                 'requester_id'     => $requester->id,
                 'sede_id'          => $requester->sede_id,
+                'area_origin_id'   => $defaultAreaId,
+                'area_current_id'  => $defaultAreaId,
+                'ticket_state_id'  => $defaultStateId,
                 'ticket_type_id'   => $classification['ticket_type_id'] ?? null,
                 'priority_id'      => $classification['priority_id'] ?? null,
             ]);
@@ -125,7 +147,7 @@ class ProcessInboundTicket implements ShouldQueue
                 'first_name'           => $fromName,
                 'sede_id'              => $sedeId,
                 'client_id'            => $this->clientId,
-                'password'             => bcrypt(str()->random(32)),
+                'password'             => \Hash::make(\Str::random(32)),
                 'status'               => 'active',
                 'onboarding_completed' => true,
                 'email_verified_at'    => now(),
