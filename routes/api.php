@@ -270,3 +270,9 @@ Route::middleware(['auth:sanctum','locale'])->group(function () {
     });
 
 });
+
+// Webhook inbound mail — fuera del grupo auth, sin CSRF, sin Sanctum.
+// La verificación de firma HMAC del proveedor se hace dentro del controller.
+Route::post('/webhook/inbound-mail/{provider}',
+    [\App\Http\Controllers\Webhook\InboundMailController::class, 'handle']
+)->name('webhook.inbound-mail');

@@ -24,6 +24,11 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
 
+        // Webhooks externos no mandan CSRF token — excluirlos explícitamente.
+        $middleware->validateCsrfTokens(except: [
+            'api/webhook/*',
+        ]);
+
         /*
         |--------------------------------------------------------------------------
         | Sanctum para SPA (React)
