@@ -32,30 +32,32 @@ class AuthController extends Controller
             ? 'email'
             : 'employee_number';
 
-        // Buscar usuario (mismo mensaje para no filtrar existencia)
         $user = User::where($fieldType, $input)->first();
+        $credentialsValid = $user && Hash::check($request->password, $user->password);
 
-        // Verificar portal ANTES de comprobar contraseña para evitar enumeración
-        // cross-tenant (mismo 422 genérico en todos los casos de fallo previo al auth)
         $tenantContext->resolve($request);
         if ($user && ! $tenantContext->userCanAccessCurrentPortal($user)) {
             Log::channel('single')->warning('Login rechazado: portal incorrecto', [
                 'user_id' => $user->id,
-                'host' => $request->getHost(),
+                'host'    => $request->getHost(),
             ]);
-            return response()->json([
-                'errors' => ['root' => 'Credenciales inválidas'],
-            ], 422);
+            // Solo revelamos el motivo exacto cuando las credenciales son correctas.
+            // Si el password es incorrecto, devolvemos el mismo 422 genérico para
+            // evitar enumeración cross-tenant.
+            if ($credentialsValid) {
+                return response()->json([
+                    'errors' => ['root' => 'No tienes acceso a este portal. Inicia sesión en la URL de tu organización.'],
+                ], 403);
+            }
+            return response()->json(['errors' => ['root' => 'Credenciales inválidas']], 422);
         }
 
-        if (! $user || ! Hash::check($request->password, $user->password)) {
+        if (! $credentialsValid) {
             Log::channel('single')->warning('Login fallido', [
                 'identifier_type' => $fieldType,
-                'ip' => $request->ip(),
+                'ip'              => $request->ip(),
             ]);
-            return response()->json([
-                'errors' => ['root' => 'Credenciales inválidas']
-            ], 422);
+            return response()->json(['errors' => ['root' => 'Credenciales inválidas']], 422);
         }
 
         if ($user->is_blacklisted) {

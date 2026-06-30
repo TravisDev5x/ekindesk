@@ -11,6 +11,8 @@ abstract class TestCase extends BaseTestCase
     {
         parent::setUp();
 
+        $this->withoutVite();
+
         if (PgsqlRowLevelSecurity::enabled()) {
             PgsqlRowLevelSecurity::setBypass(true);
         }
