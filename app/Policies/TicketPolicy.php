@@ -8,6 +8,20 @@ use Illuminate\Database\Eloquent\Builder;
 
 class TicketPolicy
 {
+    /**
+     * Admin de plataforma (super_admin) sin platform.view_internals:
+     * bloqueado de toda operación sobre tickets individuales.
+     * Devuelve null para todos los demás → el método correspondiente resuelve.
+     */
+    public function before(User $user, string $ability): ?bool
+    {
+        if (app(\App\Services\OperatorScopeService::class)->isPlatformAdminBlockedFromInternals($user)) {
+            return false;
+        }
+
+        return null;
+    }
+
     public function viewAny(User $user): bool
     {
         return $this->scopeType($user) !== null;

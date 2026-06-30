@@ -63,6 +63,17 @@ class ClientScopeService
      */
     public function guardOperationalModuleAccess(User $user, string $module): ?\Illuminate\Http\JsonResponse
     {
+        // Admin de plataforma (super_admin) sin permiso platform.view_internals:
+        // puede ver clientes y estadísticas, pero no datos operativos internos.
+        if ($this->operatorScope->isPlatformAdminBlockedFromInternals($user)) {
+            $label = $module === 'incidents' ? 'incidencias' : 'tickets';
+
+            return response()->json([
+                'message' => "Acceso de plataforma: los {$label} internos de cada cliente no están disponibles en este perfil.",
+                'code'    => 'platform_admin_restricted',
+            ], 403);
+        }
+
         if ($this->operatorScope->bypassesOperatorScope($user) || $this->operatorScope->hasMspWideAccess($user)) {
             return null;
         }

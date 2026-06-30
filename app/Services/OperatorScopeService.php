@@ -21,6 +21,24 @@ class OperatorScopeService
     }
 
     /**
+     * Admin de plataforma (super_admin) bloqueado de datos operativos internos.
+     *
+     * Un super_admin VE la lista de clientes y sus estadísticas agregadas, pero NO
+     * puede acceder a tickets/incidencias internas de cada cliente a menos que tenga
+     * el permiso explícito 'platform.view_internals'.
+     *
+     * Usuarios que NO son super_admin → siempre devuelve false (su propio scope aplica).
+     */
+    public function isPlatformAdminBlockedFromInternals(User $user): bool
+    {
+        if (! $this->bypassesOperatorScope($user)) {
+            return false;
+        }
+
+        return ! $user->can('platform.view_internals');
+    }
+
+    /**
      * Acceso transversal dentro del MSP (todos los clientes del operador).
      * Ya no implica ver toda la plataforma (eso es solo super_admin).
      */
