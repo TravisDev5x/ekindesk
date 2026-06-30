@@ -223,5 +223,45 @@ Route::middleware('auth')->group(function () {
     Route::redirect('/ticket-types', '/resolbeb/tipos');
 });
 
+// ==========================
+// PORTAL DE CLIENTE — {slug}.tikara.test / {slug}.tikara.mx
+// Rutas para usuarios finales de cada empresa cliente.
+// El middleware 'tenant' resuelve el slug y hace abort(404) si no existe.
+// ==========================
+$baseDomain = config('tenancy.base_domain', 'tikara.mx');
+Route::domain('{tenantSlug}.' . $baseDomain)
+    ->middleware(['tenant'])
+    ->group(function () {
+        // Auth del portal (sin sesión)
+        Route::middleware('guest')->group(function () {
+            Route::get('/login', function (string $tenantSlug) {
+                return Inertia::render('Portal/Auth/Login', [
+                    'tenantSlug' => $tenantSlug,
+                ]);
+            })->name('portal.login');
+        });
+
+        // Rutas del portal autenticadas
+        Route::middleware(['auth', 'tenant.rls'])->group(function () {
+            Route::get('/', function (string $tenantSlug) {
+                return Inertia::render('Portal/Dashboard', [
+                    'tenantSlug' => $tenantSlug,
+                ]);
+            })->name('portal.dashboard');
+
+            Route::get('/tickets', function (string $tenantSlug) {
+                return Inertia::render('Portal/Tickets/Index', [
+                    'tenantSlug' => $tenantSlug,
+                ]);
+            })->name('portal.tickets.index');
+
+            Route::get('/tickets/new', function (string $tenantSlug) {
+                return Inertia::render('Portal/Tickets/Create', [
+                    'tenantSlug' => $tenantSlug,
+                ]);
+            })->name('portal.tickets.create');
+        });
+    });
+
 // Compatibilidad URLs SPA legacy → Inertia (docs/INERTIA_MIGRATION.md)
 require __DIR__.'/inertia_legacy.php';
