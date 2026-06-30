@@ -15,11 +15,15 @@ return [
     |
     */
 
-    // Incluye host con puerto (ej. 127.0.0.1:8000) si usas php artisan serve
-'stateful' => array_values(array_filter(array_map('trim', explode(',', env(
-    'SANCTUM_STATEFUL_DOMAINS',
-    'helpdeskreact.test,helpdeskreact26.test,localhost,127.0.0.1,127.0.0.1:8000,localhost:8000'
-))))),
+    /*
+     * Incluye host con puerto si usas php artisan serve o vite dev.
+     * Prod Azure: SANCTUM_STATEFUL_DOMAINS=ekindesk.com,*.ekindesk.com
+     * El asterisco funciona porque Sanctum usa Str::is() (fnmatch) internamente.
+     */
+    'stateful' => array_values(array_filter(array_map('trim', explode(',', env(
+        'SANCTUM_STATEFUL_DOMAINS',
+        'localhost,localhost:5174,localhost:8000,localhost:8001,127.0.0.1,127.0.0.1:8000,127.0.0.1:8001'
+    ))))),
 
     /*
     |--------------------------------------------------------------------------
