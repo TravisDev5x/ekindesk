@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Head, Link, router } from "@inertiajs/react";
+import { differenceInDays, parseISO } from "date-fns";
 import { useFlash } from "@/hooks/useFlash";
 import AuthenticatedLayout from "@/Inertia/Layouts/AuthenticatedLayout";
 import InertiaPageShell from "@/Inertia/components/InertiaPageShell";
@@ -35,17 +36,22 @@ import {
 import { clientActiveBadge, clientInactiveBadge } from "@/lib/badgeStyles";
 import { cn } from "@/lib/utils";
 import {
+    Ban,
     Building2,
+    CreditCard,
     Eye,
     ExternalLink,
     MapPin,
     Pencil,
     Plus,
+    RefreshCw,
     Search,
     Ticket,
     Trash2,
     Users,
 } from "lucide-react";
+
+// ─── helpers ────────────────────────────────────────────────────────────────
 
 function initials(name) {
     const parts = String(name || "").trim().split(/\s+/).filter(Boolean);
@@ -69,8 +75,35 @@ function matchesSearch(client, query) {
         client.industry,
         client.portal_slug,
         client.operator_user?.name,
+        client.plan?.name,
     ].some((f) => f && String(f).toLowerCase().includes(q));
 }
+
+/**
+ * Returns { label, color } for the subscription expiry date.
+ * null date → "Sin vencimiento"
+ */
+function expiryInfo(dateStr) {
+    if (!dateStr) return { label: "Sin vencimiento", color: "text-muted-foreground" };
+    const days = differenceInDays(parseISO(dateStr), new Date());
+    if (days < 0) return { label: "Vencido", color: "text-destructive font-medium" };
+    if (days === 0) return { label: "Vence hoy", color: "text-destructive font-medium" };
+    if (days <= 14) return { label: `${days}d`, color: "text-orange-500 font-medium" };
+    if (days <= 30) return { label: `${days}d`, color: "text-yellow-600 font-medium" };
+    return { label: `${days}d`, color: "text-green-600" };
+}
+
+const PLAN_TYPE_STYLES = {
+    free:       "border-slate-300 text-slate-600",
+    trial:      "border-blue-300 text-blue-700",
+    starter:    "border-sky-300 text-sky-700",
+    basic:      "border-cyan-300 text-cyan-700",
+    professional:"border-purple-300 text-purple-700",
+    pro:        "border-purple-300 text-purple-700",
+    enterprise: "border-amber-400 text-amber-700",
+};
+
+// ─── sub-components ──────────────────────────────────────────────────────────
 
 function SummaryCard({ icon: Icon, label, value, color = "text-foreground" }) {
     return (
@@ -99,16 +132,40 @@ function StatBadge({ value, icon: Icon }) {
     );
 }
 
+function PlanCell({ client }) {
+    const plan = client.plan;
+    if (!plan) {
+        return <span className="text-muted-foreground text-sm">Sin plan</span>;
+    }
+    const typeKey = (plan.type ?? "").toLowerCase();
+    const style = PLAN_TYPE_STYLES[typeKey] ?? "border-slate-200 text-slate-600";
+    const { label: exLabel, color: exColor } = expiryInfo(client.subscription_expires_at);
+
+    return (
+        <div className="flex flex-col gap-0.5 min-w-[90px]">
+            <Badge variant="outline" className={cn("text-xs w-fit", style)}>
+                {plan.name}
+            </Badge>
+            <span className={cn("text-xs", exColor)}>{exLabel}</span>
+        </div>
+    );
+}
+
+// ─── main component ───────────────────────────────────────────────────────────
+
 export default function Index({
     clients,
     summary,
     showOperatorColumn = false,
+    isPlatformAdmin = false,
     portalBaseDomain,
     portalScheme = "http",
 }) {
     useFlash();
     const rows = clients?.data ?? [];
     const [deleteTarget, setDeleteTarget] = useState(null);
+    const [cancelTarget, setCancelTarget] = useState(null);
+    const [reactivateTarget, setReactivateTarget] = useState(null);
     const [loading, setLoading] = useState(false);
     const [search, setSearch] = useState("");
 
@@ -135,7 +192,28 @@ export default function Index({
         });
     };
 
-    const colSpan = showOperatorColumn ? 8 : 7;
+    const handleCancel = () => {
+        if (!cancelTarget) return;
+        router.patch(`/clients/${cancelTarget.id}/cancel`, {}, {
+            onFinish: () => setCancelTarget(null),
+        });
+    };
+
+    const handleReactivate = () => {
+        if (!reactivateTarget) return;
+        router.patch(`/clients/${reactivateTarget.id}/reactivate`, {}, {
+            onFinish: () => setReactivateTarget(null),
+        });
+    };
+
+    // inactive = total - active (includes cancelled)
+    const inactiveCount = (summary?.total ?? 0) - (summary?.active ?? 0);
+
+    // column count for skeleton colSpan
+    const colCount =
+        7 +
+        (showOperatorColumn ? 1 : 0) +
+        (isPlatformAdmin ? 1 : 0);
 
     const tableHeaders = (
         <TableRow>
@@ -145,6 +223,7 @@ export default function Index({
             <TableHead className="text-center">Secciones</TableHead>
             <TableHead className="text-center">Usuarios</TableHead>
             <TableHead className="text-center">Tickets</TableHead>
+            {isPlatformAdmin && <TableHead>Plan / Vencimiento</TableHead>}
             <TableHead>Estatus</TableHead>
             <TableHead className="text-right">Acciones</TableHead>
         </TableRow>
@@ -165,7 +244,7 @@ export default function Index({
                     />
                     <SummaryCard
                         icon={Building2}
-                        label="Activos"
+                        label={isPlatformAdmin ? `Activos / ${inactiveCount} inactivos` : "Activos"}
                         value={summary?.active ?? 0}
                         color="text-green-600"
                     />
@@ -225,7 +304,7 @@ export default function Index({
                                     <TableBody>
                                         {[...Array(5)].map((_, i) => (
                                             <TableRow key={i}>
-                                                <TableCell colSpan={colSpan}>
+                                                <TableCell colSpan={colCount}>
                                                     <Skeleton className="h-10 w-full" />
                                                 </TableCell>
                                             </TableRow>
@@ -240,146 +319,196 @@ export default function Index({
                                 <Table>
                                     <TableHeader>{tableHeaders}</TableHeader>
                                     <TableBody>
-                                        {filteredRows.map((client) => (
-                                            <TableRow key={client.id}>
-                                                {/* Cliente */}
-                                                <TableCell>
-                                                    <div className="flex items-center gap-3">
-                                                        {client.logo_path ? (
-                                                            <img
-                                                                src={logoUrl(client.logo_path)}
-                                                                alt=""
-                                                                className="h-9 w-9 rounded-md object-cover border shrink-0"
-                                                            />
-                                                        ) : (
-                                                            <div className="h-9 w-9 rounded-md bg-muted flex items-center justify-center text-xs font-semibold shrink-0">
-                                                                {initials(client.business_name || client.name)}
-                                                            </div>
-                                                        )}
-                                                        <div>
-                                                            <p className="font-medium leading-none">
-                                                                {client.business_name || client.name}
-                                                            </p>
-                                                            {client.industry && (
-                                                                <p className="text-xs text-muted-foreground mt-0.5">
-                                                                    {client.industry}
-                                                                </p>
+                                        {filteredRows.map((client) => {
+                                            const isCancelled = !!client.cancelled_at;
+                                            return (
+                                                <TableRow
+                                                    key={client.id}
+                                                    className={cn(isCancelled && "opacity-60")}
+                                                >
+                                                    {/* Cliente */}
+                                                    <TableCell>
+                                                        <div className="flex items-center gap-3">
+                                                            {client.logo_path ? (
+                                                                <img
+                                                                    src={logoUrl(client.logo_path)}
+                                                                    alt=""
+                                                                    className="h-9 w-9 rounded-md object-cover border shrink-0"
+                                                                />
+                                                            ) : (
+                                                                <div className="h-9 w-9 rounded-md bg-muted flex items-center justify-center text-xs font-semibold shrink-0">
+                                                                    {initials(client.business_name || client.name)}
+                                                                </div>
                                                             )}
+                                                            <div>
+                                                                <p className="font-medium leading-none">
+                                                                    {client.business_name || client.name}
+                                                                </p>
+                                                                {client.industry && (
+                                                                    <p className="text-xs text-muted-foreground mt-0.5">
+                                                                        {client.industry}
+                                                                    </p>
+                                                                )}
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                </TableCell>
-
-                                                {/* Operador (MSP admins only) */}
-                                                {showOperatorColumn && (
-                                                    <TableCell className="text-sm text-muted-foreground">
-                                                        {client.operator_user?.name ?? "—"}
                                                     </TableCell>
-                                                )}
 
-                                                {/* Portal */}
-                                                <TableCell>
-                                                    {client.portal_slug ? (
-                                                        portalUrl(client.portal_slug) ? (
-                                                            <a
-                                                                href={portalUrl(client.portal_slug)}
-                                                                target="_blank"
-                                                                rel="noopener noreferrer"
-                                                                className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
-                                                            >
-                                                                {client.portal_slug}
-                                                                <ExternalLink className="h-3 w-3" />
-                                                            </a>
-                                                        ) : (
-                                                            <Badge variant="secondary" className="font-mono text-xs">
-                                                                {client.portal_slug}
-                                                            </Badge>
-                                                        )
-                                                    ) : (
-                                                        <span className="text-muted-foreground text-sm">—</span>
+                                                    {/* Operador (MSP admins only) */}
+                                                    {showOperatorColumn && (
+                                                        <TableCell className="text-sm text-muted-foreground">
+                                                            {client.operator_user?.name ?? "—"}
+                                                        </TableCell>
                                                     )}
-                                                </TableCell>
 
-                                                {/* Secciones */}
-                                                <TableCell className="text-center">
-                                                    <StatBadge
-                                                        value={client.sedes_count}
-                                                        icon={MapPin}
-                                                    />
-                                                </TableCell>
-
-                                                {/* Usuarios */}
-                                                <TableCell className="text-center">
-                                                    <StatBadge
-                                                        value={client.users_count}
-                                                        icon={Users}
-                                                    />
-                                                </TableCell>
-
-                                                {/* Tickets */}
-                                                <TableCell className="text-center">
-                                                    <StatBadge
-                                                        value={client.tickets_count}
-                                                        icon={Ticket}
-                                                    />
-                                                </TableCell>
-
-                                                {/* Estatus */}
-                                                <TableCell>
-                                                    <Badge
-                                                        variant="outline"
-                                                        className={cn(
-                                                            "text-xs",
-                                                            client.is_active
-                                                                ? clientActiveBadge
-                                                                : clientInactiveBadge
+                                                    {/* Portal */}
+                                                    <TableCell>
+                                                        {client.portal_slug ? (
+                                                            portalUrl(client.portal_slug) ? (
+                                                                <a
+                                                                    href={portalUrl(client.portal_slug)}
+                                                                    target="_blank"
+                                                                    rel="noopener noreferrer"
+                                                                    className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
+                                                                >
+                                                                    {client.portal_slug}
+                                                                    <ExternalLink className="h-3 w-3" />
+                                                                </a>
+                                                            ) : (
+                                                                <Badge variant="secondary" className="font-mono text-xs">
+                                                                    {client.portal_slug}
+                                                                </Badge>
+                                                            )
+                                                        ) : (
+                                                            <span className="text-muted-foreground text-sm">—</span>
                                                         )}
-                                                    >
-                                                        {client.is_active ? "Activo" : "Inactivo"}
-                                                    </Badge>
-                                                </TableCell>
+                                                    </TableCell>
 
-                                                {/* Acciones */}
-                                                <TableCell className="text-right">
-                                                    <TooltipProvider>
-                                                        <div className="flex justify-end gap-1">
-                                                            <Tooltip>
-                                                                <TooltipTrigger asChild>
-                                                                    <Button variant="ghost" size="icon" asChild>
-                                                                        <Link href={`/clients/${client.id}`}>
-                                                                            <Eye className="h-4 w-4" />
-                                                                        </Link>
-                                                                    </Button>
-                                                                </TooltipTrigger>
-                                                                <TooltipContent>Ver cliente</TooltipContent>
-                                                            </Tooltip>
-                                                            <Tooltip>
-                                                                <TooltipTrigger asChild>
-                                                                    <Button variant="ghost" size="icon" asChild>
-                                                                        <Link href={`/clients/${client.id}/edit`}>
-                                                                            <Pencil className="h-4 w-4" />
-                                                                        </Link>
-                                                                    </Button>
-                                                                </TooltipTrigger>
-                                                                <TooltipContent>Editar</TooltipContent>
-                                                            </Tooltip>
-                                                            <Tooltip>
-                                                                <TooltipTrigger asChild>
-                                                                    <Button
-                                                                        variant="ghost"
-                                                                        size="icon"
-                                                                        className="text-destructive hover:text-destructive"
-                                                                        onClick={() => setDeleteTarget(client)}
-                                                                    >
-                                                                        <Trash2 className="h-4 w-4" />
-                                                                    </Button>
-                                                                </TooltipTrigger>
-                                                                <TooltipContent>Eliminar</TooltipContent>
-                                                            </Tooltip>
-                                                        </div>
-                                                    </TooltipProvider>
-                                                </TableCell>
-                                            </TableRow>
-                                        ))}
+                                                    {/* Secciones */}
+                                                    <TableCell className="text-center">
+                                                        <StatBadge value={client.sedes_count} icon={MapPin} />
+                                                    </TableCell>
+
+                                                    {/* Usuarios */}
+                                                    <TableCell className="text-center">
+                                                        <StatBadge value={client.users_count} icon={Users} />
+                                                    </TableCell>
+
+                                                    {/* Tickets */}
+                                                    <TableCell className="text-center">
+                                                        <StatBadge value={client.tickets_count} icon={Ticket} />
+                                                    </TableCell>
+
+                                                    {/* Plan / Vencimiento (solo DIOS) */}
+                                                    {isPlatformAdmin && (
+                                                        <TableCell>
+                                                            <PlanCell client={client} />
+                                                        </TableCell>
+                                                    )}
+
+                                                    {/* Estatus */}
+                                                    <TableCell>
+                                                        {isCancelled ? (
+                                                            <Badge
+                                                                variant="outline"
+                                                                className="text-xs border-destructive/50 text-destructive"
+                                                            >
+                                                                Cancelado
+                                                            </Badge>
+                                                        ) : (
+                                                            <Badge
+                                                                variant="outline"
+                                                                className={cn(
+                                                                    "text-xs",
+                                                                    client.is_active
+                                                                        ? clientActiveBadge
+                                                                        : clientInactiveBadge
+                                                                )}
+                                                            >
+                                                                {client.is_active ? "Activo" : "Inactivo"}
+                                                            </Badge>
+                                                        )}
+                                                    </TableCell>
+
+                                                    {/* Acciones */}
+                                                    <TableCell className="text-right">
+                                                        <TooltipProvider>
+                                                            <div className="flex justify-end gap-1">
+                                                                <Tooltip>
+                                                                    <TooltipTrigger asChild>
+                                                                        <Button variant="ghost" size="icon" asChild>
+                                                                            <Link href={`/clients/${client.id}`}>
+                                                                                <Eye className="h-4 w-4" />
+                                                                            </Link>
+                                                                        </Button>
+                                                                    </TooltipTrigger>
+                                                                    <TooltipContent>Ver cliente</TooltipContent>
+                                                                </Tooltip>
+
+                                                                <Tooltip>
+                                                                    <TooltipTrigger asChild>
+                                                                        <Button variant="ghost" size="icon" asChild>
+                                                                            <Link href={`/clients/${client.id}/edit`}>
+                                                                                <Pencil className="h-4 w-4" />
+                                                                            </Link>
+                                                                        </Button>
+                                                                    </TooltipTrigger>
+                                                                    <TooltipContent>Editar</TooltipContent>
+                                                                </Tooltip>
+
+                                                                {/* Cancel / Reactivate — solo DIOS */}
+                                                                {isPlatformAdmin && (
+                                                                    isCancelled ? (
+                                                                        <Tooltip>
+                                                                            <TooltipTrigger asChild>
+                                                                                <Button
+                                                                                    variant="ghost"
+                                                                                    size="icon"
+                                                                                    className="text-green-600 hover:text-green-700"
+                                                                                    onClick={() => setReactivateTarget(client)}
+                                                                                >
+                                                                                    <RefreshCw className="h-4 w-4" />
+                                                                                </Button>
+                                                                            </TooltipTrigger>
+                                                                            <TooltipContent>Reactivar cuenta</TooltipContent>
+                                                                        </Tooltip>
+                                                                    ) : (
+                                                                        <Tooltip>
+                                                                            <TooltipTrigger asChild>
+                                                                                <Button
+                                                                                    variant="ghost"
+                                                                                    size="icon"
+                                                                                    className="text-orange-500 hover:text-orange-600"
+                                                                                    onClick={() => setCancelTarget(client)}
+                                                                                >
+                                                                                    <Ban className="h-4 w-4" />
+                                                                                </Button>
+                                                                            </TooltipTrigger>
+                                                                            <TooltipContent>Cancelar cuenta</TooltipContent>
+                                                                        </Tooltip>
+                                                                    )
+                                                                )}
+
+                                                                {!isPlatformAdmin && (
+                                                                    <Tooltip>
+                                                                        <TooltipTrigger asChild>
+                                                                            <Button
+                                                                                variant="ghost"
+                                                                                size="icon"
+                                                                                className="text-destructive hover:text-destructive"
+                                                                                onClick={() => setDeleteTarget(client)}
+                                                                            >
+                                                                                <Trash2 className="h-4 w-4" />
+                                                                            </Button>
+                                                                        </TooltipTrigger>
+                                                                        <TooltipContent>Eliminar</TooltipContent>
+                                                                    </Tooltip>
+                                                                )}
+                                                            </div>
+                                                        </TooltipProvider>
+                                                    </TableCell>
+                                                </TableRow>
+                                            );
+                                        })}
                                     </TableBody>
                                 </Table>
                             )}
@@ -408,6 +537,7 @@ export default function Index({
                 )}
             </InertiaPageShell>
 
+            {/* ── Delete dialog ────────────────────────────────────────── */}
             <AlertDialog
                 open={deleteTarget !== null}
                 onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
@@ -417,8 +547,8 @@ export default function Index({
                         <AlertDialogTitle>¿Eliminar cliente?</AlertDialogTitle>
                         <AlertDialogDescription>
                             Se eliminará a{" "}
-                            {deleteTarget?.business_name || deleteTarget?.name}. Esta acción no se
-                            puede deshacer.
+                            <strong>{deleteTarget?.business_name || deleteTarget?.name}</strong>.
+                            Esta acción no se puede deshacer.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -428,6 +558,59 @@ export default function Index({
                             onClick={handleDelete}
                         >
                             Eliminar
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            {/* ── Cancel account dialog ────────────────────────────────── */}
+            <AlertDialog
+                open={cancelTarget !== null}
+                onOpenChange={(open) => { if (!open) setCancelTarget(null); }}
+            >
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>¿Cancelar cuenta?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            La cuenta de{" "}
+                            <strong>{cancelTarget?.business_name || cancelTarget?.name}</strong>{" "}
+                            quedará inactiva. Los datos del cliente se conservan y la cuenta puede
+                            reactivarse en cualquier momento.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>No cancelar</AlertDialogCancel>
+                        <AlertDialogAction
+                            className="bg-orange-500 text-white hover:bg-orange-600"
+                            onClick={handleCancel}
+                        >
+                            Sí, cancelar cuenta
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            {/* ── Reactivate dialog ────────────────────────────────────── */}
+            <AlertDialog
+                open={reactivateTarget !== null}
+                onOpenChange={(open) => { if (!open) setReactivateTarget(null); }}
+            >
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>¿Reactivar cuenta?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            La cuenta de{" "}
+                            <strong>{reactivateTarget?.business_name || reactivateTarget?.name}</strong>{" "}
+                            volverá a estar activa y el cliente podrá acceder al sistema.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction
+                            className="bg-green-600 text-white hover:bg-green-700"
+                            onClick={handleReactivate}
+                        >
+                            Reactivar
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

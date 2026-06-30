@@ -12,9 +12,9 @@ export default defineConfig({
         react(),
     ],
     server: {
-        host: true,
+        host: 'localhost',
         strictPort: true,
-        port: 5173,
+        port: 5174,
         cors: {
             origin: true,
             credentials: true,
@@ -24,7 +24,7 @@ export default defineConfig({
             "Cache-Control": "no-store",
         },
         hmr: process.env.VITE_HMR_HOST
-            ? { host: process.env.VITE_HMR_HOST, port: 5173, protocol: "ws" }
+            ? { host: process.env.VITE_HMR_HOST, port: 5174, protocol: "ws" }
             : true,
     },
     resolve: {

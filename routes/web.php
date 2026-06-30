@@ -109,6 +109,9 @@ Route::middleware('auth')->group(function () {
         Route::get('/{client}/edit', [ClienteController::class, 'edit'])->name('edit');
         Route::put('/{client}', [ClienteController::class, 'update'])->name('update');
         Route::delete('/{client}', [ClienteController::class, 'destroy'])->name('destroy');
+        Route::patch('/{client}/cancel', [ClienteController::class, 'cancel'])->name('cancel');
+        Route::patch('/{client}/reactivate', [ClienteController::class, 'reactivate'])->name('reactivate');
+        Route::patch('/{client}/plan', [ClienteController::class, 'updatePlan'])->name('plan.update');
     });
 
     Route::prefix('company')->name('company.')->group(function () {

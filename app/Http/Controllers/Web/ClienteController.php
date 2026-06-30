@@ -4,11 +4,13 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use App\Models\Cliente;
+use App\Models\Plan;
 use App\Models\Sede;
 use App\Models\TicketState;
 use App\Services\OperatorScopeService;
 use App\Services\TenantContextService;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -56,6 +58,8 @@ class ClienteController extends Controller
             'total_tickets' => \App\Models\Ticket::whereIn('client_id', $clientIds)->count(),
         ];
 
+        $isPlatformAdmin = $this->operatorScope->bypassesOperatorScope($user);
+
         $query = $this->clientQuery()
             ->withCount(['sedes', 'tickets', 'users'])
             ->orderBy('name');
@@ -64,14 +68,22 @@ class ClienteController extends Controller
             $query->with('operatorUser:id,name');
         }
 
+        if ($isPlatformAdmin) {
+            $query->with('plan:id,name,slug,type,price_monthly');
+        }
+
         $clients = $query->paginate(20);
 
         return Inertia::render('Clients/Index', [
             'clients'             => $clients,
             'summary'             => $summary,
             'showOperatorColumn'  => $showOperatorColumn,
+            'isPlatformAdmin'     => $isPlatformAdmin,
             'portalBaseDomain'    => config('tenancy.base_domain'),
             'portalScheme'        => config('tenancy.portal_scheme', 'http'),
+            'availablePlans'      => $isPlatformAdmin
+                ? Plan::activePublic()->get(['id', 'name', 'slug', 'type', 'price_monthly'])
+                : [],
         ]);
     }
 
@@ -231,6 +243,52 @@ class ClienteController extends Controller
         return redirect()
             ->route('clients.index')
             ->with('success', 'Cliente eliminado');
+    }
+
+    /** Solo super_admin: cancela la cuenta (desactiva) sin borrar datos. */
+    public function cancel(Cliente $client): RedirectResponse
+    {
+        abort_unless($this->operatorScope->bypassesOperatorScope(auth()->user()), 403);
+
+        $client->update([
+            'is_active'    => false,
+            'cancelled_at' => now(),
+        ]);
+
+        return redirect()
+            ->route('clients.index')
+            ->with('success', "Cuenta de \"{$client->name}\" cancelada. Los datos se conservan.");
+    }
+
+    /** Solo super_admin: reactiva una cuenta cancelada. */
+    public function reactivate(Cliente $client): RedirectResponse
+    {
+        abort_unless($this->operatorScope->bypassesOperatorScope(auth()->user()), 403);
+
+        $client->update([
+            'is_active'    => true,
+            'cancelled_at' => null,
+        ]);
+
+        return redirect()
+            ->route('clients.index')
+            ->with('success', "Cuenta de \"{$client->name}\" reactivada.");
+    }
+
+    /** Solo super_admin: actualiza plan y fecha de vencimiento. */
+    public function updatePlan(Request $request, Cliente $client): RedirectResponse
+    {
+        abort_unless($this->operatorScope->bypassesOperatorScope(auth()->user()), 403);
+
+        $validated = $request->validate([
+            'plan_id'                => 'nullable|exists:plans,id',
+            'subscription_expires_at'=> 'nullable|date|after:today',
+            'billing_email'          => 'nullable|email|max:255',
+        ]);
+
+        $client->update($validated);
+
+        return back()->with('success', 'Plan actualizado.');
     }
 
     private function validateClient(Request $request, ?Cliente $client = null): array

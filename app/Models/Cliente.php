@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Plan;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -31,6 +32,10 @@ class Cliente extends Model
         'portal_welcome_message',
         'notes',
         'is_active',
+        'plan_id',
+        'subscription_expires_at',
+        'billing_email',
+        'cancelled_at',
     ];
 
     protected $appends = [
@@ -38,7 +43,9 @@ class Cliente extends Model
     ];
 
     protected $casts = [
-        'is_active' => 'boolean',
+        'is_active'               => 'boolean',
+        'subscription_expires_at' => 'datetime',
+        'cancelled_at'            => 'datetime',
     ];
 
     protected static function booted(): void
@@ -64,6 +71,11 @@ class Cliente extends Model
     public function operatorUser(): BelongsTo
     {
         return $this->belongsTo(User::class, 'operator_user_id');
+    }
+
+    public function plan(): BelongsTo
+    {
+        return $this->belongsTo(Plan::class);
     }
 
     public function sedes(): HasMany
