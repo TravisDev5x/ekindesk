@@ -1,4 +1,3 @@
-import { ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { brandLogo } from "@/lib/marketingTheme";
 import {
@@ -6,6 +5,12 @@ import {
     getTenantLogoUrl,
     isClientPortalTenant,
 } from "@/lib/tenantBranding";
+
+/** Returns "TI" for Tikara's own brand, first letter for portal tenants. */
+function getBrandMonogram(name, isPortal) {
+    if (isPortal) return name.charAt(0).toUpperCase();
+    return name.slice(0, 2).toUpperCase();
+}
 
 export function TenantBrandMark({ tenant, className, fallbackName = "Tikara" }) {
     const name = getTenantBrandName(tenant, fallbackName);
@@ -18,34 +23,24 @@ export function TenantBrandMark({ tenant, className, fallbackName = "Tikara" }) 
                 src={logoUrl}
                 alt=""
                 className={cn(
-                    "rounded-lg object-cover border border-border/60 bg-card shrink-0",
+                    "rounded-xl object-cover border border-border/60 bg-card shrink-0",
                     className
                 )}
             />
         );
     }
 
-    if (isPortal) {
-        return (
-            <div
-                className={cn(
-                    "flex items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-md shrink-0 font-bold text-sm",
-                    className
-                )}
-            >
-                {name.charAt(0).toUpperCase()}
-            </div>
-        );
-    }
-
     return (
         <div
             className={cn(
-                "flex items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-md shrink-0",
+                "shrink-0",
+                brandLogo,
                 className
             )}
         >
-            <ShieldCheck className="h-4 w-4" />
+            <span className="text-[10px] leading-none">
+                {getBrandMonogram(name, isPortal)}
+            </span>
         </div>
     );
 }
@@ -88,10 +83,11 @@ export function TenantBrandHeader({
     );
 }
 
-/** Marca compacta para login (reutiliza tokens marketing). */
+/** Marca compacta para login/auth (reutiliza tokens marketing). */
 export function TenantBrandLoginMark({ tenant, className }) {
     const name = getTenantBrandName(tenant, "Tikara");
     const logoUrl = getTenantLogoUrl(tenant);
+    const isPortal = isClientPortalTenant(tenant);
 
     if (logoUrl) {
         return (
@@ -107,8 +103,10 @@ export function TenantBrandLoginMark({ tenant, className }) {
     }
 
     return (
-        <div className={cn("flex h-10 w-10 items-center justify-center rounded-xl", brandLogo, className)}>
-            <span className="text-lg font-black">{name.charAt(0).toUpperCase()}</span>
+        <div className={cn("flex h-10 w-10 items-center justify-center", brandLogo, className)}>
+            <span className="text-sm leading-none">
+                {getBrandMonogram(name, isPortal)}
+            </span>
         </div>
     );
 }

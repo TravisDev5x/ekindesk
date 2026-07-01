@@ -21,7 +21,7 @@ export const surfaceRoot = "surface-marketing min-h-screen mkt-section-default t
 export const surfaceAuth = "surface-auth min-h-screen bg-background text-foreground antialiased";
 
 export const brandLogo =
-    `flex items-center justify-center rounded-lg bg-gradient-to-br from-[hsl(var(--brand))] to-[hsl(var(--brand-muted))] text-sm font-black text-brand-foreground shadow-lg shadow-[hsl(var(--brand)/0.25)]`;
+    `flex items-center justify-center rounded-xl bg-gradient-to-br from-[hsl(var(--brand))] to-[hsl(var(--brand-muted))] font-black tracking-tight text-brand-foreground shadow-[0_2px_16px_hsl(var(--brand)/0.45)] ring-1 ring-white/25 ring-inset`;
 
 export const brandBadge =
     "inline-flex items-center gap-2 rounded-full border border-brand/30 bg-brand/10 px-4 py-1.5 text-sm text-brand-muted";

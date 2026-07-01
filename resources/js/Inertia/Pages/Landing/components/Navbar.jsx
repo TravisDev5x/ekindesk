@@ -24,9 +24,7 @@ const NAV_LINKS = [
 function BrandLogo() {
     return (
         <Link href="/" className="flex items-center gap-2.5 shrink-0">
-            <div className={`h-8 w-8 ${brandLogo}`}>
-                E
-            </div>
+            <div className={`h-8 w-8 text-[10px] ${brandLogo}`}>TI</div>
             <span className="text-lg font-bold text-foreground tracking-tight">Tikara</span>
         </Link>
     );
