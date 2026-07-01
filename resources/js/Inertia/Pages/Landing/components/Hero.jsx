@@ -17,9 +17,16 @@ export default function Hero() {
         <section id="mission" className={heroSectionClass}>
             <div className="mx-auto grid w-full max-w-7xl gap-12 lg:grid-cols-2 lg:gap-16 items-center">
                 <div>
-                    <div className={`${brandBadge} mb-8`}>
-                        <span className="h-2 w-2 rounded-full bg-brand animate-pulse" />
-                        Listo para operar en tu empresa
+                    <div className="flex flex-wrap items-center gap-3 mb-8">
+                        <div className={`${brandBadge}`}>
+                            <span className="h-2 w-2 rounded-full bg-brand animate-pulse" />
+                            Listo para operar en tu empresa
+                        </div>
+                        <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground/70">
+                            <span className="h-px w-4 bg-border" />
+                            Un producto de{" "}
+                            <span className="font-semibold text-foreground/60 tracking-tight">DDMA</span>
+                        </span>
                     </div>
 
                     <h1 className="text-5xl lg:text-6xl font-black text-foreground leading-[1.1] tracking-tight">

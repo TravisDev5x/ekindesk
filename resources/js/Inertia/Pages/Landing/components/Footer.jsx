@@ -4,9 +4,16 @@ import { brandLogo, footerLink } from "@/lib/marketingTheme";
 
 function BrandLogo() {
     return (
-        <div className="flex items-center gap-2.5">
-            <div className={`h-8 w-8 text-[10px] ${brandLogo}`}>TI</div>
-            <span className="text-lg font-bold text-foreground">Tikara</span>
+        <div>
+            <div className="flex items-center gap-2.5">
+                <div className={`h-8 w-8 text-[10px] ${brandLogo}`}>TI</div>
+                <div>
+                    <p className="text-lg font-bold text-foreground leading-tight">Tikara</p>
+                    <p className="text-[10px] text-muted-foreground/70 font-medium tracking-wide leading-tight">
+                        por DDMA
+                    </p>
+                </div>
+            </div>
         </div>
     );
 }
@@ -22,6 +29,7 @@ export default function Footer() {
                         <BrandLogo />
                         <p className="text-muted-foreground text-sm mt-3 max-w-xs leading-relaxed">
                             Helpdesk MSP profesional para equipos de soporte IT.
+                            Un producto de DDMA Desarrollos Digitales Mexicanos y Asociados.
                         </p>
                         <div className="mt-4 flex gap-2">
                             {["X", "in", "GH"].map((label) => (
@@ -81,6 +89,14 @@ export default function Footer() {
                                 </Link>
                             </li>
                         </ul>
+                        <div className="mt-6 rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5">
+                            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60 mb-1">
+                                Razón social
+                            </p>
+                            <p className="text-xs text-muted-foreground leading-snug">
+                                DDMA Desarrollos Digitales Mexicanos y Asociados
+                            </p>
+                        </div>
                     </div>
 
                     <div>
@@ -107,9 +123,17 @@ export default function Footer() {
 
                 <Separator className="my-8 bg-border" />
 
-                <div className="flex flex-col sm:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
-                    <p>© {year} Tikara. Todos los derechos reservados.</p>
-                    <p>Hecho en México 🇲🇽</p>
+                <div className="flex flex-col sm:flex-row justify-between items-center gap-3 text-sm text-muted-foreground">
+                    <p>
+                        © {year}{" "}
+                        <span className="font-medium text-foreground/70">Tikara</span>
+                        {" "}— una marca de{" "}
+                        <span className="font-medium text-foreground/70">
+                            DDMA Desarrollos Digitales Mexicanos y Asociados
+                        </span>
+                        . Todos los derechos reservados.
+                    </p>
+                    <p className="shrink-0">Hecho en México 🇲🇽</p>
                 </div>
             </div>
         </footer>
