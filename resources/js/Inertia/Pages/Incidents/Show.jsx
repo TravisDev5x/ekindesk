@@ -201,7 +201,7 @@ export default function Detalle() {
                         <Label className="text-[10px] uppercase text-muted-foreground font-bold">Sede</Label>
                         <div className="font-medium flex items-center gap-1.5">
                             <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
-                            {incident.sede?.name || "-"}
+                            {incident.site?.name || "-"}
                         </div>
                     </div>
                     <div className="space-y-1">

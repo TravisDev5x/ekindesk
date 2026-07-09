@@ -82,7 +82,7 @@ const IncidentRow = memo(function IncidentRow({ incident }) {
             <TableCell>
                 <div className="flex flex-col text-xs gap-1">
                     <span className="font-medium flex items-center gap-1.5 text-foreground/80">
-                        <Building2 className="w-3 h-3 text-muted-foreground" /> {incident.sede?.name}
+                        <Building2 className="w-3 h-3 text-muted-foreground" /> {incident.site?.name}
                     </span>
                 </div>
             </TableCell>
@@ -150,7 +150,7 @@ const IncidentCard = memo(function IncidentCard({ incident }) {
                 </div>
                 <div className="flex items-center justify-between gap-2 pt-1">
                     <span className="text-[11px] text-muted-foreground flex items-center gap-1 truncate min-w-0">
-                        <Building2 className="w-3 h-3 shrink-0" /> {incident.sede?.name}
+                        <Building2 className="w-3 h-3 shrink-0" /> {incident.site?.name}
                     </span>
                     <Button
                         asChild
@@ -184,7 +184,7 @@ export default function Index() {
     const [perPage, setPerPage] = useState(() => Number(localStorage.getItem("incidents.perPage")) || 10);
     const [currentPage, setCurrentPage] = useState(1);
 
-    const defaultFilters = { area: "all", sede: "all", type: "all", severity: "all", status: "all", search: "", assignment: "all", assignee: "all" };
+    const defaultFilters = { area: "all", site: "all", type: "all", severity: "all", status: "all", search: "", assignment: "all", assignee: "all" };
     const [filters, setFilters] = useState(() => {
         const saved = localStorage.getItem("incidents.filters");
         return saved ? { ...defaultFilters, ...JSON.parse(saved) } : defaultFilters;
@@ -222,7 +222,7 @@ export default function Index() {
                 per_page: perPage,
                 search: filters.search,
                 ...(filters.area !== "all" && { area_id: filters.area }),
-                ...(filters.sede !== "all" && { site_id: filters.sede }),
+                ...(filters.site !== "all" && { site_id: filters.site }),
                 ...(filters.type !== "all" && { incident_type_id: filters.type }),
                 ...(filters.severity !== "all" && { incident_severity_id: filters.severity }),
                 ...(filters.status !== "all" && { incident_status_id: filters.status }),
@@ -263,7 +263,7 @@ export default function Index() {
             occurred_at: "",
             enabled_at: "",
             area_id: String(user?.area_id || cats.areas?.[0]?.id || ""),
-            site_id: String(user?.sede?.id || cats.sedes?.[0]?.id || ""),
+            site_id: String(user?.site?.id || cats.sites?.[0]?.id || ""),
             incident_type_id: String(cats.incident_types?.[0]?.id || ""),
             incident_severity_id: String(cats.incident_severities?.[0]?.id || ""),
             incident_status_id: String(cats.incident_statuses?.[0]?.id || ""),
@@ -316,7 +316,7 @@ export default function Index() {
 
     const hasActiveFilters = filters.search !== ""
         || filters.area !== "all"
-        || filters.sede !== "all"
+        || filters.site !== "all"
         || filters.type !== "all"
         || filters.severity !== "all"
         || filters.status !== "all"
@@ -326,7 +326,7 @@ export default function Index() {
     const activeFilterCount = [
         filters.search,
         filters.area !== "all",
-        filters.sede !== "all",
+        filters.site !== "all",
         filters.type !== "all",
         filters.severity !== "all",
         filters.status !== "all",
@@ -423,11 +423,11 @@ export default function Index() {
                             )}
 
                             {canFilterSite && (
-                                <Select value={filters.sede} onValueChange={(v) => setFilters(f => ({ ...f, sede: v }))}>
+                                <Select value={filters.site} onValueChange={(v) => setFilters(f => ({ ...f, site: v }))}>
                                     <SelectTrigger className="h-8 text-xs bg-background"><SelectValue placeholder="Sede" /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">Todas las sedes</SelectItem>
-                                        {(cats.sedes || []).map(s => <SelectItem key={s.id} value={String(s.id)}>{s.name}</SelectItem>)}
+                                        {(cats.sites || []).map(s => <SelectItem key={s.id} value={String(s.id)}>{s.name}</SelectItem>)}
                                     </SelectContent>
                                 </Select>
                             )}
@@ -645,7 +645,7 @@ export default function Index() {
                                     <Label className="text-xs font-bold uppercase text-muted-foreground">Sede</Label>
                                     <Select value={form.site_id} onValueChange={v => setForm({ ...form, site_id: v })}>
                                         <SelectTrigger className="bg-background"><SelectValue placeholder="Seleccionar Sede" /></SelectTrigger>
-                                        <SelectContent>{(cats.sedes || []).map(s => <SelectItem key={s.id} value={String(s.id)}>{s.name}</SelectItem>)}</SelectContent>
+                                        <SelectContent>{(cats.sites || []).map(s => <SelectItem key={s.id} value={String(s.id)}>{s.name}</SelectItem>)}</SelectContent>
                                     </Select>
                                 </div>
                                 <div className="space-y-2">

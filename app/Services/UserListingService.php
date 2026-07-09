@@ -58,8 +58,8 @@ class UserListingService
                 'campaign' => $user->campaign->name ?? 'Sin Asignar',
                 'area' => $user->area->name ?? 'Sin Asignar',
                 'position' => $user->position->name ?? 'Sin Asignar',
-                'sede' => $user->site->name ?? 'Sin Asignar',
-                'ubicacion' => $user->location->name ?? null,
+                'site' => $user->site->name ?? 'Sin Asignar',
+                'location' => $user->location->name ?? null,
                 'status' => $user->status,
                 'is_blacklisted' => (bool) $user->is_blacklisted,
                 'roles' => $user->roles->map(fn ($r) => ['id' => $r->id, 'name' => $r->name])->values()->all(),
@@ -109,16 +109,16 @@ class UserListingService
                 $query->where('area_id', $areaId);
             }
         }
-        if ($request->filled('sede')) {
-            $sedeId = Site::where('name', $request->input('sede'))->value('id');
-            if ($sedeId !== null) {
-                $query->where('site_id', $sedeId);
+        if ($request->filled('site')) {
+            $siteId = Site::where('name', $request->input('site'))->value('id');
+            if ($siteId !== null) {
+                $query->where('site_id', $siteId);
             }
         }
-        if ($request->filled('ubicacion')) {
-            $ubicacionId = Location::where('name', $request->input('ubicacion'))->value('id');
-            if ($ubicacionId !== null) {
-                $query->where('location_id', $ubicacionId);
+        if ($request->filled('location')) {
+            $locationId = Location::where('name', $request->input('location'))->value('id');
+            if ($locationId !== null) {
+                $query->where('location_id', $locationId);
             }
         }
         if ($request->filled('role_id')) {

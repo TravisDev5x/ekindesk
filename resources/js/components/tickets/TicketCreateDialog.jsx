@@ -52,10 +52,10 @@ export function TicketCreateDialog({
     catalogs,
     saving,
     onSubmit,
-    /** { sedeName, clientName } — sede/cliente del solicitante (solo lectura) */
+    /** { siteName, clientName } — site/cliente del solicitante (solo lectura) */
     siteContext = null,
 }) {
-    const autoSite = Boolean(siteContext?.sedeName);
+    const autoSite = Boolean(siteContext?.siteName);
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-xl gap-0 overflow-hidden p-0 [&>div.flex-1]:px-0 [&>div.flex-1]:pt-0 [&>div.flex-1]:pb-0">
@@ -138,7 +138,7 @@ export function TicketCreateDialog({
                                     <Field label="Sede">
                                         <div className="flex h-10 items-center gap-2 rounded-md border border-border/60 bg-muted/30 px-3 text-sm">
                                             <MapPin className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
-                                            <span>{siteContext.sedeName}</span>
+                                            <span>{siteContext.siteName}</span>
                                         </div>
                                         <p className="text-xs text-muted-foreground">
                                             Se asignan automáticamente según tu perfil.
@@ -158,7 +158,7 @@ export function TicketCreateDialog({
                                             </SelectTrigger>
                                         </div>
                                         <SelectContent>
-                                            {(catalogs.sedes || []).map((s) => (
+                                            {(catalogs.sites || []).map((s) => (
                                                 <SelectItem key={s.id} value={String(s.id)}>
                                                     {s.name}
                                                 </SelectItem>

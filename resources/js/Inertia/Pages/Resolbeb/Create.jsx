@@ -46,7 +46,7 @@ export default function ResolbebCreate({ catalogs: catalogsProp }) {
             catalogs.ticket_states[0];
         setForm((prev) => ({
             ...prev,
-            site_id: prev.site_id || String(user?.site_id || user?.sede?.id || ""),
+            site_id: prev.site_id || String(user?.site_id || user?.site?.id || ""),
             area_origin_id: prev.area_origin_id || String(user?.area_id || ""),
             ticket_type_id: prev.ticket_type_id || String(catalogs.ticket_types?.[0]?.id || ""),
             impact_level_id: prev.impact_level_id || String(catalogs.impact_levels?.[0]?.id || ""),
@@ -59,7 +59,7 @@ export default function ResolbebCreate({ catalogs: catalogsProp }) {
         catalogs.impact_levels,
         catalogs.urgency_levels,
         user?.site_id,
-        user?.sede?.id,
+        user?.site?.id,
         user?.area_id,
     ]);
 
@@ -88,7 +88,7 @@ export default function ResolbebCreate({ catalogs: catalogsProp }) {
             notify.error("El asunto es obligatorio");
             return;
         }
-        if (!user?.site_id && !user?.sede?.id) {
+        if (!user?.site_id && !user?.site?.id) {
             notify.error("Tu usuario no tiene sede asignada. Contacta al administrador.");
             return;
         }
@@ -259,8 +259,8 @@ export default function ResolbebCreate({ catalogs: catalogsProp }) {
                                         <MapPin className="w-3 h-3" /> Sede
                                     </Label>
                                     <div className="flex h-10 items-center rounded-md border border-border/60 bg-background px-3 text-sm">
-                                        {user?.sede?.name ||
-                                            (catalogs.sedes || []).find(
+                                        {user?.site?.name ||
+                                            (catalogs.sites || []).find(
                                                 (s) => String(s.id) === String(user?.site_id)
                                             )?.name ||
                                             "—"}

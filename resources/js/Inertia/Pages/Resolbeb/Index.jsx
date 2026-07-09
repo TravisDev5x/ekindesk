@@ -100,7 +100,7 @@ const TicketRow = memo(function TicketRow({ ticket }) {
             <TableCell>
                 <div className="flex flex-col text-xs gap-1">
                     <span className="font-medium flex items-center gap-1.5 text-foreground/80">
-                        <Building2 className="w-3 h-3 text-muted-foreground" /> {ticket.sede?.name}
+                        <Building2 className="w-3 h-3 text-muted-foreground" /> {ticket.site?.name}
                     </span>
                     <span className="text-muted-foreground pl-5 truncate max-w-[140px]" title={ticket.area_current?.name}>
                         {ticket.area_current?.name}
@@ -142,8 +142,8 @@ export default function ResolbebIndex({ mode = "tickets", catalogs: catalogsProp
     const { url } = usePage();
     const catalogs = useMemo(() => ({
         areas: [],
-        sedes: [],
-        ubicaciones: [],
+        sites: [],
+        locations: [],
         priorities: [],
         ticket_states: [],
         ticket_types: [],
@@ -161,7 +161,7 @@ export default function ResolbebIndex({ mode = "tickets", catalogs: catalogsProp
     const [perPage, setPerPage] = useState(() => Number(localStorage.getItem("resolvev1.tickets.perPage")) || 10);
     const [currentPage, setCurrentPage] = useState(1);
     const [lastUpdated, setLastUpdated] = useState(null);
-    const defaultFilters = { client: "all", area: "all", sede: "all", type: "all", priority: "all", state: "all", search: "", assignment: "all", assignee: "all", sla: "all" };
+    const defaultFilters = { client: "all", area: "all", site: "all", type: "all", priority: "all", state: "all", search: "", assignment: "all", assignee: "all", sla: "all" };
     const [filters, setFilters] = useState(() => {
         const saved = localStorage.getItem("resolvev1.tickets.filters");
         return saved ? { ...defaultFilters, ...JSON.parse(saved) } : defaultFilters;
@@ -188,15 +188,15 @@ export default function ResolbebIndex({ mode = "tickets", catalogs: catalogsProp
     const canFilterByClient = canManageAll;
     const clients = catalogs.clients || [];
 
-    const filteredSedes = useMemo(() => {
-        const sedes = catalogs.sedes || [];
-        if (filters.client === "all") return sedes;
-        return sedes.filter((s) => String(s.client_id) === String(filters.client));
-    }, [catalogs.sedes, filters.client]);
+    const filteredSites = useMemo(() => {
+        const sites = catalogs.sites || [];
+        if (filters.client === "all") return sites;
+        return sites.filter((s) => String(s.client_id) === String(filters.client));
+    }, [catalogs.sites, filters.client]);
 
     useEffect(() => {
         if (!canManageAll && userClientId && filters.client !== userClientId) {
-            setFilters((prev) => ({ ...prev, client: userClientId, sede: "all" }));
+            setFilters((prev) => ({ ...prev, client: userClientId, site: "all" }));
         }
     }, [canManageAll, userClientId, filters.client]);
 
@@ -214,7 +214,7 @@ export default function ResolbebIndex({ mode = "tickets", catalogs: catalogsProp
             else if (!canManageAll && userClientId) params.client_id = userClientId;
             if (canManageAll) {
                 if (filters.area !== "all") params.area_current_id = filters.area;
-                if (filters.sede !== "all") params.site_id = filters.sede;
+                if (filters.site !== "all") params.site_id = filters.site;
                 if (filters.type !== "all") params.ticket_type_id = filters.type;
                 if (filters.priority !== "all") params.priority_id = filters.priority;
                 if (filters.state !== "all") params.ticket_state_id = filters.state;
@@ -223,7 +223,7 @@ export default function ResolbebIndex({ mode = "tickets", catalogs: catalogsProp
                 if (filters.assignment === "unassigned") params.assigned_status = "unassigned";
                 if (filters.assignment === "user" && filters.assignee !== "all") params.assigned_user_id = filters.assignee;
             } else {
-                if (filters.sede !== "all") params.site_id = filters.sede;
+                if (filters.site !== "all") params.site_id = filters.site;
                 if (filters.type !== "all") params.ticket_type_id = filters.type;
             }
             if (canViewArea && !canManageAll && user?.area_id) params.area_current_id = user.area_id;
@@ -275,7 +275,7 @@ export default function ResolbebIndex({ mode = "tickets", catalogs: catalogsProp
         setForm({
             ...form,
             subject: "", description: "",
-            site_id: String(user?.site_id || user?.sede?.id || ""),
+            site_id: String(user?.site_id || user?.site?.id || ""),
             area_origin_id: String(user?.area_id || ""),
             area_current_id: String(user?.area_id || ""),
             ticket_type_id: String(catalogs.ticket_types?.[0]?.id || ""),
@@ -287,15 +287,15 @@ export default function ResolbebIndex({ mode = "tickets", catalogs: catalogsProp
     };
 
     const ticketSiteContext = useMemo(() => {
-        const sedeId = user?.site_id || user?.sede?.id;
-        if (!sedeId) return null;
-        const sede = (catalogs.sedes || []).find((s) => String(s.id) === String(sedeId));
-        const client = (catalogs.clients || []).find((c) => String(c.id) === String(user?.client_id || sede?.client_id));
+        const siteId = user?.site_id || user?.site?.id;
+        if (!siteId) return null;
+        const site = (catalogs.sites || []).find((s) => String(s.id) === String(siteId));
+        const client = (catalogs.clients || []).find((c) => String(c.id) === String(user?.client_id || site?.client_id));
         return {
-            sedeName: user?.sede?.name || sede?.name || "Tu sede",
+            siteName: user?.site?.name || site?.name || "Tu sede",
             clientName: user?.client_name || client?.name || null,
         };
-    }, [user, catalogs.sedes, catalogs.clients]);
+    }, [user, catalogs.sites, catalogs.clients]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -340,11 +340,11 @@ export default function ResolbebIndex({ mode = "tickets", catalogs: catalogsProp
         client: !canManageAll && userClientId ? userClientId : "all",
     });
     const hasActiveFilters = canManageAll
-        ? (filters.search !== "" || filters.client !== "all" || filters.area !== "all" || filters.sede !== "all" || filters.type !== "all" || filters.state !== "all" || filters.priority !== "all" || filters.assignment !== "all" || (filters.assignment === "user" && filters.assignee !== "all") || filters.sla !== "all")
-        : (filters.search !== "" || filters.sede !== "all" || filters.type !== "all");
+        ? (filters.search !== "" || filters.client !== "all" || filters.area !== "all" || filters.site !== "all" || filters.type !== "all" || filters.state !== "all" || filters.priority !== "all" || filters.assignment !== "all" || (filters.assignment === "user" && filters.assignee !== "all") || filters.sla !== "all")
+        : (filters.search !== "" || filters.site !== "all" || filters.type !== "all");
     const activeFilterCount = canManageAll
-        ? [filters.search, filters.client !== "all", filters.area !== "all", filters.sede !== "all", filters.type !== "all", filters.priority !== "all", filters.state !== "all", filters.assignment !== "all", filters.assignment === "user" && filters.assignee !== "all", filters.sla !== "all"].filter(Boolean).length
-        : [filters.search, filters.sede !== "all", filters.type !== "all"].filter(Boolean).length;
+        ? [filters.search, filters.client !== "all", filters.area !== "all", filters.site !== "all", filters.type !== "all", filters.priority !== "all", filters.state !== "all", filters.assignment !== "all", filters.assignment === "user" && filters.assignee !== "all", filters.sla !== "all"].filter(Boolean).length
+        : [filters.search, filters.site !== "all", filters.type !== "all"].filter(Boolean).length;
 
     const [exporting, setExporting] = useState(false);
     const handleExport = useCallback(async () => {
@@ -353,7 +353,7 @@ export default function ResolbebIndex({ mode = "tickets", catalogs: catalogsProp
         if (filters.client !== "all") params.client_id = filters.client;
         else if (!canManageAll && userClientId) params.client_id = userClientId;
         if (filters.area !== "all") params.area_current_id = filters.area;
-        if (filters.sede !== "all") params.site_id = filters.sede;
+        if (filters.site !== "all") params.site_id = filters.site;
         if (filters.type !== "all") params.ticket_type_id = filters.type;
         if (filters.priority !== "all") params.priority_id = filters.priority;
         if (filters.state !== "all") params.ticket_state_id = filters.state;
@@ -514,7 +514,7 @@ export default function ResolbebIndex({ mode = "tickets", catalogs: catalogsProp
                                 {canFilterByClient && (
                                     <Select
                                         value={filters.client}
-                                        onValueChange={(v) => setFilters((f) => ({ ...f, client: v, sede: "all" }))}
+                                        onValueChange={(v) => setFilters((f) => ({ ...f, client: v, site: "all" }))}
                                     >
                                         <SelectTrigger className="h-8 text-xs bg-background"><SelectValue placeholder="Cliente" /></SelectTrigger>
                                         <SelectContent>
@@ -555,11 +555,11 @@ export default function ResolbebIndex({ mode = "tickets", catalogs: catalogsProp
                                         {catalogs.ticket_types.map(t => <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>)}
                                     </SelectContent>
                                 </Select>
-                                <Select value={filters.sede} onValueChange={(v) => setFilters(f => ({ ...f, sede: v }))}>
+                                <Select value={filters.site} onValueChange={(v) => setFilters(f => ({ ...f, site: v }))}>
                                     <SelectTrigger className="h-8 text-xs bg-background"><SelectValue placeholder="Sede" /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">Todas las sedes</SelectItem>
-                                        {filteredSedes.map(s => <SelectItem key={s.id} value={String(s.id)}>{s.name}</SelectItem>)}
+                                        {filteredSites.map(s => <SelectItem key={s.id} value={String(s.id)}>{s.name}</SelectItem>)}
                                     </SelectContent>
                                 </Select>
                                 {canManageAll && (

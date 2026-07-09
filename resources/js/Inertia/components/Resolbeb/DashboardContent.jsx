@@ -150,7 +150,7 @@ export default function DashboardContent({ isStandalone = false }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const catalogs = catalogsProp ?? { sedes: [], area_users: [] };
+  const catalogs = catalogsProp ?? { sites: [], area_users: [] };
   const [filters, setFilters] = useState({});
   const [lastRefresh, setLastRefresh] = useState(null);
   const [isTvMode, setIsTvMode] = useState(false);
@@ -255,7 +255,7 @@ export default function DashboardContent({ isStandalone = false }) {
     return noPermContent;
   }
 
-  const sedes = catalogs.sedes || [];
+  const sites = catalogs.sites || [];
   const agents = catalogs.area_users || [];
 
   const dashboardContent = (
@@ -320,7 +320,7 @@ export default function DashboardContent({ isStandalone = false }) {
           <CardTitle className="text-sm font-medium flex items-center gap-2">Filtros rápidos</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-wrap gap-4">
-          {canFilterSite && sedes.length > 0 && (
+          {canFilterSite && sites.length > 0 && (
             <div className="space-y-2">
               <Label className="text-xs">Sede</Label>
               <Select
@@ -332,7 +332,7 @@ export default function DashboardContent({ isStandalone = false }) {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todas las sedes</SelectItem>
-                  {sedes.map((s) => (
+                  {sites.map((s) => (
                     <SelectItem key={s.id} value={String(s.id)}>{s.name}</SelectItem>
                   ))}
                 </SelectContent>
@@ -516,11 +516,11 @@ export default function DashboardContent({ isStandalone = false }) {
                 description="Tickets creados este mes por sede"
                 chartHeight={300}
               >
-                {(data.top_sedes?.length ?? 0) > 0 ? (
+                {(data.top_sites?.length ?? 0) > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={data.top_sedes} margin={{ top: 8, right: 8, left: 8, bottom: 8 }}>
+                    <BarChart data={data.top_sites} margin={{ top: 8, right: 8, left: 8, bottom: 8 }}>
                       <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                      <XAxis dataKey="sede" tick={{ fontSize: 10 }} />
+                      <XAxis dataKey="site" tick={{ fontSize: 10 }} />
                       <YAxis tick={{ fontSize: 11 }} />
                       <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(255, 255, 255, 0.05)" }} />
                       <Bar dataKey="total" name="Tickets" fill={chartColor(0)} radius={[4, 4, 0, 0]} />
@@ -634,7 +634,7 @@ export default function DashboardContent({ isStandalone = false }) {
                         <TableCell className="text-xs">{t.assigned_user?.name ?? "Sin asignar"}</TableCell>
                         <TableCell className="text-xs flex items-center gap-1">
                           <Building2 className="h-3 w-3 text-muted-foreground" />
-                          {t.sede?.name ?? "—"}
+                          {t.site?.name ?? "—"}
                         </TableCell>
                         <TableCell>
                           <span className={cn("text-xs font-medium", t.is_overdue && "text-destructive")}>

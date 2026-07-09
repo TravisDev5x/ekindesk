@@ -85,7 +85,7 @@ class HandleInertiaRequests extends Middleware
                     'force_password_change' => $user->force_password_change ?? false,
                     'area' => $user->area?->name,
                     'area_id' => $user->area_id,
-                    'sede' => $user->site?->name,
+                    'site' => $user->site?->name,
                     'site_id' => $user->site_id,
                     'availability' => $user->availability,
                     'roles' => $user->getCachedRoleNames()->values()->all(),

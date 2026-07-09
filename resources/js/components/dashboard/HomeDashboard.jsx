@@ -395,7 +395,7 @@ function DashboardSolicitante() {
     const [createModalOpen, setCreateModalOpen] = useState(false);
     const [createForm, setCreateForm] = useState(CREATE_FORM_INITIAL);
     const [createSaving, setCreateSaving] = useState(false);
-    const [createCatalogs, setCreateCatalogs] = useState({ areas: [], sedes: [], priorities: [], ticket_states: [], ticket_types: [] });
+    const [createCatalogs, setCreateCatalogs] = useState({ areas: [], sites: [], priorities: [], ticket_states: [], ticket_types: [] });
     const [createCatalogsLoading, setCreateCatalogsLoading] = useState(false);
     const [sortOrder, setSortOrder] = useState("recent");
     const [stateFilter, setStateFilter] = useState("all");
@@ -449,7 +449,7 @@ function DashboardSolicitante() {
             const openState = (data.ticket_states || []).find((s) => (s.code || "").toLowerCase() === "abierto") || (data.ticket_states || [])[0];
             setCreateForm({
                 ...CREATE_FORM_INITIAL,
-                site_id: String(user?.site_id || user?.sede?.id || ""),
+                site_id: String(user?.site_id || user?.site?.id || ""),
                 area_origin_id: String(user?.area_id || ""),
                 ticket_type_id: String((data.ticket_types || [])[0]?.id || ""),
                 priority_id: String((data.priorities || [])[0]?.id || ""),
@@ -468,7 +468,7 @@ function DashboardSolicitante() {
             })
             .catch(() => notify.error("No se pudieron cargar los catálogos"))
             .finally(() => setCreateCatalogsLoading(false));
-    }, [user?.site_id, user?.sede?.id, user?.area_id, createCatalogs]);
+    }, [user?.site_id, user?.site?.id, user?.area_id, createCatalogs]);
 
     const handleCreateSubmit = async (e) => {
         e.preventDefault();
@@ -889,7 +889,7 @@ function DashboardSolicitante() {
                                             <Select value={createForm.site_id} onValueChange={(v) => setCreateForm((f) => ({ ...f, site_id: v }))} disabled={createCatalogsLoading}>
                                                 <SelectTrigger className="bg-muted/40 border-border/60"><SelectValue placeholder="Sede" /></SelectTrigger>
                                                 <SelectContent>
-                                                    {(createCatalogs.sedes || []).map((s) => (
+                                                    {(createCatalogs.sites || []).map((s) => (
                                                         <SelectItem key={s.id} value={String(s.id)}>{s.name}</SelectItem>
                                                     ))}
                                                 </SelectContent>
@@ -1128,7 +1128,7 @@ function DashboardAdmin() {
     const canFilterSite = can("tickets.filter_by_site") || canManageAll;
 
     const [catalogs, setCatalogs] = useState({
-        areas: [], sedes: [], priorities: [], ticket_states: [], ticket_types: [],
+        areas: [], sites: [], priorities: [], ticket_states: [], ticket_types: [],
     });
 
     const [filters, setFilters] = useState(() => {
@@ -1203,7 +1203,7 @@ function DashboardAdmin() {
         if (filtersToApply.priority !== "all") params.priority_id = filtersToApply.priority;
         if (filtersToApply.type !== "all") params.ticket_type_id = filtersToApply.type;
         if (filtersToApply.area !== "all") params.area_current_id = filtersToApply.area;
-        if (filtersToApply.sede !== "all") params.site_id = filtersToApply.sede;
+        if (filtersToApply.site !== "all") params.site_id = filtersToApply.site;
 
         if (!canManageAll && canViewArea && user?.area_id) params.area_current_id = user.area_id;
         if (!canFilterSite) delete params.site_id;
@@ -1383,11 +1383,11 @@ function DashboardAdmin() {
                                 {canFilterSite && (
                                     <div className="space-y-1.5">
                                         <Label className="text-[10px] uppercase font-bold text-muted-foreground ml-1">Sede</Label>
-                                        <Select value={filters.sede} onValueChange={(v) => setFilters(p => ({ ...p, sede: v }))}>
+                                        <Select value={filters.site} onValueChange={(v) => setFilters(p => ({ ...p, site: v }))}>
                                             <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Sede" /></SelectTrigger>
                                             <SelectContent>
                                                 <SelectItem value="all">Todas</SelectItem>
-                                                {catalogs.sedes.map(s => <SelectItem key={s.id} value={String(s.id)}>{s.name}</SelectItem>)}
+                                                {catalogs.sites.map(s => <SelectItem key={s.id} value={String(s.id)}>{s.name}</SelectItem>)}
                                             </SelectContent>
                                         </Select>
                                     </div>

@@ -52,23 +52,23 @@ class ResolbebIndexController extends Controller
                 ->get(['id', 'name', 'area_id', 'position_id']);
         }
 
-        $sedes = $this->clientScope->sitesQueryForUser($user)->orderBy('name')->get(['id', 'name', 'type', 'client_id']);
-        $sedeIds = $sedes->pluck('id');
+        $sites = $this->clientScope->sitesQueryForUser($user)->orderBy('name')->get(['id', 'name', 'type', 'client_id']);
+        $siteIds = $sites->pluck('id');
 
-        $ubicacionesQuery = DB::table('locations')
+        $locationsQuery = DB::table('locations')
             ->join('sites', 'sites.id', '=', 'locations.site_id')
             ->where('locations.is_active', true);
-        if ($sedeIds->isNotEmpty()) {
-            $ubicacionesQuery->whereIn('locations.site_id', $sedeIds);
+        if ($siteIds->isNotEmpty()) {
+            $locationsQuery->whereIn('locations.site_id', $siteIds);
         } else {
-            $ubicacionesQuery->whereRaw('0 = 1');
+            $locationsQuery->whereRaw('0 = 1');
         }
 
         return [
             'clients' => $user ? $this->clientScope->clientsForCatalog($user) : [],
             'areas' => Area::where('is_active', true)->orderBy('name')->get(['id', 'name']),
-            'sedes' => $sedes,
-            'ubicaciones' => $ubicacionesQuery
+            'sites' => $sites,
+            'locations' => $locationsQuery
                 ->orderBy('sites.name')
                 ->orderBy('locations.name')
                 ->get([

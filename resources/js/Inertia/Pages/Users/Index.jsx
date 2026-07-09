@@ -65,8 +65,8 @@ const EMPTY_FORM = {
     campaign: "",
     area: "",
     position: "",
-    sede: "",
-    ubicacion: "",
+    site: "",
+    location: "",
 };
 
 function initials(name) {
@@ -119,9 +119,9 @@ function UserCard({ user, renderRowActions }) {
                     </div>
                     <StatusBadge status={user.status} isBlacklisted={user.is_blacklisted} />
                 </div>
-                {(user.campaign || user.sede) && (
+                {(user.campaign || user.site) && (
                     <p className="text-xs text-muted-foreground truncate">
-                        {[user.campaign, user.sede, user.ubicacion].filter(Boolean).join(" · ")}
+                        {[user.campaign, user.site, user.location].filter(Boolean).join(" · ")}
                     </p>
                 )}
                 {user.position && (
@@ -159,8 +159,8 @@ function userToForm(user, catalogs) {
         campaign: user.campaign && user.campaign !== "Sin Asignar" ? user.campaign : "",
         area: user.area && user.area !== "Sin Asignar" ? user.area : "",
         position: user.position && user.position !== "Sin Asignar" ? user.position : "",
-        sede: user.sede && user.sede !== "Sin Asignar" ? user.sede : "",
-        ubicacion: user.ubicacion ?? "",
+        site: user.site && user.site !== "Sin Asignar" ? user.site : "",
+        location: user.location ?? "",
     };
 }
 
@@ -213,7 +213,7 @@ export default function Index({ users, catalogs, filters: serverFilters = {} }) 
         role_id: serverFilters.role_id ?? "all",
         campaign: serverFilters.campaign ?? "all",
         area: serverFilters.area ?? "all",
-        sede: serverFilters.sede ?? "all",
+        site: serverFilters.site ?? "all",
     });
 
     const [dialogOpen, setDialogOpen] = useState(false);
@@ -241,7 +241,7 @@ export default function Index({ users, catalogs, filters: serverFilters = {} }) 
             role_id: serverFilters.role_id ?? "all",
             campaign: serverFilters.campaign ?? "all",
             area: serverFilters.area ?? "all",
-            sede: serverFilters.sede ?? "all",
+            site: serverFilters.site ?? "all",
         });
     }, [serverFilters]);
 
@@ -268,7 +268,7 @@ export default function Index({ users, catalogs, filters: serverFilters = {} }) 
             if (merged.role_id && merged.role_id !== "all") q.role_id = merged.role_id;
             if (merged.campaign && merged.campaign !== "all") q.campaign = merged.campaign;
             if (merged.area && merged.area !== "all") q.area = merged.area;
-            if (merged.sede && merged.sede !== "all") q.sede = merged.sede;
+            if (merged.site && merged.site !== "all") q.site = merged.site;
             if (merged.status === "only") q.status = "only";
             if (merged.per_page) q.per_page = merged.per_page;
             if (merged.page) q.page = merged.page;
@@ -291,7 +291,7 @@ export default function Index({ users, catalogs, filters: serverFilters = {} }) 
         if (serverFilters.area && serverFilters.area !== "all") n++;
         if (serverFilters.role_id && serverFilters.role_id !== "all") n++;
         if (serverFilters.user_status && serverFilters.user_status !== "all") n++;
-        if (serverFilters.sede && serverFilters.sede !== "all") n++;
+        if (serverFilters.site && serverFilters.site !== "all") n++;
         if (serverFilters.blacklist && serverFilters.blacklist !== "all") n++;
         return n;
     }, [serverFilters]);
@@ -318,7 +318,7 @@ export default function Index({ users, catalogs, filters: serverFilters = {} }) 
             role_id: "all",
             campaign: "all",
             area: "all",
-            sede: "all",
+            site: "all",
         };
         setDraft(cleared);
         visit({ ...cleared, page: 1, status: showTrashed ? "only" : undefined });
@@ -368,8 +368,8 @@ export default function Index({ users, catalogs, filters: serverFilters = {} }) 
             campaign: form.campaign,
             area: form.area,
             position: form.position,
-            sede: form.sede || null,
-            ubicacion: form.ubicacion || null,
+            site: form.site || null,
+            location: form.location || null,
         };
         if (form.password) payload.password = form.password;
         if (!isEdit) payload.password = form.password;
@@ -462,11 +462,11 @@ export default function Index({ users, catalogs, filters: serverFilters = {} }) 
         }
     };
 
-    const filteredUbicaciones = useMemo(() => {
-        const list = catalogs.ubicaciones ?? [];
-        if (!form.sede) return list;
-        return list.filter((u) => u.sede_name === form.sede);
-    }, [catalogs.ubicaciones, form.sede]);
+    const filteredLocations = useMemo(() => {
+        const list = catalogs.locations ?? [];
+        if (!form.site) return list;
+        return list.filter((u) => u.site_name === form.site);
+    }, [catalogs.locations, form.site]);
 
     const renderRowActions = useCallback(
         (u) => (
@@ -870,15 +870,15 @@ export default function Index({ users, catalogs, filters: serverFilters = {} }) 
                                 <div className="space-y-1">
                                     <Label className="text-xs">Sede</Label>
                                     <Select
-                                        value={draft.sede}
-                                        onValueChange={(v) => onFilterChange({ sede: v })}
+                                        value={draft.site}
+                                        onValueChange={(v) => onFilterChange({ site: v })}
                                     >
                                         <SelectTrigger className="h-9">
                                             <SelectValue placeholder="Todas" />
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="all">Todas</SelectItem>
-                                            {(catalogs.sedes ?? []).map((s) => (
+                                            {(catalogs.sites ?? []).map((s) => (
                                                 <SelectItem key={s.id} value={s.name}>
                                                     {s.name}
                                                 </SelectItem>
@@ -1188,12 +1188,12 @@ export default function Index({ users, catalogs, filters: serverFilters = {} }) 
                                 <div className="space-y-1">
                                     <Label>Sede</Label>
                                     <Select
-                                        value={form.sede || "none"}
+                                        value={form.site || "none"}
                                         onValueChange={(v) =>
                                             setForm((f) => ({
                                                 ...f,
-                                                sede: v === "none" ? "" : v,
-                                                ubicacion: "",
+                                                site: v === "none" ? "" : v,
+                                                location: "",
                                             }))
                                         }
                                     >
@@ -1202,7 +1202,7 @@ export default function Index({ users, catalogs, filters: serverFilters = {} }) 
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="none">Sin sede</SelectItem>
-                                            {(catalogs.sedes ?? []).map((s) => (
+                                            {(catalogs.sites ?? []).map((s) => (
                                                 <SelectItem key={s.id} value={s.name}>
                                                     {s.name}
                                                 </SelectItem>
@@ -1213,11 +1213,11 @@ export default function Index({ users, catalogs, filters: serverFilters = {} }) 
                                 <div className="space-y-1">
                                     <Label>Ubicación</Label>
                                     <Select
-                                        value={form.ubicacion || "none"}
+                                        value={form.location || "none"}
                                         onValueChange={(v) =>
                                             setForm((f) => ({
                                                 ...f,
-                                                ubicacion: v === "none" ? "" : v,
+                                                location: v === "none" ? "" : v,
                                             }))
                                         }
                                     >
@@ -1226,10 +1226,10 @@ export default function Index({ users, catalogs, filters: serverFilters = {} }) 
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="none">Sin ubicación</SelectItem>
-                                            {filteredUbicaciones.map((u) => (
+                                            {filteredLocations.map((u) => (
                                                 <SelectItem key={u.id} value={u.name}>
                                                     {u.name}
-                                                    {u.sede_name ? ` (${u.sede_name})` : ""}
+                                                    {u.site_name ? ` (${u.site_name})` : ""}
                                                 </SelectItem>
                                             ))}
                                         </SelectContent>

@@ -116,7 +116,7 @@ class CatalogController extends Controller
         );
     }
 
-    /** Core: roles, areas, sedes, ubicaciones, campañas, puestos, area_users. */
+    /** Core: roles, areas, sites, locations, campañas, puestos, area_users. */
     private function getCoreCatalogs($user): array
     {
         $guards = ['web', 'sanctum'];
@@ -128,17 +128,17 @@ class CatalogController extends Controller
                 ->get(['id', 'name', 'area_id', 'position_id']);
         }
 
-        $sedesQuery = $this->clientScope->sitesQueryForUser($user)->orderBy('name');
-        $sedes = $sedesQuery->get(['id', 'name', 'type', 'client_id']);
-        $sedeIds = $sedes->pluck('id');
+        $sitesQuery = $this->clientScope->sitesQueryForUser($user)->orderBy('name');
+        $sites = $sitesQuery->get(['id', 'name', 'type', 'client_id']);
+        $siteIds = $sites->pluck('id');
 
-        $ubicacionesQuery = DB::table('locations')
+        $locationsQuery = DB::table('locations')
             ->join('sites', 'sites.id', '=', 'locations.site_id')
             ->where('locations.is_active', true);
-        if ($sedeIds->isNotEmpty()) {
-            $ubicacionesQuery->whereIn('locations.site_id', $sedeIds);
+        if ($siteIds->isNotEmpty()) {
+            $locationsQuery->whereIn('locations.site_id', $siteIds);
         } else {
-            $ubicacionesQuery->whereRaw('0 = 1');
+            $locationsQuery->whereRaw('0 = 1');
         }
 
         return [
@@ -146,8 +146,8 @@ class CatalogController extends Controller
             'campaigns' => $this->scopedCatalogTable('campaigns')->where('is_active', true)->orderBy('name')->get(['id', 'name']),
             'areas' => $this->scopedCatalogTable('areas')->where('is_active', true)->orderBy('name')->get(['id', 'name']),
             'positions' => $this->scopedCatalogTable('positions')->where('is_active', true)->orderBy('name')->get(['id', 'name']),
-            'sedes' => $sedes,
-            'ubicaciones' => $ubicacionesQuery
+            'sites' => $sites,
+            'locations' => $locationsQuery
                 ->orderBy('sites.name')
                 ->orderBy('locations.name')
                 ->get([
@@ -155,7 +155,7 @@ class CatalogController extends Controller
                     'locations.name',
                     'locations.code',
                     'locations.site_id',
-                    'sites.name as sede_name',
+                    'sites.name as site_name',
                     'sites.client_id',
                 ]),
             'roles' => DB::table('roles')

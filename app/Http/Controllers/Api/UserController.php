@@ -72,16 +72,16 @@ class UserController extends Controller
                 $query->where('area_id', $areaId);
             }
         }
-        if ($request->filled('sede')) {
-            $sedeId = \App\Models\Site::where('name', $request->input('sede'))->value('id');
-            if ($sedeId !== null) {
-                $query->where('site_id', $sedeId);
+        if ($request->filled('site')) {
+            $siteId = \App\Models\Site::where('name', $request->input('site'))->value('id');
+            if ($siteId !== null) {
+                $query->where('site_id', $siteId);
             }
         }
-        if ($request->filled('ubicacion')) {
-            $ubicacionId = \App\Models\Location::where('name', $request->input('ubicacion'))->value('id');
-            if ($ubicacionId !== null) {
-                $query->where('location_id', $ubicacionId);
+        if ($request->filled('location')) {
+            $locationId = \App\Models\Location::where('name', $request->input('location'))->value('id');
+            if ($locationId !== null) {
+                $query->where('location_id', $locationId);
             }
         }
         if ($request->filled('role_id')) {
@@ -117,9 +117,9 @@ class UserController extends Controller
                     'campaign' => $user->campaign->name ?? 'Sin Asignar',
                     'area' => $user->area->name ?? 'Sin Asignar',
                     'position' => $user->position->name ?? 'Sin Asignar',
-                    'sede' => $user->site->name ?? 'Sin Asignar',
-                    'sede_type' => $user->site->type ?? null,
-                    'ubicacion' => $user->location->name ?? null,
+                    'site' => $user->site->name ?? 'Sin Asignar',
+                    'site_type' => $user->site->type ?? null,
+                    'location' => $user->location->name ?? null,
                     'status' => $user->status,
                     'is_blacklisted' => $user->is_blacklisted,
                     'roles' => $user->roles->map(fn ($r) => ['id' => $r->id, 'name' => $r->name]),
@@ -155,27 +155,27 @@ class UserController extends Controller
             'campaign' => 'required|exists:campaigns,name',
             'area' => 'required|exists:areas,name',
             'position' => 'required|exists:positions,name',
-            'sede' => 'nullable|exists:sites,name',
-            'ubicacion' => 'nullable|exists:locations,name',
+            'site' => 'nullable|exists:sites,name',
+            'location' => 'nullable|exists:locations,name',
         ]);
 
         $campaignId = \App\Models\Campaign::where('name', $request->campaign)->first()->id;
         $areaId = \App\Models\Area::where('name', $request->area)->first()->id;
         $positionId = \App\Models\Position::where('name', $request->position)->first()->id;
-        $sedeId = $request->filled('sede')
+        $siteId = $request->filled('site')
             ? \App\Models\Site::where('name', $request->site)->first()->id
             : \App\Models\Site::where('code', 'REMOTO')->value('id');
         $actor = Auth::user();
-        if ($actor && ! $this->clientScope->assertSiteAccessible($actor, (int) $sedeId)) {
+        if ($actor && ! $this->clientScope->assertSiteAccessible($actor, (int) $siteId)) {
             return response()->json(['message' => 'La sede no pertenece a tu cliente'], 422);
         }
-        $clientId = $sedeId ? \App\Models\Site::where('id', $sedeId)->value('client_id') : null;
-        $ubicacionId = null;
-        if ($request->filled('ubicacion')) {
-            $ubicacionId = \App\Models\Location::where('name', $request->location)
-                ->where('site_id', $sedeId)
+        $clientId = $siteId ? \App\Models\Site::where('id', $siteId)->value('client_id') : null;
+        $locationId = null;
+        if ($request->filled('location')) {
+            $locationId = \App\Models\Location::where('name', $request->location)
+                ->where('site_id', $siteId)
                 ->value('id');
-            if (!$ubicacionId) {
+            if (!$locationId) {
                 return response()->json(['message' => 'Ubicación no pertenece a la sede seleccionada'], 422);
             }
         }
@@ -201,9 +201,9 @@ class UserController extends Controller
             'campaign_id' => $campaignId,
             'area_id' => $areaId,
             'position_id' => $positionId,
-            'site_id' => $sedeId,
+            'site_id' => $siteId,
             'client_id' => $clientId ? (int) $clientId : null,
-            'location_id' => $ubicacionId,
+            'location_id' => $locationId,
         ]);
 
         if ($role) {
@@ -237,8 +237,8 @@ class UserController extends Controller
             'campaign' => 'required|exists:campaigns,name',
             'area' => 'required|exists:areas,name',
             'position' => 'required|exists:positions,name',
-            'sede' => 'nullable|exists:sites,name',
-            'ubicacion' => 'nullable|exists:locations,name',
+            'site' => 'nullable|exists:sites,name',
+            'location' => 'nullable|exists:locations,name',
         ]);
 
         if ($request->has('campaign')) {
@@ -250,25 +250,25 @@ class UserController extends Controller
         if ($request->has('position')) {
             $user->position_id = \App\Models\Position::where('name', $request->position)->first()->id;
         }
-        if ($request->has('sede')) {
-            $newSedeId = \App\Models\Site::where('name', $request->site)->first()->id;
+        if ($request->has('site')) {
+            $newSiteId = \App\Models\Site::where('name', $request->site)->first()->id;
             $actor = Auth::user();
-            if ($actor && ! $this->clientScope->assertSiteAccessible($actor, (int) $newSedeId)) {
+            if ($actor && ! $this->clientScope->assertSiteAccessible($actor, (int) $newSiteId)) {
                 return response()->json(['message' => 'La sede no pertenece a tu cliente'], 422);
             }
-            $user->site_id = $newSedeId;
+            $user->site_id = $newSiteId;
         }
-        if ($request->has('ubicacion')) {
-            $ubicacion = \App\Models\Location::where('name', $request->location)->first();
-            if ($ubicacion && $user->site_id && $ubicacion->site_id !== $user->site_id) {
+        if ($request->has('location')) {
+            $location = \App\Models\Location::where('name', $request->location)->first();
+            if ($location && $user->site_id && $location->site_id !== $user->site_id) {
                 return response()->json(['message' => 'Ubicación no pertenece a la sede seleccionada'], 422);
             }
-            $user->location_id = $ubicacion?->id;
+            $user->location_id = $location?->id;
         }
 
         $originalEmail = $user->email;
 
-        $user->fill($request->except(['campaign', 'area', 'position', 'sede', 'site_id', 'ubicacion', 'location_id', 'password', 'role_id', 'name']));
+        $user->fill($request->except(['campaign', 'area', 'position', 'site', 'site_id', 'location', 'location_id', 'password', 'role_id', 'name']));
         $user->email = $request->filled('email') ? $request->email : null;
         $user->phone = $request->filled('phone') ? $request->phone : null;
 

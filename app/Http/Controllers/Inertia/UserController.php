@@ -29,15 +29,15 @@ class UserController extends Controller
         $actor = $request->user();
         $users = $this->listing->paginate($request, $actor);
 
-        $sedeIds = $this->clientScope->sitesQueryForUser($actor)->pluck('id');
+        $siteIds = $this->clientScope->sitesQueryForUser($actor)->pluck('id');
 
-        $ubicacionesQuery = DB::table('locations')
+        $locationsQuery = DB::table('locations')
             ->join('sites', 'sites.id', '=', 'locations.site_id')
             ->where('locations.is_active', true);
-        if ($sedeIds->isNotEmpty()) {
-            $ubicacionesQuery->whereIn('locations.site_id', $sedeIds);
+        if ($siteIds->isNotEmpty()) {
+            $locationsQuery->whereIn('locations.site_id', $siteIds);
         } else {
-            $ubicacionesQuery->whereRaw('0 = 1');
+            $locationsQuery->whereRaw('0 = 1');
         }
 
         return Inertia::render('Users/Index', [
@@ -50,7 +50,7 @@ class UserController extends Controller
                 'areas' => Area::where('is_active', true)->orderBy('name')->get(['id', 'name']),
                 'campaigns' => Campaign::where('is_active', true)->orderBy('name')->get(['id', 'name']),
                 'positions' => Position::where('is_active', true)->orderBy('name')->get(['id', 'name']),
-                'sedes' => Site::query()
+                'sites' => Site::query()
                     ->when(! $this->clientScope->bypassesClientScope($actor), function ($q) use ($actor) {
                         $clientId = $this->clientScope->resolveUserClientId($actor);
                         if ($clientId) {
@@ -62,14 +62,14 @@ class UserController extends Controller
                     ->where('is_active', true)
                     ->orderBy('name')
                     ->get(['id', 'name']),
-                'ubicaciones' => $ubicacionesQuery
+                'locations' => $locationsQuery
                     ->orderBy('sites.name')
                     ->orderBy('locations.name')
                     ->get([
                         'locations.id',
                         'locations.name',
                         'locations.site_id',
-                        'sites.name as sede_name',
+                        'sites.name as site_name',
                     ]),
             ],
             'filters' => $request->only([
@@ -79,8 +79,8 @@ class UserController extends Controller
                 'role_id',
                 'campaign',
                 'area',
-                'sede',
-                'ubicacion',
+                'site',
+                'location',
                 'status',
                 'per_page',
             ]),

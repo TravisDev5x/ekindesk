@@ -58,7 +58,7 @@ class CheckAuthController extends Controller
             'force_password_change' => $user->force_password_change ?? false,
             'availability' => $user->availability,
             'area' => $user->area?->name,
-            'sede' => $user->site?->name,
+            'site' => $user->site?->name,
             'employee_number' => $user->employee_number,
             'client_name' => $user->site?->client?->name,
         ];

@@ -179,7 +179,7 @@ class CatalogPageController extends Controller
             'areas' => Area::where('is_active', true)->orderBy('name')->get(['id', 'name']),
             'ticket_types' => TicketType::where('is_active', true)->orderBy('name')->get(['id', 'name']),
             'priorities' => Priority::where('is_active', true)->orderBy('level')->orderBy('name')->get(['id', 'name', 'level']),
-            'sedes' => Site::where('is_active', true)->orderBy('name')->get(['id', 'name']),
+            'sites' => Site::where('is_active', true)->orderBy('name')->get(['id', 'name']),
             'impact_levels' => ImpactLevel::where('is_active', true)->orderBy('weight')->orderBy('name')->get(['id', 'name']),
             'urgency_levels' => UrgencyLevel::where('is_active', true)->orderBy('weight')->orderBy('name')->get(['id', 'name']),
             'ticket_states' => TicketState::orderBy('name')->get(['id', 'name', 'code', 'is_final']),
@@ -190,7 +190,7 @@ class CatalogPageController extends Controller
     public function resolbebDashboardCatalogs(): array
     {
         return [
-            'sedes' => Site::where('is_active', true)->orderBy('name')->get(['id', 'name']),
+            'sites' => Site::where('is_active', true)->orderBy('name')->get(['id', 'name']),
             'area_users' => User::where('status', 'active')
                 ->whereNotNull('area_id')
                 ->orderBy('name')
@@ -202,7 +202,7 @@ class CatalogPageController extends Controller
     {
         return [
             'areas' => Area::where('is_active', true)->orderBy('name')->get(['id', 'name']),
-            'sedes' => Site::where('is_active', true)->orderBy('name')->get(['id', 'name']),
+            'sites' => Site::where('is_active', true)->orderBy('name')->get(['id', 'name']),
             'incident_types' => \App\Models\IncidentType::where('is_active', true)->orderBy('name')->get(['id', 'name']),
             'incident_severities' => \App\Models\IncidentSeverity::where('is_active', true)->orderBy('level')->get(['id', 'name', 'level', 'code']),
             'incident_statuses' => \App\Models\IncidentStatus::where('is_active', true)->orderBy('name')->get(['id', 'name', 'code', 'is_final']),
