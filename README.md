@@ -7,11 +7,16 @@ Modelo **MSP → empresas cliente** con aislamiento por tenant, portales por sub
 
 <br />
 
+[![Tests](https://github.com/TravisDev5x/ekindesk/actions/workflows/tests.yml/badge.svg)](https://github.com/TravisDev5x/ekindesk/actions/workflows/tests.yml)
+![License](https://img.shields.io/badge/License-Source_Available-lightgrey?style=for-the-badge)
+
+<br />
+
 ![PHP](https://img.shields.io/badge/PHP-8.2+-777BB4?style=for-the-badge&logo=php&logoColor=white)
 ![Laravel](https://img.shields.io/badge/Laravel-12-FF2D20?style=for-the-badge&logo=laravel&logoColor=white)
 ![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black)
 ![Inertia.js](https://img.shields.io/badge/Inertia.js-3-9333EA?style=for-the-badge&logo=inertia&logoColor=white)
-![Vite](https://img.shields.io/badge/Vite-7-646CFF?style=for-the-badge&logo=vite&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-8-646CFF?style=for-the-badge&logo=vite&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind-4-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)
 
 <br />
@@ -21,6 +26,12 @@ Modelo **MSP → empresas cliente** con aislamiento por tenant, portales por sub
 ![Sanctum](https://img.shields.io/badge/Sanctum-Auth-FF2D20?style=for-the-badge&logo=laravel&logoColor=white)
 ![Radix UI](https://img.shields.io/badge/Radix_UI-Components-161618?style=for-the-badge&logo=radixui&logoColor=white)
 ![Zod](https://img.shields.io/badge/Zod-Validation-3E63DD?style=for-the-badge&logo=zod&logoColor=white)
+
+<br />
+
+![React Hook Form](https://img.shields.io/badge/React_Hook_Form-EC5990?style=for-the-badge&logo=reacthookform&logoColor=white)
+![Axios](https://img.shields.io/badge/Axios-5A29E4?style=for-the-badge&logo=axios&logoColor=white)
+![TanStack Table](https://img.shields.io/badge/TanStack_Table-FF4154?style=for-the-badge&logo=tanstack&logoColor=white)
 
 </div>
 
