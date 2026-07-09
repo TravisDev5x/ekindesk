@@ -17,7 +17,7 @@ COPY . .
 RUN npm run build
 
 # ---- Stage 3: runtime ----
-FROM php:8.2-fpm AS runtime
+FROM php:8.4-fpm AS runtime
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
         libpq-dev libzip-dev libicu-dev libonig-dev \
