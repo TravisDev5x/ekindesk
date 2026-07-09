@@ -239,7 +239,7 @@ class FullDemoSeeder extends Seeder
                 'campaign_id' => $campaign?->id,
                 'area_id' => $area?->id,
                 'position_id' => $position?->id,
-                'sede_id' => $sede?->id,
+                'site_id' => $sede?->id,
             ]
         );
 

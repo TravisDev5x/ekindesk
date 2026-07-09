@@ -24,8 +24,8 @@ class AuditReportAccess
             $filters = Arr::only($request->query(), [
                 'area_current_id',
                 'area_origin_id',
-                'sede_id',
-                'ubicacion_id',
+                'site_id',
+                'location_id',
                 'ticket_type_id',
                 'priority_id',
                 'ticket_state_id',

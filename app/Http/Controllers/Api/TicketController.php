@@ -57,7 +57,7 @@ class TicketController extends Controller
             'areaCurrent:id,name',
             'sede:id,name,client_id',
             'cliente:id,name',
-            'ubicacion:id,name,sede_id',
+            'ubicacion:id,name,site_id',
             'requester:id,name,email',
             'assignedUser:id,name,position_id',
             'ticketType:id,name',
@@ -296,7 +296,7 @@ class TicketController extends Controller
             'areaCurrent:id,name',
             'sede:id,name,client_id',
             'cliente:id,name',
-            'ubicacion:id,name,sede_id',
+            'ubicacion:id,name,site_id',
             'requester:id,name,email',
             'requesterPosition:id,name',
             'assignedUser:id,name,position_id',
@@ -525,11 +525,11 @@ class TicketController extends Controller
 
         $data = $request->validated();
 
-        if (isset($data['sede_id'])) {
-            if (! $this->clientScope->assertSedeAccessible($user, (int) $data['sede_id'])) {
+        if (isset($data['site_id'])) {
+            if (! $this->clientScope->assertSedeAccessible($user, (int) $data['site_id'])) {
                 return response()->json(['message' => 'La sede seleccionada no pertenece a tu cliente'], 422);
             }
-            $data['client_id'] = $this->clientScope->syncTicketClientFromSede((int) $data['sede_id']);
+            $data['client_id'] = $this->clientScope->syncTicketClientFromSede((int) $data['site_id']);
         }
 
         if (!empty($data['impact_level_id']) && !empty($data['urgency_level_id'])) {
@@ -1172,7 +1172,7 @@ class TicketController extends Controller
         $filters = [
             'area_current_id' => 'area_current_id',
             'area_origin_id' => 'area_origin_id',
-            'ubicacion_id' => 'ubicacion_id',
+            'location_id' => 'location_id',
             'ticket_type_id' => 'ticket_type_id',
             'priority_id' => 'priority_id',
             'ticket_state_id' => 'ticket_state_id',
@@ -1184,7 +1184,7 @@ class TicketController extends Controller
             }
         }
 
-        if ($request->filled('sede_id')) {
+        if ($request->filled('site_id')) {
             $canFilterSede = $user->can('tickets.filter_by_sede')
                 || $user->can('tickets.manage_all')
                 || $user->can('tickets.view_area');

@@ -37,11 +37,11 @@ class User extends Authenticatable implements MustVerifyEmail
         'campaign_id',
         'area_id',
         'position_id',
-        'sede_id',
+        'site_id',
         'client_id',
         'is_operator',
         'onboarding_completed',
-        'ubicacion_id',
+        'location_id',
         'avatar_path',
         'status',
         'theme',
@@ -157,7 +157,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function sede(): BelongsTo
     {
-        return $this->belongsTo(Sede::class);
+        return $this->belongsTo(Sede::class, 'site_id');
     }
 
     public function client(): BelongsTo
@@ -177,7 +177,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function ubicacion(): BelongsTo
     {
-        return $this->belongsTo(Ubicacion::class);
+        return $this->belongsTo(Ubicacion::class, 'location_id');
     }
 
     public function getCachedRoleNames(): Collection

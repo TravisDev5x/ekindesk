@@ -56,7 +56,7 @@ class InvitationAcceptanceService
                 'client_id' => $locked->client_id,
                 'is_operator' => $isOperator,
                 'onboarding_completed' => ! $isOperator,
-                'sede_id' => $this->resolveSedeIdForInvitation($locked),
+                'site_id' => $this->resolveSedeIdForInvitation($locked),
             ]);
 
             $user->forceFill(['email_verified_at' => now()])->save();

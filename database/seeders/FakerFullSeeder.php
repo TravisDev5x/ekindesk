@@ -94,7 +94,7 @@ class FakerFullSeeder extends Seeder
         foreach ($sedes as $sede) {
             foreach (array_slice($names, 0, 3) as $name) {
                 Ubicacion::firstOrCreate(
-                    ['sede_id' => $sede->id, 'name' => $sede->name . ' - ' . $name],
+                    ['site_id' => $sede->id, 'name' => $sede->name . ' - ' . $name],
                     ['is_active' => true]
                 );
             }
@@ -131,11 +131,11 @@ class FakerFullSeeder extends Seeder
                 'password' => Hash::make(self::ADMIN_PASSWORD),
                 'status' => 'active',
                 'email_verified_at' => now(),
-                'sede_id' => $sede->id,
+                'site_id' => $sede->id,
                 'campaign_id' => $campaign->id,
                 'area_id' => $area->id,
                 'position_id' => $position->id,
-                'ubicacion_id' => Ubicacion::inRandomOrder()->first()?->id,
+                'location_id' => Ubicacion::inRandomOrder()->first()?->id,
             ]);
         } else {
             $user->update(['password' => Hash::make(self::ADMIN_PASSWORD)]);
@@ -205,7 +205,7 @@ class FakerFullSeeder extends Seeder
             $requester = $users[array_rand($users)];
             $area = $areas->random();
             $sede = $sedes->random();
-            $ubicaciones = Ubicacion::where('sede_id', $sede->id)->get();
+            $ubicaciones = Ubicacion::where('site_id', $sede->id)->get();
             $ubicacion = $ubicaciones->isNotEmpty() ? $ubicaciones->random() : null;
 
             Ticket::create([
@@ -213,8 +213,8 @@ class FakerFullSeeder extends Seeder
                 'description' => fake()->optional(0.85)->paragraphs(2, true),
                 'area_origin_id' => $area->id,
                 'area_current_id' => $area->id,
-                'sede_id' => $sede->id,
-                'ubicacion_id' => $ubicacion?->id,
+                'site_id' => $sede->id,
+                'location_id' => $ubicacion?->id,
                 'requester_id' => $requester->id,
                 'requester_position_id' => $requester->position_id,
                 'ticket_type_id' => $types->random()->id,
@@ -273,7 +273,7 @@ class FakerFullSeeder extends Seeder
                 'involved_user_id' => fake()->boolean(0.3) ? $users[array_rand($users)]->id : null,
                 'assigned_user_id' => fake()->boolean(0.5) ? $users[array_rand($users)]->id : null,
                 'area_id' => $area->id,
-                'sede_id' => $sede->id,
+                'site_id' => $sede->id,
                 'incident_type_id' => $types->random()->id,
                 'incident_severity_id' => $severities->random()->id,
                 'incident_status_id' => $status->id,

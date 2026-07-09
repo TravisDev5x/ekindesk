@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Log;
  * Fuente única del tenant operativo (client_id) de un usuario final.
  *
  * Prioridad:
- * 1. sites.client_id vía users.sede_id (asignación operativa diaria)
+ * 1. sites.client_id vía users.site_id (asignación operativa diaria)
  * 2. users.client_id (vínculo directo MSP / invitación sin sede)
  */
 class TenantClientResolver
@@ -21,7 +21,7 @@ class TenantClientResolver
     {
         $user->loadMissing('sede:id,client_id');
 
-        $fromSede = $user->sede_id && $user->sede?->client_id
+        $fromSede = $user->site_id && $user->sede?->client_id
             ? (int) $user->sede->client_id
             : null;
 
@@ -48,7 +48,7 @@ class TenantClientResolver
 
     public function hasOperationalSite(User $user): bool
     {
-        return (bool) $user->sede_id;
+        return (bool) $user->site_id;
     }
 
     /**

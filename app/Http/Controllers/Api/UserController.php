@@ -75,13 +75,13 @@ class UserController extends Controller
         if ($request->filled('sede')) {
             $sedeId = \App\Models\Sede::where('name', $request->input('sede'))->value('id');
             if ($sedeId !== null) {
-                $query->where('sede_id', $sedeId);
+                $query->where('site_id', $sedeId);
             }
         }
         if ($request->filled('ubicacion')) {
             $ubicacionId = \App\Models\Ubicacion::where('name', $request->input('ubicacion'))->value('id');
             if ($ubicacionId !== null) {
-                $query->where('ubicacion_id', $ubicacionId);
+                $query->where('location_id', $ubicacionId);
             }
         }
         if ($request->filled('role_id')) {
@@ -173,7 +173,7 @@ class UserController extends Controller
         $ubicacionId = null;
         if ($request->filled('ubicacion')) {
             $ubicacionId = \App\Models\Ubicacion::where('name', $request->ubicacion)
-                ->where('sede_id', $sedeId)
+                ->where('site_id', $sedeId)
                 ->value('id');
             if (!$ubicacionId) {
                 return response()->json(['message' => 'Ubicación no pertenece a la sede seleccionada'], 422);
@@ -201,9 +201,9 @@ class UserController extends Controller
             'campaign_id' => $campaignId,
             'area_id' => $areaId,
             'position_id' => $positionId,
-            'sede_id' => $sedeId,
+            'site_id' => $sedeId,
             'client_id' => $clientId ? (int) $clientId : null,
-            'ubicacion_id' => $ubicacionId,
+            'location_id' => $ubicacionId,
         ]);
 
         if ($role) {
@@ -256,19 +256,19 @@ class UserController extends Controller
             if ($actor && ! $this->clientScope->assertSedeAccessible($actor, (int) $newSedeId)) {
                 return response()->json(['message' => 'La sede no pertenece a tu cliente'], 422);
             }
-            $user->sede_id = $newSedeId;
+            $user->site_id = $newSedeId;
         }
         if ($request->has('ubicacion')) {
             $ubicacion = \App\Models\Ubicacion::where('name', $request->ubicacion)->first();
-            if ($ubicacion && $user->sede_id && $ubicacion->sede_id !== $user->sede_id) {
+            if ($ubicacion && $user->site_id && $ubicacion->site_id !== $user->site_id) {
                 return response()->json(['message' => 'Ubicación no pertenece a la sede seleccionada'], 422);
             }
-            $user->ubicacion_id = $ubicacion?->id;
+            $user->location_id = $ubicacion?->id;
         }
 
         $originalEmail = $user->email;
 
-        $user->fill($request->except(['campaign', 'area', 'position', 'sede', 'sede_id', 'ubicacion', 'ubicacion_id', 'password', 'role_id', 'name']));
+        $user->fill($request->except(['campaign', 'area', 'position', 'sede', 'site_id', 'ubicacion', 'location_id', 'password', 'role_id', 'name']));
         $user->email = $request->filled('email') ? $request->email : null;
         $user->phone = $request->filled('phone') ? $request->phone : null;
 

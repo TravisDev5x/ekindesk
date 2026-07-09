@@ -124,7 +124,7 @@ class AuthController extends Controller
             'maternal_last_name' => ['nullable', 'string', 'max:255'],
             'email' => ['required', 'email', 'unique:users,email'],
             'phone' => ['nullable', 'digits:10'],
-            'sede_id' => ['nullable', 'exists:sites,id'],
+            'site_id' => ['nullable', 'exists:sites,id'],
             'password' => [
                 'required',
                 'string',
@@ -137,7 +137,7 @@ class AuthController extends Controller
             ],
         ]);
 
-        $sedeId = $validated['sede_id'] ?? \App\Models\Sede::where('code', 'REMOTO')->value('id');
+        $sedeId = $validated['site_id'] ?? \App\Models\Sede::where('code', 'REMOTO')->value('id');
 
         if ($request->filled('plan')) {
             session(['invited_plan_slug' => $request->input('plan')]);
@@ -152,7 +152,7 @@ class AuthController extends Controller
             'phone' => $validated['phone'] ?? null,
             'password' => Hash::make($validated['password']),
             'status' => 'pending_email',
-            'sede_id' => $sedeId,
+            'site_id' => $sedeId,
             'client_id' => null,
             'is_operator' => false,
             'onboarding_completed' => false,

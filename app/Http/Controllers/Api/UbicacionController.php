@@ -11,28 +11,28 @@ class UbicacionController extends Controller
 {
     public function index(Request $request)
     {
-        $sedeId = $request->query('sede_id');
+        $sedeId = $request->query('site_id');
         $query = Ubicacion::with('sede:id,name,type');
         if ($sedeId) {
-            $query->where('sede_id', $sedeId);
+            $query->where('site_id', $sedeId);
         }
-        return $query->orderBy('sede_id')->orderBy('name')->get();
+        return $query->orderBy('site_id')->orderBy('name')->get();
     }
 
     public function store(Request $request)
     {
         $data = $request->validate([
-            'sede_id' => ['required', 'exists:sites,id'],
+            'site_id' => ['required', 'exists:sites,id'],
             'name' => ['required', 'min:2'],
             'code' => ['nullable', 'max:20', 'unique:locations,code'],
             'is_active' => ['boolean'],
         ]);
         $data['is_active'] = $data['is_active'] ?? true;
 
-        $sedeId = $data['sede_id'];
+        $sedeId = $data['site_id'];
         // unique per sede
         $request->validate([
-            'name' => Rule::unique('locations', 'name')->where('sede_id', $sedeId),
+            'name' => Rule::unique('locations', 'name')->where('site_id', $sedeId),
         ]);
 
         $ubicacion = Ubicacion::create($data);
@@ -42,14 +42,14 @@ class UbicacionController extends Controller
     public function update(Request $request, Ubicacion $ubicacione)
     {
         $data = $request->validate([
-            'sede_id' => ['required', 'exists:sites,id'],
+            'site_id' => ['required', 'exists:sites,id'],
             'name' => ['required', 'min:2'],
             'code' => ['nullable', 'max:20', Rule::unique('locations', 'code')->ignore($ubicacione->id)],
             'is_active' => ['boolean'],
         ]);
         $request->validate([
             'name' => Rule::unique('locations', 'name')
-                ->where('sede_id', $data['sede_id'])
+                ->where('site_id', $data['site_id'])
                 ->ignore($ubicacione->id),
         ]);
 

@@ -35,8 +35,8 @@ class UserFactory extends Factory
             'campaign_id' => Campaign::inRandomOrder()->first()?->id ?? Campaign::first()?->id,
             'area_id' => Area::inRandomOrder()->first()?->id ?? Area::first()?->id,
             'position_id' => Position::inRandomOrder()->first()?->id ?? Position::first()?->id,
-            'sede_id' => Sede::inRandomOrder()->first()?->id ?? Sede::first()?->id,
-            'ubicacion_id' => Ubicacion::inRandomOrder()->first()?->id,
+            'site_id' => Sede::inRandomOrder()->first()?->id ?? Sede::first()?->id,
+            'location_id' => Ubicacion::inRandomOrder()->first()?->id,
             // -----------------------
 
             'email_verified_at' => now(),

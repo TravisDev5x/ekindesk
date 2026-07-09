@@ -78,7 +78,7 @@ class TicketDemoSeeder extends Seeder
         if ($sfa) {
             foreach (['Piso 1', 'Piso 2'] as $name) {
                 Ubicacion::firstOrCreate(
-                    ['name' => $name, 'sede_id' => $sfa->id],
+                    ['name' => $name, 'site_id' => $sfa->id],
                     ['is_active' => true]
                 );
             }
@@ -86,7 +86,7 @@ class TicketDemoSeeder extends Seeder
         if ($sfb) {
             foreach (['Edificio Norte', 'Edificio Sur'] as $name) {
                 Ubicacion::firstOrCreate(
-                    ['name' => $name, 'sede_id' => $sfb->id],
+                    ['name' => $name, 'site_id' => $sfb->id],
                     ['is_active' => true]
                 );
             }
@@ -228,8 +228,8 @@ class TicketDemoSeeder extends Seeder
             'extra' => [
                 'area_id' => $areaSist?->id,
                 'position_id' => $posSup?->id,
-                'sede_id' => $sedeA?->id,
-                'ubicacion_id' => $ubiA1?->id,
+                'site_id' => $sedeA?->id,
+                'location_id' => $ubiA1?->id,
             ],
         ], 'admin');
 
@@ -243,8 +243,8 @@ class TicketDemoSeeder extends Seeder
             'extra' => [
                 'area_id' => $areaSist?->id,
                 'position_id' => $posUsuario?->id,
-                'sede_id' => $sedeA?->id,
-                'ubicacion_id' => $ubiA2?->id,
+                'site_id' => $sedeA?->id,
+                'location_id' => $ubiA2?->id,
             ],
         ], 'usuario');
 
@@ -258,8 +258,8 @@ class TicketDemoSeeder extends Seeder
             'extra' => [
                 'area_id' => $areaSist?->id,
                 'position_id' => $posUsuario?->id,
-                'sede_id' => $sedeRemoto?->id,
-                'ubicacion_id' => null,
+                'site_id' => $sedeRemoto?->id,
+                'location_id' => null,
             ],
         ], 'usuario');
 
@@ -273,8 +273,8 @@ class TicketDemoSeeder extends Seeder
             'extra' => [
                 'area_id' => $areaSoporte?->id,
                 'position_id' => $posN1?->id,
-                'sede_id' => $sedeA?->id,
-                'ubicacion_id' => $ubiA1?->id,
+                'site_id' => $sedeA?->id,
+                'location_id' => $ubiA1?->id,
             ],
         ], 'agente_soporte');
 
@@ -288,8 +288,8 @@ class TicketDemoSeeder extends Seeder
             'extra' => [
                 'area_id' => $areaSoporte?->id,
                 'position_id' => $posSup?->id,
-                'sede_id' => $sedeA?->id,
-                'ubicacion_id' => $ubiA2?->id,
+                'site_id' => $sedeA?->id,
+                'location_id' => $ubiA2?->id,
             ],
         ], 'supervisor_soporte');
 
@@ -303,8 +303,8 @@ class TicketDemoSeeder extends Seeder
             'extra' => [
                 'area_id' => $areaInfra?->id,
                 'position_id' => $posInfra?->id,
-                'sede_id' => $sedeB?->id,
-                'ubicacion_id' => $ubiB1?->id,
+                'site_id' => $sedeB?->id,
+                'location_id' => $ubiB1?->id,
             ],
         ], 'agente_infraestructura');
 
@@ -318,8 +318,8 @@ class TicketDemoSeeder extends Seeder
             'extra' => [
                 'area_id' => $areaRedes?->id,
                 'position_id' => $posRedes?->id,
-                'sede_id' => $sedeB?->id,
-                'ubicacion_id' => $ubiB1?->id,
+                'site_id' => $sedeB?->id,
+                'location_id' => $ubiB1?->id,
             ],
         ], 'agente_infraestructura');
 
@@ -333,8 +333,8 @@ class TicketDemoSeeder extends Seeder
             'extra' => [
                 'area_id' => $areaApps?->id,
                 'position_id' => $posApps?->id,
-                'sede_id' => $sedeA?->id,
-                'ubicacion_id' => $ubiA1?->id,
+                'site_id' => $sedeA?->id,
+                'location_id' => $ubiA1?->id,
             ],
         ], 'agente_soporte');
 
@@ -348,8 +348,8 @@ class TicketDemoSeeder extends Seeder
             'extra' => [
                 'area_id' => $areaSeg?->id,
                 'position_id' => $posSup?->id,
-                'sede_id' => $sedeA?->id,
-                'ubicacion_id' => $ubiA2?->id,
+                'site_id' => $sedeA?->id,
+                'location_id' => $ubiA2?->id,
             ],
         ], 'supervisor_soporte');
 
@@ -393,8 +393,8 @@ class TicketDemoSeeder extends Seeder
             'description' => 'El equipo no responde al presionar el botón.',
             'area_origin_id' => $areaSoporte->id,
             'area_current_id' => $areaSoporte->id,
-            'sede_id' => $sedeA->id,
-            'ubicacion_id' => $ubiA1->id,
+            'site_id' => $sedeA->id,
+            'location_id' => $ubiA1->id,
             'requester_id' => $users['usuario_fisico']->id,
             'requester_position_id' => $users['usuario_fisico']->position_id,
             'ticket_type_id' => $types['Falla de equipo'],
@@ -409,8 +409,8 @@ class TicketDemoSeeder extends Seeder
             'description' => 'No puedo conectarme a la VPN corporativa.',
             'area_origin_id' => $areaSoporte->id,
             'area_current_id' => $areaSoporte->id,
-            'sede_id' => $sedeRemoto->id,
-            'ubicacion_id' => null,
+            'site_id' => $sedeRemoto->id,
+            'location_id' => null,
             'requester_id' => $users['usuario_remoto']->id,
             'requester_position_id' => $users['usuario_remoto']->position_id,
             'ticket_type_id' => $types['Acceso a sistema'],
@@ -426,8 +426,8 @@ class TicketDemoSeeder extends Seeder
             'description' => 'Red inestable en sala principal.',
             'area_origin_id' => $areaSoporte->id,
             'area_current_id' => $areaInfra->id,
-            'sede_id' => $sedeA->id,
-            'ubicacion_id' => $ubiA2->id,
+            'site_id' => $sedeA->id,
+            'location_id' => $ubiA2->id,
             'requester_id' => $users['usuario_fisico']->id,
             'requester_position_id' => $users['usuario_fisico']->position_id,
             'ticket_type_id' => $types['Falla de red'],
@@ -443,8 +443,8 @@ class TicketDemoSeeder extends Seeder
             'description' => 'Solicito instalación de módulo contable.',
             'area_origin_id' => $areaSoporte->id,
             'area_current_id' => $areaSoporte->id,
-            'sede_id' => $sedeB->id,
-            'ubicacion_id' => $ubiB1->id,
+            'site_id' => $sedeB->id,
+            'location_id' => $ubiB1->id,
             'requester_id' => $users['usuario_fisico']->id,
             'requester_position_id' => $users['usuario_fisico']->position_id,
             'ticket_type_id' => $types['Solicitud de software'],
@@ -462,8 +462,8 @@ class TicketDemoSeeder extends Seeder
             'description' => 'Requiere acceso nuevo colaborador.',
             'area_origin_id' => $areaSoporte->id,
             'area_current_id' => $areaSoporte->id,
-            'sede_id' => $sedeRemoto->id,
-            'ubicacion_id' => null,
+            'site_id' => $sedeRemoto->id,
+            'location_id' => null,
             'requester_id' => $users['usuario_remoto']->id,
             'requester_position_id' => $users['usuario_remoto']->position_id,
             'ticket_type_id' => $types['Acceso a sistema'],
@@ -479,8 +479,8 @@ class TicketDemoSeeder extends Seeder
             'description' => 'Phishing reportado por usuario remoto.',
             'area_origin_id' => $areaSeg->id ?? $areaSoporte->id,
             'area_current_id' => $areaSeg->id ?? $areaSoporte->id,
-            'sede_id' => $sedeRemoto->id,
-            'ubicacion_id' => null,
+            'site_id' => $sedeRemoto->id,
+            'location_id' => null,
             'requester_id' => $users['usuario_remoto']->id,
             'requester_position_id' => $users['usuario_remoto']->position_id,
             'ticket_type_id' => $types['Incidente de seguridad'],
@@ -498,8 +498,8 @@ class TicketDemoSeeder extends Seeder
             'description' => 'Actualizar módulo ventas antes de corte.',
             'area_origin_id' => $areaApps->id ?? $areaSist->id,
             'area_current_id' => $areaApps->id ?? $areaSist->id,
-            'sede_id' => $sedeA->id,
-            'ubicacion_id' => $ubiA1->id,
+            'site_id' => $sedeA->id,
+            'location_id' => $ubiA1->id,
             'requester_id' => $users['usuario_fisico']->id,
             'requester_position_id' => $users['usuario_fisico']->position_id,
             'ticket_type_id' => $types['Solicitud de software'],
@@ -517,8 +517,8 @@ class TicketDemoSeeder extends Seeder
             'description' => 'Usuarios remotos con latencia alta.',
             'area_origin_id' => $areaRedes->id ?? $areaInfra->id,
             'area_current_id' => $areaRedes->id ?? $areaInfra->id,
-            'sede_id' => $sedeRemoto->id,
-            'ubicacion_id' => null,
+            'site_id' => $sedeRemoto->id,
+            'location_id' => null,
             'requester_id' => $users['usuario_remoto']->id,
             'requester_position_id' => $users['usuario_remoto']->position_id,
             'ticket_type_id' => $types['VPN / Acceso remoto'],
@@ -536,8 +536,8 @@ class TicketDemoSeeder extends Seeder
             'description' => 'Servidor de archivos en RAID degradado.',
             'area_origin_id' => $areaInfra->id,
             'area_current_id' => $areaInfra->id,
-            'sede_id' => $sedeB->id,
-            'ubicacion_id' => $ubiB1->id,
+            'site_id' => $sedeB->id,
+            'location_id' => $ubiB1->id,
             'requester_id' => $users['usuario_fisico']->id,
             'requester_position_id' => $users['usuario_fisico']->position_id,
             'ticket_type_id' => $types['Falla de equipo'],
@@ -556,8 +556,8 @@ class TicketDemoSeeder extends Seeder
             'description' => 'Mouse se desconecta al moverlo.',
             'area_origin_id' => $areaSoporte->id,
             'area_current_id' => $areaSoporte->id,
-            'sede_id' => $sedeA->id,
-            'ubicacion_id' => $ubiA2->id,
+            'site_id' => $sedeA->id,
+            'location_id' => $ubiA2->id,
             'requester_id' => $users['usuario_fisico']->id,
             'requester_position_id' => $users['usuario_fisico']->position_id,
             'ticket_type_id' => $types['Falla de equipo'],

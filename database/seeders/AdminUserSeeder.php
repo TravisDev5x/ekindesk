@@ -54,7 +54,7 @@ class AdminUserSeeder extends Seeder
             'password' => Hash::make($password),
             'status' => 'active',
             'email_verified_at' => now(),
-            'sede_id' => $sede->id,
+            'site_id' => $sede->id,
             'campaign_id' => $campaign?->id,
             'area_id' => $area?->id,
             'position_id' => $position?->id,

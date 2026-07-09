@@ -138,7 +138,7 @@ class IncidentController extends Controller
             'occurred_at' => 'nullable|date',
             'enabled_at' => 'required|date',
             'area_id' => 'required|exists:areas,id',
-            'sede_id' => 'required|exists:sites,id',
+            'site_id' => 'required|exists:sites,id',
             'incident_type_id' => 'required|exists:incident_types,id',
             'incident_severity_id' => 'required|exists:incident_severities,id',
             'incident_status_id' => 'required|exists:incident_statuses,id',
@@ -150,7 +150,7 @@ class IncidentController extends Controller
 
         $data['reporter_id'] = $user->id;
 
-        if (! $this->clientScope->assertSedeAccessible($user, (int) $data['sede_id'])) {
+        if (! $this->clientScope->assertSedeAccessible($user, (int) $data['site_id'])) {
             return response()->json(['message' => 'La sede seleccionada no está disponible para tu organización.'], 422);
         }
 
@@ -469,7 +469,7 @@ class IncidentController extends Controller
     {
         $filters = [
             'area_id' => 'area_id',
-            'sede_id' => 'sede_id',
+            'site_id' => 'site_id',
             'incident_type_id' => 'incident_type_id',
             'incident_severity_id' => 'incident_severity_id',
             'incident_status_id' => 'incident_status_id',
@@ -479,7 +479,7 @@ class IncidentController extends Controller
 
         foreach ($filters as $param => $column) {
             if ($request->filled($param)) {
-                if ($param === 'sede_id' && !$user->can('incidents.filter_by_sede') && !$user->can('incidents.manage_all')) {
+                if ($param === 'site_id' && !$user->can('incidents.filter_by_sede') && !$user->can('incidents.manage_all')) {
                     continue;
                 }
                 $query->where($column, $request->input($param));

@@ -112,13 +112,13 @@ class UserListingService
         if ($request->filled('sede')) {
             $sedeId = Sede::where('name', $request->input('sede'))->value('id');
             if ($sedeId !== null) {
-                $query->where('sede_id', $sedeId);
+                $query->where('site_id', $sedeId);
             }
         }
         if ($request->filled('ubicacion')) {
             $ubicacionId = Ubicacion::where('name', $request->input('ubicacion'))->value('id');
             if ($ubicacionId !== null) {
-                $query->where('ubicacion_id', $ubicacionId);
+                $query->where('location_id', $ubicacionId);
             }
         }
         if ($request->filled('role_id')) {

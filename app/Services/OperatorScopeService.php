@@ -205,7 +205,7 @@ class OperatorScopeService
         if ($enforced = $this->tenantContext->enforcedClientId()) {
             return $query->where(function ($q) use ($enforced) {
                 $q->where('client_id', $enforced)
-                    ->orWhereIn('sede_id', function ($sub) use ($enforced) {
+                    ->orWhereIn('site_id', function ($sub) use ($enforced) {
                         $sub->select('id')->from('sites')->where('client_id', $enforced);
                     });
             });
@@ -223,7 +223,7 @@ class OperatorScopeService
 
             return $query->where(function ($q) use ($operatorId) {
                 $q->whereIn('client_id', $this->clientIdsSubquery($operatorId))
-                    ->orWhereIn('sede_id', $this->siteIdsSubquery($operatorId));
+                    ->orWhereIn('site_id', $this->siteIdsSubquery($operatorId));
             });
         }
 
@@ -234,7 +234,7 @@ class OperatorScopeService
 
         return $query->where(function ($q) use ($clientId) {
             $q->where('client_id', $clientId)
-                ->orWhereIn('sede_id', function ($sub) use ($clientId) {
+                ->orWhereIn('site_id', function ($sub) use ($clientId) {
                     $sub->select('id')->from('sites')->where('client_id', $clientId);
                 });
         });
@@ -245,7 +245,7 @@ class OperatorScopeService
         if ($enforced = $this->tenantContext->enforcedClientId()) {
             return $query->where(function ($q) use ($enforced) {
                 $q->where('client_id', $enforced)
-                    ->orWhereIn('sede_id', function ($sub) use ($enforced) {
+                    ->orWhereIn('site_id', function ($sub) use ($enforced) {
                         $sub->select('id')->from('sites')->where('client_id', $enforced);
                     });
             });
@@ -263,7 +263,7 @@ class OperatorScopeService
 
             return $query->where(function ($q) use ($operatorId) {
                 $q->whereIn('client_id', $this->clientIdsSubquery($operatorId))
-                    ->orWhereIn('sede_id', $this->siteIdsSubquery($operatorId));
+                    ->orWhereIn('site_id', $this->siteIdsSubquery($operatorId));
             });
         }
 
@@ -274,7 +274,7 @@ class OperatorScopeService
 
         return $query->where(function ($q) use ($clientId) {
             $q->where('client_id', $clientId)
-                ->orWhereIn('sede_id', function ($sub) use ($clientId) {
+                ->orWhereIn('site_id', function ($sub) use ($clientId) {
                     $sub->select('id')->from('sites')->where('client_id', $clientId);
                 });
         });

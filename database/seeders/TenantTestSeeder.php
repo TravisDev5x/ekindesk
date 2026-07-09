@@ -127,7 +127,7 @@ class TenantTestSeeder extends Seeder
                 'employee_number'     => 'OP001',
                 'area_id'             => $areaId,
                 'position_id'         => $positionId,
-                'sede_id'             => $siteId,
+                'site_id'             => $siteId,
                 'status'              => 'active',
                 'is_operator'         => true,
                 'email_verified_at'   => now(),

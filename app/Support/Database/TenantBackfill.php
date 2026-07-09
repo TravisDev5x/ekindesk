@@ -11,9 +11,9 @@ use Illuminate\Support\Facades\Schema;
 class TenantBackfill
 {
     /**
-     * Copy sites.client_id into child rows linked by sede_id (tickets, incidents, …).
+     * Copy sites.client_id into child rows linked by site_id (tickets, incidents, …).
      */
-    public static function syncClientIdFromSites(string $childTable, string $sedeColumn = 'sede_id'): int
+    public static function syncClientIdFromSites(string $childTable, string $sedeColumn = 'site_id'): int
     {
         if (! Schema::hasTable($childTable) || ! Schema::hasColumn($childTable, 'client_id')) {
             return 0;

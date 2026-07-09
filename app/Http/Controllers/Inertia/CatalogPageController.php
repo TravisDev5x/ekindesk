@@ -122,7 +122,7 @@ class CatalogPageController extends Controller
     public function ubicaciones(): Response
     {
         return Inertia::render('Catalogs/Ubicaciones', [
-            'ubicaciones' => Ubicacion::with('sede:id,name,type')->orderBy('sede_id')->orderBy('name')->get(),
+            'ubicaciones' => Ubicacion::with('sede:id,name,type')->orderBy('site_id')->orderBy('name')->get(),
             'sedes' => Sede::where('is_active', true)->orderBy('name')->get(['id', 'name']),
         ]);
     }

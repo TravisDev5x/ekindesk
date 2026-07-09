@@ -154,7 +154,7 @@ class TenantIntegrity
         }
 
         return (int) DB::table($childTable.' as c')
-            ->join('sites as s', 's.id', '=', 'c.sede_id')
+            ->join('sites as s', 's.id', '=', 'c.site_id')
             ->whereNotNull('s.client_id')
             ->whereNull('c.client_id')
             ->count();

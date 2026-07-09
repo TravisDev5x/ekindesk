@@ -56,10 +56,10 @@ class ResolbebIndexController extends Controller
         $sedeIds = $sedes->pluck('id');
 
         $ubicacionesQuery = DB::table('locations')
-            ->join('sites', 'sites.id', '=', 'locations.sede_id')
+            ->join('sites', 'sites.id', '=', 'locations.site_id')
             ->where('locations.is_active', true);
         if ($sedeIds->isNotEmpty()) {
-            $ubicacionesQuery->whereIn('locations.sede_id', $sedeIds);
+            $ubicacionesQuery->whereIn('locations.site_id', $sedeIds);
         } else {
             $ubicacionesQuery->whereRaw('0 = 1');
         }
@@ -74,7 +74,7 @@ class ResolbebIndexController extends Controller
                 ->get([
                     'locations.id',
                     'locations.name',
-                    'locations.sede_id',
+                    'locations.site_id',
                 ]),
             'priorities' => Priority::orderBy('level')->orderBy('name')->get(['id', 'name', 'level', 'is_active']),
             'ticket_states' => TicketState::orderBy('name')->get(['id', 'name', 'code', 'is_active', 'is_final']),

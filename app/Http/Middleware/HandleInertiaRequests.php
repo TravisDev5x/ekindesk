@@ -86,7 +86,7 @@ class HandleInertiaRequests extends Middleware
                     'area' => $user->area?->name,
                     'area_id' => $user->area_id,
                     'sede' => $user->sede?->name,
-                    'sede_id' => $user->sede_id,
+                    'site_id' => $user->site_id,
                     'availability' => $user->availability,
                     'roles' => $user->getCachedRoleNames()->values()->all(),
                     'permissions' => $user->getCachedPermissions()->values()->all(),

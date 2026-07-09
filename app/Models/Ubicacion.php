@@ -15,7 +15,7 @@ class Ubicacion extends Model
     protected $table = 'locations';
 
     protected $fillable = [
-        'sede_id',
+        'site_id',
         'name',
         'code',
         'is_active',
@@ -27,11 +27,11 @@ class Ubicacion extends Model
 
     public function sede(): BelongsTo
     {
-        return $this->belongsTo(Sede::class);
+        return $this->belongsTo(Sede::class, 'site_id');
     }
 
     public function users(): HasMany
     {
-        return $this->hasMany(User::class, 'ubicacion_id');
+        return $this->hasMany(User::class, 'location_id');
     }
 }

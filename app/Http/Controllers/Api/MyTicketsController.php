@@ -90,7 +90,7 @@ class MyTicketsController extends Controller
             'areaOrigin:id,name',
             'areaCurrent:id,name',
             'sede:id,name',
-            'ubicacion:id,name,sede_id',
+            'ubicacion:id,name,site_id',
             'requester:id,name,email',
             'assignedUser:id,name,position_id',
             'ticketType:id,name',

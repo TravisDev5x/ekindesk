@@ -133,10 +133,10 @@ class CatalogController extends Controller
         $sedeIds = $sedes->pluck('id');
 
         $ubicacionesQuery = DB::table('locations')
-            ->join('sites', 'sites.id', '=', 'locations.sede_id')
+            ->join('sites', 'sites.id', '=', 'locations.site_id')
             ->where('locations.is_active', true);
         if ($sedeIds->isNotEmpty()) {
-            $ubicacionesQuery->whereIn('locations.sede_id', $sedeIds);
+            $ubicacionesQuery->whereIn('locations.site_id', $sedeIds);
         } else {
             $ubicacionesQuery->whereRaw('0 = 1');
         }
@@ -154,7 +154,7 @@ class CatalogController extends Controller
                     'locations.id',
                     'locations.name',
                     'locations.code',
-                    'locations.sede_id',
+                    'locations.site_id',
                     'sites.name as sede_name',
                     'sites.client_id',
                 ]),

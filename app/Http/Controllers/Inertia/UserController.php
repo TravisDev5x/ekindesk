@@ -32,10 +32,10 @@ class UserController extends Controller
         $sedeIds = $this->clientScope->sedesQueryForUser($actor)->pluck('id');
 
         $ubicacionesQuery = DB::table('locations')
-            ->join('sites', 'sites.id', '=', 'locations.sede_id')
+            ->join('sites', 'sites.id', '=', 'locations.site_id')
             ->where('locations.is_active', true);
         if ($sedeIds->isNotEmpty()) {
-            $ubicacionesQuery->whereIn('locations.sede_id', $sedeIds);
+            $ubicacionesQuery->whereIn('locations.site_id', $sedeIds);
         } else {
             $ubicacionesQuery->whereRaw('0 = 1');
         }
@@ -68,7 +68,7 @@ class UserController extends Controller
                     ->get([
                         'locations.id',
                         'locations.name',
-                        'locations.sede_id',
+                        'locations.site_id',
                         'sites.name as sede_name',
                     ]),
             ],

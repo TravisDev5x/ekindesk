@@ -46,13 +46,13 @@ class ClientScopeService
     {
         $user->loadMissing('sede:id,name,client_id');
 
-        if (! $user->sede_id) {
+        if (! $user->site_id) {
             return response()->json([
                 'message' => 'Debes tener una sede asignada para crear tickets. Contacta a tu administrador.',
             ], 422);
         }
 
-        $data['sede_id'] = (int) $user->sede_id;
+        $data['site_id'] = (int) $user->site_id;
         $data['client_id'] = $this->resolveUserClientId($user);
 
         return null;
@@ -120,7 +120,7 @@ class ClientScopeService
         if ($clientId) {
             return $query->where(function ($q) use ($clientId) {
                 $q->where('client_id', $clientId)
-                    ->orWhereIn('sede_id', $this->sedeIdsSubquery($clientId));
+                    ->orWhereIn('site_id', $this->sedeIdsSubquery($clientId));
             });
         }
 
@@ -200,7 +200,7 @@ class ClientScopeService
         if ($enforced = $this->tenantContext->enforcedClientId()) {
             return $query->where(function ($q) use ($enforced) {
                 $q->where('users.client_id', $enforced)
-                    ->orWhereIn('users.sede_id', $this->sedeIdsSubquery($enforced));
+                    ->orWhereIn('users.site_id', $this->sedeIdsSubquery($enforced));
             });
         }
 
@@ -218,7 +218,7 @@ class ClientScopeService
                 return $query->whereRaw('0 = 1');
             }
 
-            return $query->whereIn('users.sede_id', function ($sub) use ($operatorId) {
+            return $query->whereIn('users.site_id', function ($sub) use ($operatorId) {
                 $sub->select('sites.id')
                     ->from('sites')
                     ->join('clients', 'clients.id', '=', 'sites.client_id')
@@ -231,7 +231,7 @@ class ClientScopeService
             return $query->where('users.id', $user->id);
         }
 
-        return $query->whereIn('users.sede_id', $this->sedeIdsSubquery($clientId));
+        return $query->whereIn('users.site_id', $this->sedeIdsSubquery($clientId));
     }
 
     public function ticketVisibleToUser(User $user, \App\Models\Ticket $ticket): bool
@@ -319,7 +319,7 @@ class ClientScopeService
             return false;
         }
 
-        return (int) $user->sede_id === $sedeId;
+        return (int) $user->site_id === $sedeId;
     }
 
     public function assertUserAccessible(User $user, int $targetUserId): bool
@@ -333,7 +333,7 @@ class ClientScopeService
                 ->where('id', $targetUserId)
                 ->where(function ($q) use ($enforced) {
                     $q->where('client_id', $enforced)
-                        ->orWhereIn('sede_id', $this->sedeIdsSubquery($enforced));
+                        ->orWhereIn('site_id', $this->sedeIdsSubquery($enforced));
                 })
                 ->exists();
         }
@@ -358,7 +358,7 @@ class ClientScopeService
 
             return DB::table('users')
                 ->where('id', $targetUserId)
-                ->whereIn('sede_id', function ($sub) use ($operatorId) {
+                ->whereIn('site_id', function ($sub) use ($operatorId) {
                     $sub->select('sites.id')
                         ->from('sites')
                         ->join('clients', 'clients.id', '=', 'sites.client_id')
@@ -374,7 +374,7 @@ class ClientScopeService
 
         return DB::table('users')
             ->where('id', $targetUserId)
-            ->whereIn('sede_id', $this->sedeIdsSubquery($clientId))
+            ->whereIn('site_id', $this->sedeIdsSubquery($clientId))
             ->exists();
     }
 
@@ -411,14 +411,14 @@ class ClientScopeService
         });
     }
 
-    /** Valida sede_id en filtros de listados. */
-    public function applySedeFilter(Request $request, User $user, Builder $query, string $column = 'sede_id'): void
+    /** Valida site_id en filtros de listados. */
+    public function applySedeFilter(Request $request, User $user, Builder $query, string $column = 'site_id'): void
     {
-        if (! $request->filled('sede_id')) {
+        if (! $request->filled('site_id')) {
             return;
         }
 
-        $sedeId = (int) $request->input('sede_id');
+        $sedeId = (int) $request->input('site_id');
         if ($sedeId < 1 || ! $this->assertSedeAccessible($user, $sedeId)) {
             return;
         }
@@ -494,7 +494,7 @@ class ClientScopeService
                 return $q->whereRaw('0 = 1');
             }
 
-            return $q->whereIn('sede_id', function ($sub) use ($operatorId) {
+            return $q->whereIn('site_id', function ($sub) use ($operatorId) {
                 $sub->select('sites.id')
                     ->from('sites')
                     ->join('clients', 'clients.id', '=', 'sites.client_id')
@@ -508,7 +508,7 @@ class ClientScopeService
             }
             $clientId = $this->resolveUserClientId($user);
             if ($clientId) {
-                $q->whereIn('sede_id', $this->sedeIdsSubquery($clientId));
+                $q->whereIn('site_id', $this->sedeIdsSubquery($clientId));
             }
 
             return $q;
@@ -519,7 +519,7 @@ class ClientScopeService
 
     private function whereTicketSedeInClient(Builder $query, int $clientId): Builder
     {
-        return $query->whereIn('sede_id', $this->sedeIdsSubquery($clientId));
+        return $query->whereIn('site_id', $this->sedeIdsSubquery($clientId));
     }
 
     private function applyIncidentsWithoutTenant(Builder $query, User $user): Builder

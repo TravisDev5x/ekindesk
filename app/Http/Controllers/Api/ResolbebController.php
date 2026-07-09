@@ -24,7 +24,7 @@ use Illuminate\Support\Facades\Gate;
 
 /**
  * Dashboard operativo RESOLBEB: KPIs, balance de carga, tendencia y tickets críticos.
- * Filtros: assigned_user_id (agente), sede_id (sede).
+ * Filtros: assigned_user_id (agente), site_id (sede).
  */
 class ResolbebController extends Controller
 {
@@ -34,7 +34,7 @@ class ResolbebController extends Controller
 
     /**
      * Dashboard operativo: KPIs, balance de carga, tendencia, top incidentes y top 5 críticos.
-     * Filtros opcionales: sede_id, assigned_user_id.
+     * Filtros opcionales: site_id, assigned_user_id.
      */
     public function dashboardOperativo(Request $request): JsonResponse
     {
@@ -226,15 +226,15 @@ class ResolbebController extends Controller
         $mesFin = Carbon::now()->endOfMonth();
         $topSedesRaw = (clone $base)
             ->whereBetween('created_at', [$mesInicio, $mesFin])
-            ->select('sede_id', DB::raw('count(*) as total'))
-            ->groupBy('sede_id')
+            ->select('site_id', DB::raw('count(*) as total'))
+            ->groupBy('site_id')
             ->orderByDesc('total')
             ->get();
-        $sedeIds = $topSedesRaw->pluck('sede_id')->filter()->unique()->values()->all();
+        $sedeIds = $topSedesRaw->pluck('site_id')->filter()->unique()->values()->all();
         $sedeNames = $sedeIds ? Sede::whereIn('id', $sedeIds)->pluck('name', 'id')->all() : [];
         $topSedes = $topSedesRaw->map(function ($row) use ($sedeNames) {
             return [
-                'sede' => $row->sede_id ? ($sedeNames[$row->sede_id] ?? 'Sede #'.$row->sede_id) : 'Sin sede',
+                'sede' => $row->site_id ? ($sedeNames[$row->site_id] ?? 'Sede #'.$row->site_id) : 'Sin sede',
                 'total' => (int) $row->total,
             ];
         })->values()->all();
@@ -338,14 +338,14 @@ class ResolbebController extends Controller
         $filters = [
             'area_current_id' => 'area_current_id',
             'area_origin_id' => 'area_origin_id',
-            'sede_id' => 'sede_id',
+            'site_id' => 'site_id',
             'ticket_type_id' => 'ticket_type_id',
             'priority_id' => 'priority_id',
             'ticket_state_id' => 'ticket_state_id',
         ];
         foreach ($filters as $param => $column) {
             if ($request->filled($param)) {
-                if ($param === 'sede_id' && ! $user->can('tickets.filter_by_sede') && ! $user->can('tickets.manage_all')) {
+                if ($param === 'site_id' && ! $user->can('tickets.filter_by_sede') && ! $user->can('tickets.manage_all')) {
                     continue;
                 }
                 $query->where($column, $request->input($param));

@@ -78,7 +78,7 @@ class DemoDataSeeder extends Seeder
         if ($sfa) {
             foreach (['Piso 1', 'Piso 2', 'Piso 3'] as $name) {
                 Ubicacion::firstOrCreate(
-                    ['sede_id' => $sfa->id, 'name' => $name],
+                    ['site_id' => $sfa->id, 'name' => $name],
                     ['is_active' => true]
                 );
             }
@@ -86,7 +86,7 @@ class DemoDataSeeder extends Seeder
         if ($sfb) {
             foreach (['Edificio Norte', 'Edificio Sur'] as $name) {
                 Ubicacion::firstOrCreate(
-                    ['sede_id' => $sfb->id, 'name' => $name],
+                    ['site_id' => $sfb->id, 'name' => $name],
                     ['is_active' => true]
                 );
             }
@@ -210,7 +210,7 @@ class DemoDataSeeder extends Seeder
             $requester = $users[array_rand($users)];
             $area = $areas->random();
             $sede = $sedes->random();
-            $ubicacionesSede = Ubicacion::where('sede_id', $sede->id)->get();
+            $ubicacionesSede = Ubicacion::where('site_id', $sede->id)->get();
             $ubicacion = $ubicacionesSede->isNotEmpty() ? $ubicacionesSede->random() : null;
 
             Ticket::create([
@@ -218,8 +218,8 @@ class DemoDataSeeder extends Seeder
                 'description' => fake()->optional(0.85)->paragraphs(2, true),
                 'area_origin_id' => $area->id,
                 'area_current_id' => $area->id,
-                'sede_id' => $sede->id,
-                'ubicacion_id' => $ubicacion?->id,
+                'site_id' => $sede->id,
+                'location_id' => $ubicacion?->id,
                 'requester_id' => $requester->id,
                 'requester_position_id' => $requester->position_id,
                 'ticket_type_id' => $types->random()->id,
@@ -270,7 +270,7 @@ class DemoDataSeeder extends Seeder
                 'involved_user_id' => fake()->boolean(0.3) ? $users[array_rand($users)]->id : null,
                 'assigned_user_id' => fake()->boolean(0.5) ? $users[array_rand($users)]->id : null,
                 'area_id' => $area->id,
-                'sede_id' => $sede->id,
+                'site_id' => $sede->id,
                 'incident_type_id' => $types->random()->id,
                 'incident_severity_id' => $severities->random()->id,
                 'incident_status_id' => $status->id,

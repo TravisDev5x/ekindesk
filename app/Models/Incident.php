@@ -21,7 +21,7 @@ class Incident extends Model
         'involved_user_id',
         'assigned_user_id',
         'area_id',
-        'sede_id',
+        'site_id',
         'client_id',
         'incident_type_id',
         'incident_severity_id',
@@ -39,17 +39,17 @@ class Incident extends Model
     public function involvedUser(): BelongsTo { return $this->belongsTo(User::class, 'involved_user_id'); }
     public function assignedUser(): BelongsTo { return $this->belongsTo(User::class, 'assigned_user_id'); }
     public function area(): BelongsTo { return $this->belongsTo(Area::class, 'area_id'); }
-    public function sede(): BelongsTo { return $this->belongsTo(Sede::class, 'sede_id'); }
+    public function sede(): BelongsTo { return $this->belongsTo(Sede::class, 'site_id'); }
     public function client(): BelongsTo { return $this->belongsTo(Cliente::class, 'client_id'); }
 
     protected static function booted(): void
     {
         static::saving(function (Incident $incident) {
-            if (! $incident->sede_id) {
+            if (! $incident->site_id) {
                 return;
             }
-            if ($incident->isDirty('sede_id') || $incident->client_id === null) {
-                $incident->client_id = app(ClientScopeService::class)->syncClientIdFromSede((int) $incident->sede_id);
+            if ($incident->isDirty('site_id') || $incident->client_id === null) {
+                $incident->client_id = app(ClientScopeService::class)->syncClientIdFromSede((int) $incident->site_id);
             }
         });
     }

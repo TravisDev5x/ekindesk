@@ -84,7 +84,7 @@ class ProcessInboundTicket implements ShouldQueue
                 'subject'          => mb_substr($this->parsedEmail['subject'], 0, 255),
                 'description'      => $this->parsedEmail['body_plain'],
                 'requester_id'     => $requester->id,
-                'sede_id'          => $requester->sede_id,
+                'site_id'          => $requester->site_id,
                 'area_origin_id'   => $defaultAreaId,
                 'area_current_id'  => $defaultAreaId,
                 'ticket_state_id'  => $defaultStateId,
@@ -118,7 +118,7 @@ class ProcessInboundTicket implements ShouldQueue
     /**
      * Busca o crea el usuario solicitante a partir del email entrante.
      *
-     * sede_id es NOT NULL en users: usa la primera sede activa del tenant.
+     * site_id es NOT NULL en users: usa la primera sede activa del tenant.
      * Si el tenant no tiene sedes, lanza excepción (el job reintentará).
      */
     private function findOrCreateRequester(Cliente $tenant): User
@@ -145,7 +145,7 @@ class ProcessInboundTicket implements ShouldQueue
             ],
             [
                 'first_name'           => $fromName,
-                'sede_id'              => $sedeId,
+                'site_id'              => $sedeId,
                 'client_id'            => $this->clientId,
                 'password'             => \Hash::make(\Str::random(32)),
                 'status'               => 'active',

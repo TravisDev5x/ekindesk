@@ -185,7 +185,7 @@ class TicketAnalyticsController extends Controller
         $filters = [
             'area_current_id' => 'area_current_id',
             'area_origin_id' => 'area_origin_id',
-            'ubicacion_id' => 'ubicacion_id',
+            'location_id' => 'location_id',
             'ticket_type_id' => 'ticket_type_id',
             'priority_id' => 'priority_id',
             'ticket_state_id' => 'ticket_state_id',
@@ -197,7 +197,7 @@ class TicketAnalyticsController extends Controller
             }
         }
 
-        if ($request->filled('sede_id')) {
+        if ($request->filled('site_id')) {
             $canFilterSede = $user->can('tickets.filter_by_sede')
                 || $user->can('tickets.manage_all')
                 || $user->can('tickets.view_area');
