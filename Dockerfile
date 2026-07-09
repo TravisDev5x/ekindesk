@@ -4,12 +4,12 @@
 FROM composer:2 AS composer_build
 WORKDIR /app
 COPY composer.json composer.lock ./
-RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist
+RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist --ignore-platform-reqs
 COPY . .
 RUN composer dump-autoload --optimize --no-dev
 
 # ---- Stage 2: frontend build ----
-FROM node:20-alpine AS frontend_build
+FROM node:22-alpine AS frontend_build
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
