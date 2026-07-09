@@ -37,6 +37,12 @@ RUN mkdir -p storage/framework/cache/data storage/framework/sessions storage/fra
     && chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache \
     && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
+# php:8.4-fpm ships with output_buffering=Off. Some early byte gets flushed
+# before Laravel sets its response headers on Inertia partial-reload requests,
+# which locks in the default Content-Type/no X-Inertia header for the rest of
+# the response. Buffering the whole response defers header commit until send.
+RUN echo 'output_buffering = 4096' > /usr/local/etc/php/conf.d/zz-buffering.ini
+
 USER www-data
 
 EXPOSE 9000
