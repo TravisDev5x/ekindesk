@@ -17,6 +17,7 @@
 /public/hot
 /public/hot.resolved
 /public/storage
+/docker/nginx/default.conf
 /storage/*.key
 /storage/pail
 /storage/framework/cache/data
