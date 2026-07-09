@@ -124,7 +124,7 @@ Inertia (Vite → inertia.jsx → páginas en Inertia/Pages/)
 ### Backend
 
 - **Validation**: Always in Form Request classes (`app/Http/Requests/`), not inline in controllers
-- **Audit logging**: `TicketObserver` auto-logs all model changes to `ticket_audit_logs`; incidents do **not** have observers yet
+- **Audit logging**: `Ticket` uses the `Auditable` trait (`app/Traits/Auditable.php`) to auto-log model changes to `audit_logs`; incidents do **not** use this trait yet
 - **Events/Listeners**: `TicketCreated` / `TicketUpdated` → `SendTicketNotification` listener
 - **Client scoping (multi-tenant)**: Use `ClientScopeService` to filter queries by `client_id`—don't apply scoping manually in controllers
 - **API responses**: Return plain JSON; use Laravel's `response()->json()` with appropriate HTTP status codes
