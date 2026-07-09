@@ -28,7 +28,7 @@ class SiganAssetsSeeder extends Seeder
     {
         $this->command->info('SiganAssetsSeeder: activos TI, mobiliario, canibalización y mantenimiento.');
 
-        if (! \Illuminate\Support\Facades\Schema::hasTable('sigan_assets')) {
+        if (! \Illuminate\Support\Facades\Schema::hasTable('assets')) {
             $this->command->error('Ejecuta antes la migración create_sigan_assets_tables.');
             return;
         }
@@ -55,13 +55,13 @@ class SiganAssetsSeeder extends Seeder
                 ? 'Laptop ' . strtoupper(substr(md5((string) $i), 0, 6))
                 : 'PC Escritorio ' . strtoupper(substr(md5((string) $i), 0, 6));
             $asset = Asset::create([
-                'tipo' => 'ti',
-                'subtipo' => $subtipo,
-                'nombre' => $nombre,
-                'numero_serie' => 'SN-TI-' . str_pad((string) $i, 5, '0', STR_PAD_LEFT),
-                'estado' => 'activo',
-                'ubicacion' => $this->faker->randomElement($ubicaciones),
-                'observaciones' => $i % 5 === 0 ? 'Revisión anual pendiente.' : null,
+                'type' => 'it',
+                'subtype' => $subtipo,
+                'name' => $nombre,
+                'serial_number' => 'SN-TI-' . str_pad((string) $i, 5, '0', STR_PAD_LEFT),
+                'status' => 'active',
+                'location' => $this->faker->randomElement($ubicaciones),
+                'notes' => $i % 5 === 0 ? 'Revisión anual pendiente.' : null,
             ]);
             $created[] = $asset;
         }
@@ -86,12 +86,12 @@ class SiganAssetsSeeder extends Seeder
                 ? 'Silla ergonómica ' . $i
                 : 'UPS ' . $i . ' 1500VA';
             $asset = Asset::create([
-                'tipo' => 'mobiliario',
-                'subtipo' => $subtipo,
-                'nombre' => $nombre,
-                'numero_serie' => $subtipo === 'ups' ? 'SN-UPS-' . str_pad((string) $i, 4, '0', STR_PAD_LEFT) : null,
-                'estado' => 'activo',
-                'ubicacion' => $this->faker->randomElement($ubicaciones),
+                'type' => 'furniture',
+                'subtype' => $subtipo,
+                'name' => $nombre,
+                'serial_number' => $subtipo === 'ups' ? 'SN-UPS-' . str_pad((string) $i, 4, '0', STR_PAD_LEFT) : null,
+                'status' => 'active',
+                'location' => $this->faker->randomElement($ubicaciones),
             ]);
             $created[] = $asset;
         }
@@ -111,22 +111,22 @@ class SiganAssetsSeeder extends Seeder
             return [];
         }
         $scrap1 = Asset::create([
-            'tipo' => 'ti',
-            'subtipo' => 'laptop',
-            'nombre' => 'Laptop Huesero 01 (Scrap)',
-            'numero_serie' => 'SN-SCRAP-001',
-            'estado' => 'scrap',
-            'ubicacion' => 'Almacén - Área de baja',
-            'observaciones' => 'Componentes extraídos para refacciones.',
+            'type' => 'it',
+            'subtype' => 'laptop',
+            'name' => 'Laptop Huesero 01 (Scrap)',
+            'serial_number' => 'SN-SCRAP-001',
+            'status' => 'scrap',
+            'location' => 'Almacén - Área de baja',
+            'notes' => 'Componentes extraídos para refacciones.',
         ]);
         $scrap2 = Asset::create([
-            'tipo' => 'ti',
-            'subtipo' => 'pc',
-            'nombre' => 'PC Huesero 02 (Scrap)',
-            'numero_serie' => 'SN-SCRAP-002',
-            'estado' => 'scrap',
-            'ubicacion' => 'Almacén - Área de baja',
-            'observaciones' => 'RAM y SSD extraídos.',
+            'type' => 'it',
+            'subtype' => 'pc',
+            'name' => 'PC Huesero 02 (Scrap)',
+            'serial_number' => 'SN-SCRAP-002',
+            'status' => 'scrap',
+            'location' => 'Almacén - Área de baja',
+            'notes' => 'RAM y SSD extraídos.',
         ]);
 
         $receptor1 = $activosTI[0];
@@ -134,31 +134,31 @@ class SiganAssetsSeeder extends Seeder
 
         AssetComponent::create([
             'asset_id' => $scrap1->id,
-            'tipo_componente' => 'ram',
-            'descripcion' => '8GB DDR4',
-            'estado' => 'extraido',
-            'usado_en_asset_id' => $receptor1->id,
+            'component_type' => 'ram',
+            'description' => '8GB DDR4',
+            'status' => 'removed',
+            'reused_in_asset_id' => $receptor1->id,
         ]);
         AssetComponent::create([
             'asset_id' => $scrap1->id,
-            'tipo_componente' => 'ssd',
-            'descripcion' => '256GB NVMe',
-            'estado' => 'extraido',
-            'usado_en_asset_id' => $receptor1->id,
+            'component_type' => 'ssd',
+            'description' => '256GB NVMe',
+            'status' => 'removed',
+            'reused_in_asset_id' => $receptor1->id,
         ]);
         AssetComponent::create([
             'asset_id' => $scrap2->id,
-            'tipo_componente' => 'ram',
-            'descripcion' => '16GB DDR4',
-            'estado' => 'extraido',
-            'usado_en_asset_id' => $receptor2->id,
+            'component_type' => 'ram',
+            'description' => '16GB DDR4',
+            'status' => 'removed',
+            'reused_in_asset_id' => $receptor2->id,
         ]);
         AssetComponent::create([
             'asset_id' => $scrap2->id,
-            'tipo_componente' => 'ssd',
-            'descripcion' => '512GB SATA',
-            'estado' => 'extraido',
-            'usado_en_asset_id' => $receptor2->id,
+            'component_type' => 'ssd',
+            'description' => '512GB SATA',
+            'status' => 'removed',
+            'reused_in_asset_id' => $receptor2->id,
         ]);
 
         $this->command->info('  2 activos Scrap creados con componentes extraídos (canibalización).');
@@ -181,22 +181,22 @@ class SiganAssetsSeeder extends Seeder
             $asset = $todos[$i % count($todos)];
             MaintenanceRecord::create([
                 'asset_id' => $asset->id,
-                'tipo' => 'interno',
-                'proveedor' => null,
-                'fecha' => Carbon::today()->subDays(rand(5, 90)),
-                'descripcion' => 'Limpieza interna, revisión de ventilación y actualización de controladores.',
-                'resultado' => 'Correctivo aplicado. Equipo operativo.',
+                'type' => 'internal',
+                'provider' => null,
+                'performed_at' => Carbon::today()->subDays(rand(5, 90)),
+                'description' => 'Limpieza interna, revisión de ventilación y actualización de controladores.',
+                'result' => 'Correctivo aplicado. Equipo operativo.',
             ]);
         }
         for ($i = 0; $i < $externos; $i++) {
             $asset = $todos[($i + 2) % count($todos)];
             MaintenanceRecord::create([
                 'asset_id' => $asset->id,
-                'tipo' => 'externo',
-                'proveedor' => $proveedores[$i],
-                'fecha' => Carbon::today()->subDays(rand(10, 60)),
-                'descripcion' => 'Mantenimiento preventivo por contrato con proveedor.',
-                'resultado' => 'Sin hallazgos. Próxima visita en 6 meses.',
+                'type' => 'external',
+                'provider' => $proveedores[$i],
+                'performed_at' => Carbon::today()->subDays(rand(10, 60)),
+                'description' => 'Mantenimiento preventivo por contrato con proveedor.',
+                'result' => 'Sin hallazgos. Próxima visita en 6 meses.',
             ]);
         }
 

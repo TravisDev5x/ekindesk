@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Models\Cliente;
+use App\Models\Client;
 use App\Services\TenantContextService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
@@ -29,7 +29,7 @@ class TenantBrandingTest extends TestCase
             $this->markTestSkipped('Migración portal_slug no aplicada.');
         }
 
-        Cliente::create([
+        Client::create([
             'name' => 'Empresa Alpha',
             'portal_slug' => 'alpha',
             'logo_path' => 'clients/logos/alpha.png',

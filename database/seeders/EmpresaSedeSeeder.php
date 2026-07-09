@@ -3,7 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Campaign;
-use App\Models\Sede;
+use App\Models\Site;
 use Illuminate\Database\Seeder;
 
 /**
@@ -24,7 +24,7 @@ class EmpresaSedeSeeder extends Seeder
             ['name' => 'CDMX',     'code' => 'CDMX',     'type' => 'physical'],
         ];
         foreach ($sedes as $s) {
-            Sede::firstOrCreate(
+            Site::firstOrCreate(
                 ['name' => $s['name']],
                 ['code' => $s['code'], 'type' => $s['type'], 'is_active' => true]
             );

@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Models\Cliente;
+use App\Models\Client;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Validation\Rule;
@@ -129,15 +129,15 @@ class OperatorScopeService
         }
 
         if ($user->client_id) {
-            $operatorId = Cliente::where('id', $user->client_id)->value('operator_user_id');
+            $operatorId = Client::where('id', $user->client_id)->value('operator_user_id');
             if ($operatorId) {
                 return (int) $operatorId;
             }
         }
 
-        $user->loadMissing('sede:id,client_id');
-        if ($user->sede?->client_id) {
-            $operatorId = Cliente::where('id', $user->sede->client_id)->value('operator_user_id');
+        $user->loadMissing('site:id,client_id');
+        if ($user->site?->client_id) {
+            $operatorId = Client::where('id', $user->site->client_id)->value('operator_user_id');
             if ($operatorId) {
                 return (int) $operatorId;
             }
@@ -280,7 +280,7 @@ class OperatorScopeService
         });
     }
 
-    public function assertClientAccessible(User $user, Cliente $client): bool
+    public function assertClientAccessible(User $user, Client $client): bool
     {
         if ($this->bypassesOperatorScope($user)) {
             return true;
@@ -301,7 +301,7 @@ class OperatorScopeService
         return $clientId && (int) $client->id === $clientId;
     }
 
-    public function authorizeClient(User $user, Cliente $client): void
+    public function authorizeClient(User $user, Client $client): void
     {
         if (! $this->assertClientAccessible($user, $client)) {
             abort(403, 'No tienes acceso a este cliente.');
@@ -376,7 +376,7 @@ class OperatorScopeService
      */
     public function clientsForCatalog(User $user, bool $activeOnly = true): array
     {
-        $query = Cliente::query()->orderBy('name');
+        $query = Client::query()->orderBy('name');
         if ($activeOnly) {
             $query->where('is_active', true);
         }
@@ -392,12 +392,12 @@ class OperatorScopeService
             return false;
         }
 
-        return $this->applyOnClients(Cliente::query()->where('id', $clientId), $user)->exists();
+        return $this->applyOnClients(Client::query()->where('id', $clientId), $user)->exists();
     }
 
-    public function authorizeSite(User $user, \App\Models\Sede $sede): void
+    public function authorizeSite(User $user, \App\Models\Site $site): void
     {
-        if (! $this->applyOnSites(\App\Models\Sede::query()->where('id', $sede->id), $user)->exists()) {
+        if (! $this->applyOnSites(\App\Models\Site::query()->where('id', $site->id), $user)->exists()) {
             abort(403, 'No tienes acceso a esta sede.');
         }
     }
@@ -427,20 +427,20 @@ class OperatorScopeService
 
     public function resolveOperatorIdForTicket(\App\Models\Ticket $ticket): ?int
     {
-        $ticket->loadMissing('sede:id,client_id', 'cliente:id,operator_user_id');
+        $ticket->loadMissing('site:id,client_id', 'client:id,operator_user_id');
 
-        if ($ticket->client_id && $ticket->cliente?->operator_user_id) {
-            return (int) $ticket->cliente->operator_user_id;
+        if ($ticket->client_id && $ticket->client?->operator_user_id) {
+            return (int) $ticket->client->operator_user_id;
         }
 
         if ($ticket->client_id) {
-            $op = Cliente::where('id', $ticket->client_id)->value('operator_user_id');
+            $op = Client::where('id', $ticket->client_id)->value('operator_user_id');
 
             return $op ? (int) $op : null;
         }
 
-        if ($ticket->sede?->client_id) {
-            $op = Cliente::where('id', $ticket->sede->client_id)->value('operator_user_id');
+        if ($ticket->site?->client_id) {
+            $op = Client::where('id', $ticket->site->client_id)->value('operator_user_id');
 
             return $op ? (int) $op : null;
         }

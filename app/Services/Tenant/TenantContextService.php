@@ -2,7 +2,7 @@
 
 namespace App\Services\Tenant;
 
-use App\Models\Cliente;
+use App\Models\Client;
 
 /**
  * Contexto estático de tenant para jobs, commands y código fuera del ciclo HTTP.
@@ -19,14 +19,14 @@ use App\Models\Cliente;
  */
 final class TenantContextService
 {
-    private static ?Cliente $current = null;
+    private static ?Client $current = null;
 
-    public static function set(Cliente $tenant): void
+    public static function set(Client $tenant): void
     {
         static::$current = $tenant;
     }
 
-    public static function get(): ?Cliente
+    public static function get(): ?Client
     {
         return static::$current;
     }
@@ -46,7 +46,7 @@ final class TenantContextService
         return static::$current?->id;
     }
 
-    public static function getOrFail(): Cliente
+    public static function getOrFail(): Client
     {
         if (static::$current === null) {
             throw new \RuntimeException('Tenant context not resolved. Call TenantContextService::set() before accessing the tenant.');

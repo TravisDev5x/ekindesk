@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Models\Cliente;
+use App\Models\Client;
 use App\Models\User;
 use App\Services\TenantContextService;
 use App\Support\Tenancy\TenantContext;
@@ -22,7 +22,7 @@ class ClientPortalTenantTest extends TestCase
             $this->markTestSkipped('Migración portal_slug no aplicada.');
         }
 
-        $client = Cliente::create([
+        $client = Client::create([
             'name' => 'Empresa Alpha',
             'portal_slug' => 'alpha',
             'is_active' => true,
@@ -44,15 +44,15 @@ class ClientPortalTenantTest extends TestCase
         }
 
         $op = $this->bareUser(['is_operator' => true]);
-        $clientA = Cliente::create(['name' => 'A', 'portal_slug' => 'client-a', 'operator_user_id' => $op->id, 'is_active' => true]);
-        $clientB = Cliente::create(['name' => 'B', 'portal_slug' => 'client-b', 'operator_user_id' => $op->id, 'is_active' => true]);
+        $clientA = Client::create(['name' => 'A', 'portal_slug' => 'client-a', 'operator_user_id' => $op->id, 'is_active' => true]);
+        $clientB = Client::create(['name' => 'B', 'portal_slug' => 'client-b', 'operator_user_id' => $op->id, 'is_active' => true]);
 
         $siteB = DB::table('sites')->insertGetId([
             'name' => 'Sede B', 'code' => 'SB', 'type' => 'physical', 'is_active' => true,
             'client_id' => $clientB->id, 'created_at' => now(), 'updated_at' => now(),
         ]);
 
-        $userB = $this->bareUser(['email' => 'userb@test.local', 'sede_id' => $siteB, 'client_id' => $clientB->id]);
+        $userB = $this->bareUser(['email' => 'userb@test.local', 'site_id' => $siteB, 'client_id' => $clientB->id]);
 
         $request = Request::create('http://client-a.tikara.test/dashboard', 'GET');
         $request->setUserResolver(fn () => $userB);
@@ -71,8 +71,8 @@ class ClientPortalTenantTest extends TestCase
         }
 
         $op = $this->bareUser(['is_operator' => true]);
-        $clientA = Cliente::create(['name' => 'A', 'portal_slug' => 'client-a', 'operator_user_id' => $op->id, 'is_active' => true]);
-        $clientB = Cliente::create(['name' => 'B', 'portal_slug' => 'client-b', 'operator_user_id' => $op->id, 'is_active' => true]);
+        $clientA = Client::create(['name' => 'A', 'portal_slug' => 'client-a', 'operator_user_id' => $op->id, 'is_active' => true]);
+        $clientB = Client::create(['name' => 'B', 'portal_slug' => 'client-b', 'operator_user_id' => $op->id, 'is_active' => true]);
 
         $siteB = DB::table('sites')->insertGetId([
             'name' => 'Sede B', 'code' => 'SB2', 'type' => 'physical', 'is_active' => true,
@@ -82,7 +82,7 @@ class ClientPortalTenantTest extends TestCase
         $userB = $this->bareUser([
             'email' => 'portal-user@test.local',
             'password' => Hash::make('SecretPass123!'),
-            'sede_id' => $siteB,
+            'site_id' => $siteB,
             'client_id' => $clientB->id,
         ]);
         $userB->forceFill(['email_verified_at' => now()])->save();
@@ -116,7 +116,7 @@ class ClientPortalTenantTest extends TestCase
             'first_name' => 'T', 'paternal_last_name' => 'U',
             'email' => uniqid().'@t.local', 'password' => Hash::make('x'),
             'employee_number' => (string) random_int(100000, 999999),
-            'area_id' => $areaId, 'position_id' => $positionId, 'sede_id' => $siteId, 'status' => 'active',
+            'area_id' => $areaId, 'position_id' => $positionId, 'site_id' => $siteId, 'status' => 'active',
             'email_verified_at' => now(),
         ], $overrides));
     }

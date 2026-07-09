@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Models\Cliente;
+use App\Models\Client;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -123,7 +123,7 @@ class OperatorCatalogScopeService
 
             return [
                 'client_id' => $clientId,
-                'operator_user_id' => Cliente::where('id', $clientId)->value('operator_user_id'),
+                'operator_user_id' => Client::where('id', $clientId)->value('operator_user_id'),
             ];
         }
 
@@ -209,7 +209,7 @@ class OperatorCatalogScopeService
             return null;
         }
 
-        $operatorId = Cliente::where('id', $clientId)->value('operator_user_id');
+        $operatorId = Client::where('id', $clientId)->value('operator_user_id');
 
         return $operatorId ? (int) $operatorId : null;
     }

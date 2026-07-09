@@ -5,8 +5,8 @@ namespace Tests\Feature;
 use App\Models\Campaign;
 use App\Models\Area;
 use App\Models\Position;
-use App\Models\Sede;
-use App\Models\Ubicacion;
+use App\Models\Site;
+use App\Models\Location;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
@@ -27,10 +27,10 @@ class AuthApiTest extends TestCase
         Campaign::firstOrCreate(['name' => 'Test Campaign'], ['is_active' => true]);
         Area::firstOrCreate(['name' => 'Test Area'], ['is_active' => true]);
         Position::firstOrCreate(['name' => 'Test Position'], ['is_active' => true]);
-        $sede = Sede::where('code', 'REMOTO')->first();
+        $sede = Site::where('code', 'REMOTO')->first();
         if ($sede) {
-            Ubicacion::firstOrCreate(
-                ['sede_id' => $sede->id, 'name' => 'Virtual'],
+            Location::firstOrCreate(
+                ['site_id' => $sede->id, 'name' => 'Virtual'],
                 ['is_active' => true]
             );
         }

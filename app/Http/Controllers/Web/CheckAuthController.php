@@ -27,8 +27,8 @@ class CheckAuthController extends Controller
 
         $user->loadMissing([
             'area:id,name',
-            'sede:id,name,client_id',
-            'sede.cliente:id,name',
+            'site:id,name,client_id',
+            'site.client:id,name',
             'operatorProfile:id,user_id',
         ]);
 
@@ -52,15 +52,15 @@ class CheckAuthController extends Controller
             'sidebar_position' => $user->sidebar_position,
             'sidebar_hover_preview' => $user->sidebar_hover_preview,
             'is_operator' => $user->is_operator,
-            'client_id' => $user->sede?->client_id ?? $user->client_id,
+            'client_id' => $user->site?->client_id ?? $user->client_id,
             'onboarding_completed' => $user->onboarding_completed,
             'is_blacklisted' => $user->is_blacklisted,
             'force_password_change' => $user->force_password_change ?? false,
             'availability' => $user->availability,
             'area' => $user->area?->name,
-            'sede' => $user->sede?->name,
+            'sede' => $user->site?->name,
             'employee_number' => $user->employee_number,
-            'client_name' => $user->sede?->cliente?->name,
+            'client_name' => $user->site?->client?->name,
         ];
 
         $onboarding = app(OnboardingRedirectService::class);

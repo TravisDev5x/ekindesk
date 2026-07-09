@@ -128,7 +128,7 @@ class CatalogController extends Controller
                 ->get(['id', 'name', 'area_id', 'position_id']);
         }
 
-        $sedesQuery = $this->clientScope->sedesQueryForUser($user)->orderBy('name');
+        $sedesQuery = $this->clientScope->sitesQueryForUser($user)->orderBy('name');
         $sedes = $sedesQuery->get(['id', 'name', 'type', 'client_id']);
         $sedeIds = $sedes->pluck('id');
 

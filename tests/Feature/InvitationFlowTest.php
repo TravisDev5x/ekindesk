@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Models\Cliente;
+use App\Models\Client;
 use App\Models\Role;
 use App\Models\User;
 use App\Models\UserInvitation;
@@ -31,7 +31,7 @@ class InvitationFlowTest extends TestCase
     public function test_invitation_without_role_creates_pending_admin_user(): void
     {
         $inviter = $this->bareUser(['email' => 'inviter@test.local']);
-        $client = Cliente::create([
+        $client = Client::create([
             'name' => 'Empresa X',
             'operator_user_id' => $this->bareUser(['is_operator' => true])->id,
             'is_active' => true,
@@ -73,13 +73,13 @@ class InvitationFlowTest extends TestCase
         ]);
 
         $operator = $this->bareUser(['is_operator' => true]);
-        $clientA = Cliente::create([
+        $clientA = Client::create([
             'name' => 'Portal A',
             'portal_slug' => 'inv-portal-a',
             'operator_user_id' => $operator->id,
             'is_active' => true,
         ]);
-        $clientB = Cliente::create([
+        $clientB = Client::create([
             'name' => 'Portal B',
             'portal_slug' => 'inv-portal-b',
             'operator_user_id' => $operator->id,
@@ -123,14 +123,14 @@ class InvitationFlowTest extends TestCase
         ]);
 
         $operator = $this->bareUser(['is_operator' => true]);
-        $clientA = Cliente::create([
+        $clientA = Client::create([
             'name' => 'A',
             'portal_slug' => 'accept-a',
             'operator_user_id' => $operator->id,
             'is_active' => true,
         ]);
 
-        Cliente::create([
+        Client::create([
             'name' => 'B',
             'portal_slug' => 'accept-b',
             'operator_user_id' => $operator->id,
@@ -202,7 +202,7 @@ class InvitationFlowTest extends TestCase
             'first_name' => 'T', 'paternal_last_name' => 'U',
             'email' => uniqid().'@t.local', 'password' => Hash::make('x'),
             'employee_number' => (string) random_int(100000, 999999),
-            'area_id' => $areaId, 'position_id' => $positionId, 'sede_id' => $siteId, 'status' => 'active',
+            'area_id' => $areaId, 'position_id' => $positionId, 'site_id' => $siteId, 'status' => 'active',
             'email_verified_at' => now(),
         ], $overrides));
     }

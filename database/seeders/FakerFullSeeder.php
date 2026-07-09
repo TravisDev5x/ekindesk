@@ -10,11 +10,11 @@ use App\Models\IncidentStatus;
 use App\Models\IncidentType;
 use App\Models\Position;
 use App\Models\Priority;
-use App\Models\Sede;
+use App\Models\Site;
 use App\Models\Ticket;
 use App\Models\TicketState;
 use App\Models\TicketType;
-use App\Models\Ubicacion;
+use App\Models\Location;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
@@ -89,11 +89,11 @@ class FakerFullSeeder extends Seeder
      */
     private function ensureLocations(): void
     {
-        $sedes = Sede::where('type', 'physical')->get();
+        $sedes = Site::where('type', 'physical')->get();
         $names = ['Piso 1', 'Piso 2', 'Piso 3', 'Edificio A', 'Edificio B', 'Sala 101', 'Sala 102', 'Área abierta'];
         foreach ($sedes as $sede) {
             foreach (array_slice($names, 0, 3) as $name) {
-                Ubicacion::firstOrCreate(
+                Location::firstOrCreate(
                     ['site_id' => $sede->id, 'name' => $sede->name . ' - ' . $name],
                     ['is_active' => true]
                 );
@@ -109,7 +109,7 @@ class FakerFullSeeder extends Seeder
         $campaign = Campaign::first();
         $area = Area::first();
         $position = Position::first();
-        $sede = Sede::first();
+        $sede = Site::first();
 
         if (!$campaign || !$area || !$position || !$sede) {
             $this->command->warn('Faltan catálogos base. Ejecuta antes: php artisan db:seed --class=FullDemoSeeder');
@@ -135,7 +135,7 @@ class FakerFullSeeder extends Seeder
                 'campaign_id' => $campaign->id,
                 'area_id' => $area->id,
                 'position_id' => $position->id,
-                'location_id' => Ubicacion::inRandomOrder()->first()?->id,
+                'location_id' => Location::inRandomOrder()->first()?->id,
             ]);
         } else {
             $user->update(['password' => Hash::make(self::ADMIN_PASSWORD)]);
@@ -180,7 +180,7 @@ class FakerFullSeeder extends Seeder
         $this->command->info('  → Creando al menos ' . self::MIN_TICKETS . ' tickets (Faker)...');
 
         $areas = Area::all();
-        $sedes = Sede::all();
+        $sedes = Site::all();
         $priorities = Priority::all();
         $states = TicketState::all();
         $types = TicketType::all();
@@ -205,7 +205,7 @@ class FakerFullSeeder extends Seeder
             $requester = $users[array_rand($users)];
             $area = $areas->random();
             $sede = $sedes->random();
-            $ubicaciones = Ubicacion::where('site_id', $sede->id)->get();
+            $ubicaciones = Location::where('site_id', $sede->id)->get();
             $ubicacion = $ubicaciones->isNotEmpty() ? $ubicaciones->random() : null;
 
             Ticket::create([
@@ -237,7 +237,7 @@ class FakerFullSeeder extends Seeder
         $this->command->info('  → Creando al menos ' . self::MIN_INCIDENTS . ' incidencias (Faker)...');
 
         $areas = Area::all();
-        $sedes = Sede::all();
+        $sedes = Site::all();
         $severities = IncidentSeverity::all();
         $statuses = IncidentStatus::all();
         $types = IncidentType::all();

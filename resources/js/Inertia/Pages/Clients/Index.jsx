@@ -385,7 +385,7 @@ export default function Index({
 
                                                     {/* Secciones */}
                                                     <TableCell className="text-center">
-                                                        <StatBadge value={client.sedes_count} icon={MapPin} />
+                                                        <StatBadge value={client.sites_count} icon={MapPin} />
                                                     </TableCell>
 
                                                     {/* Usuarios */}

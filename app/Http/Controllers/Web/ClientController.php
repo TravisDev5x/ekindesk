@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
-use App\Models\Cliente;
+use App\Models\Client;
 use App\Models\Plan;
-use App\Models\Sede;
+use App\Models\Site;
 use App\Models\TicketState;
 use App\Services\OperatorScopeService;
 use App\Services\TenantContextService;
@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 use Inertia\Response;
 
-class ClienteController extends Controller
+class ClientController extends Controller
 {
     public function __construct(
         protected OperatorScopeService $operatorScope
@@ -36,10 +36,10 @@ class ClienteController extends Controller
 
     private function clientQuery(): Builder
     {
-        return $this->operatorScope->applyOnClients(Cliente::query(), auth()->user());
+        return $this->operatorScope->applyOnClients(Client::query(), auth()->user());
     }
 
-    private function authorizeClient(Cliente $client): void
+    private function authorizeClient(Client $client): void
     {
         $this->operatorScope->authorizeClient(auth()->user(), $client);
     }
@@ -61,7 +61,7 @@ class ClienteController extends Controller
         $isPlatformAdmin = $this->operatorScope->bypassesOperatorScope($user);
 
         $query = $this->clientQuery()
-            ->withCount(['sedes', 'tickets', 'users'])
+            ->withCount(['sites', 'tickets', 'users'])
             ->orderBy('name');
 
         if ($showOperatorColumn) {
@@ -100,7 +100,7 @@ class ClienteController extends Controller
     {
         $validated = $this->validateClient($request);
 
-        $cliente = DB::transaction(function () use ($request, $validated) {
+        $client = DB::transaction(function () use ($request, $validated) {
             $logoPath = null;
             if ($request->hasFile('logo')) {
                 $logoPath = $request->file('logo')->store(
@@ -109,7 +109,7 @@ class ClienteController extends Controller
                 );
             }
 
-            $cliente = Cliente::create([
+            $client = Client::create([
                 'name' => $validated['business_name'],
                 'industry' => $validated['industry'] ?? null,
                 'tax_id' => $validated['rfc'] ?? null,
@@ -127,8 +127,8 @@ class ClienteController extends Controller
                 if (empty($site['name'])) {
                     continue;
                 }
-                Sede::create([
-                    'client_id' => $cliente->id,
+                Site::create([
+                    'client_id' => $client->id,
                     'name' => $site['name'],
                     'address' => $site['address'] ?? null,
                     'city' => $site['city'] ?? null,
@@ -137,18 +137,18 @@ class ClienteController extends Controller
                 ]);
             }
 
-            return $cliente;
+            return $client;
         });
 
         return redirect()
-            ->route('clients.show', $cliente)
+            ->route('clients.show', $client)
             ->with('success', 'Cliente creado correctamente');
     }
 
-    public function show(Cliente $client): Response
+    public function show(Client $client): Response
     {
         $this->authorizeClient($client);
-        $client->load('sedes');
+        $client->load('sites');
 
         $finalStateIds = TicketState::where('is_final', true)->pluck('id');
 
@@ -170,23 +170,23 @@ class ClienteController extends Controller
         return Inertia::render('Clients/Show', [
             'client' => $client,
             'tickets_summary' => $ticketsSummary,
-            'sites' => $client->sedes,
+            'sites' => $client->sites,
             'industries' => self::INDUSTRIES,
         ]);
     }
 
-    public function edit(Cliente $client): Response
+    public function edit(Client $client): Response
     {
         $this->authorizeClient($client);
 
         return Inertia::render('Clients/Form', [
-            'client' => $client->load('sedes'),
+            'client' => $client->load('sites'),
             'industries' => self::INDUSTRIES,
-            'sites' => $client->sedes,
+            'sites' => $client->sites,
         ]);
     }
 
-    public function update(Request $request, Cliente $client)
+    public function update(Request $request, Client $client)
     {
         $this->authorizeClient($client);
         $validated = $this->validateClient($request, $client);
@@ -221,7 +221,7 @@ class ClienteController extends Controller
             ->with('success', 'Cliente actualizado');
     }
 
-    public function destroy(Cliente $client)
+    public function destroy(Client $client)
     {
         $this->authorizeClient($client);
 
@@ -246,7 +246,7 @@ class ClienteController extends Controller
     }
 
     /** Solo super_admin: cancela la cuenta (desactiva) sin borrar datos. */
-    public function cancel(Cliente $client): RedirectResponse
+    public function cancel(Client $client): RedirectResponse
     {
         abort_unless($this->operatorScope->bypassesOperatorScope(auth()->user()), 403);
 
@@ -261,7 +261,7 @@ class ClienteController extends Controller
     }
 
     /** Solo super_admin: reactiva una cuenta cancelada. */
-    public function reactivate(Cliente $client): RedirectResponse
+    public function reactivate(Client $client): RedirectResponse
     {
         abort_unless($this->operatorScope->bypassesOperatorScope(auth()->user()), 403);
 
@@ -276,7 +276,7 @@ class ClienteController extends Controller
     }
 
     /** Solo super_admin: actualiza plan y fecha de vencimiento. */
-    public function updatePlan(Request $request, Cliente $client): RedirectResponse
+    public function updatePlan(Request $request, Client $client): RedirectResponse
     {
         abort_unless($this->operatorScope->bypassesOperatorScope(auth()->user()), 403);
 
@@ -291,7 +291,7 @@ class ClienteController extends Controller
         return back()->with('success', 'Plan actualizado.');
     }
 
-    private function validateClient(Request $request, ?Cliente $client = null): array
+    private function validateClient(Request $request, ?Client $client = null): array
     {
         $uniqueName = 'unique:clients,name';
         if ($client) {
@@ -316,23 +316,23 @@ class ClienteController extends Controller
         ]);
     }
 
-    private function syncSites(Cliente $client, array $sites): void
+    private function syncSites(Client $client, array $sites): void
     {
         $submittedIds = collect($sites)->pluck('id')->filter()->map(fn ($id) => (int) $id)->all();
-        $client->sedes()->whereNotIn('id', $submittedIds)->delete();
+        $client->sites()->whereNotIn('id', $submittedIds)->delete();
 
         foreach ($sites as $site) {
             if (empty($site['name'])) {
                 continue;
             }
             if (! empty($site['id'])) {
-                $client->sedes()->where('id', $site['id'])->update([
+                $client->sites()->where('id', $site['id'])->update([
                     'name' => $site['name'],
                     'address' => $site['address'] ?? null,
                     'city' => $site['city'] ?? null,
                 ]);
             } else {
-                Sede::create([
+                Site::create([
                     'client_id' => $client->id,
                     'name' => $site['name'],
                     'address' => $site['address'] ?? null,

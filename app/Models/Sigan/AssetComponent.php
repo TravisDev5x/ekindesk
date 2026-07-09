@@ -10,20 +10,20 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  *
  * @property int $id
  * @property int $asset_id
- * @property string $tipo_componente
- * @property string $estado
- * @property int|null $usado_en_asset_id
+ * @property string $component_type
+ * @property string $status
+ * @property int|null $reused_in_asset_id
  */
 class AssetComponent extends Model
 {
-    protected $table = 'sigan_asset_components';
+    protected $table = 'asset_components';
 
     protected $fillable = [
         'asset_id',
-        'tipo_componente',
-        'descripcion',
-        'estado',
-        'usado_en_asset_id',
+        'component_type',
+        'description',
+        'status',
+        'reused_in_asset_id',
     ];
 
     public function asset(): BelongsTo
@@ -31,8 +31,8 @@ class AssetComponent extends Model
         return $this->belongsTo(Asset::class, 'asset_id');
     }
 
-    public function usadoEnAsset(): BelongsTo
+    public function reusedInAsset(): BelongsTo
     {
-        return $this->belongsTo(Asset::class, 'usado_en_asset_id');
+        return $this->belongsTo(Asset::class, 'reused_in_asset_id');
     }
 }

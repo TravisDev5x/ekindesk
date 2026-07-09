@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Models\Sede;
+use App\Models\Site;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Support\CreatesMspTwinClientFixtures;
 use Tests\TestCase;
@@ -77,13 +77,13 @@ class TenantApiIsolationTest extends TestCase
         $this->resetTenantContext();
 
         $sedes = $this->actingAs($world['agentA'], 'web')
-            ->getJson($this->portalApiUrl($world['clientA'], '/api/sedes'));
+            ->getJson($this->portalApiUrl($world['clientA'], '/api/sites'));
         $sedes->assertOk();
         $siteClientIds = collect($sedes->json())->pluck('client_id')->unique()->filter()->values();
         $this->assertSame([(int) $world['clientA']->id], $siteClientIds->all());
 
         $clientes = $this->actingAs($world['agentA'], 'web')
-            ->getJson($this->portalApiUrl($world['clientA'], '/api/clientes'));
+            ->getJson($this->portalApiUrl($world['clientA'], '/api/clients'));
         $clientes->assertOk();
         $clientIds = collect($clientes->json())->pluck('id');
         $this->assertTrue($clientIds->contains($world['clientA']->id));
@@ -100,11 +100,11 @@ class TenantApiIsolationTest extends TestCase
         $this->resetTenantContext();
 
         $this->actingAs($world['agentA'], 'web')
-            ->putJson('/api/clientes/'.$world['clientB']->id, ['name' => 'Hackeado'])
+            ->putJson('/api/clients/'.$world['clientB']->id, ['name' => 'Hackeado'])
             ->assertForbidden();
 
         $this->actingAs($world['agentA'], 'web')
-            ->putJson('/api/sedes/'.$world['siteB'], ['name' => 'Sede hackeada'])
+            ->putJson('/api/sites/'.$world['siteB'], ['name' => 'Sede hackeada'])
             ->assertForbidden();
     }
 
@@ -112,19 +112,19 @@ class TenantApiIsolationTest extends TestCase
     {
         $world = $this->createTwinClientIsolationWorld();
 
-        $foreignClient = \App\Models\Cliente::create([
+        $foreignClient = \App\Models\Client::create([
             'name' => 'Cliente ajeno',
             'operator_user_id' => $world['otherOperator']->id,
             'is_active' => true,
         ]);
-        $foreignSite = Sede::create([
+        $foreignSite = Site::create([
             'name' => 'Sede ajena',
             'code' => 'FOR-'.random_int(1000, 9999),
             'type' => 'physical',
             'is_active' => true,
             'client_id' => $foreignClient->id,
         ]);
-        $world['otherOperator']->update(['sede_id' => $foreignSite->id]);
+        $world['otherOperator']->update(['site_id' => $foreignSite->id]);
         $world['otherOperator']->givePermissionTo('tickets.manage_all');
 
         $this->actingAs($world['otherOperator'], 'web')
@@ -141,7 +141,7 @@ class TenantApiIsolationTest extends TestCase
         $world = $this->createTwinClientIsolationWorld();
         $world['operator']->givePermissionTo('catalogs.manage');
 
-        $clientes = $this->actingAs($world['operator'], 'web')->getJson('/api/clientes');
+        $clientes = $this->actingAs($world['operator'], 'web')->getJson('/api/clients');
         $clientes->assertOk();
         $names = collect($clientes->json())->pluck('name');
         $this->assertTrue($names->contains('Empresa Alpha'));

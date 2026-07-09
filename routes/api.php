@@ -16,7 +16,7 @@ use App\Http\Controllers\Api\AdminNotificationController;
 use App\Http\Controllers\Api\PermissionController;
 use App\Http\Controllers\Api\RolePermissionController;
 use App\Http\Controllers\Api\SessionMonitorController;
-use App\Http\Controllers\Api\UbicacionController;
+use App\Http\Controllers\Api\LocationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -116,7 +116,7 @@ Route::middleware(['auth:sanctum','locale','perm:permissions.manage|roles.manage
 // UBICACIONES (lectura para usuarios y catálogos)
 // ==========================
 // Listar ubicaciones: quien gestiona usuarios o catálogos puede ver el listado
-Route::middleware(['auth:sanctum','locale','perm:users.manage|catalogs.manage'])->get('ubicaciones', [UbicacionController::class, 'index']);
+Route::middleware(['auth:sanctum','locale','perm:users.manage|catalogs.manage'])->get('locations', [LocationController::class, 'index']);
 
 // ==========================
 // CAMPAÑAS
@@ -125,11 +125,11 @@ Route::middleware(['auth:sanctum','locale','perm:users.manage|catalogs.manage'])
 Route::middleware(['auth:sanctum','locale','perm:catalogs.manage'])->group(function () {
     Route::apiResource('campaigns', CampaignController::class)
         ->only(['index', 'store', 'update', 'destroy']);
-    Route::apiResource('sedes', \App\Http\Controllers\Api\SedeController::class)
+    Route::apiResource('sites', \App\Http\Controllers\Api\SiteController::class)
         ->only(['index', 'store', 'update', 'destroy']);
-    Route::apiResource('clientes', \App\Http\Controllers\Api\ClienteController::class)
+    Route::apiResource('clients', \App\Http\Controllers\Api\ClientController::class)
         ->only(['index', 'store', 'update', 'destroy']);
-    Route::apiResource('ubicaciones', \App\Http\Controllers\Api\UbicacionController::class)
+    Route::apiResource('locations', \App\Http\Controllers\Api\LocationController::class)
         ->only(['index', 'store', 'update', 'destroy']);
     Route::apiResource('priorities', \App\Http\Controllers\Api\PriorityController::class)
         ->only(['index', 'store', 'update', 'destroy']);

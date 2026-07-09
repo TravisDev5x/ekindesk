@@ -4,8 +4,8 @@ namespace App\Services;
 
 use App\Models\Area;
 use App\Models\Campaign;
-use App\Models\Sede;
-use App\Models\Ubicacion;
+use App\Models\Site;
+use App\Models\Location;
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
@@ -19,7 +19,7 @@ class UserListingService
 
     public function paginate(Request $request, ?User $actor = null): LengthAwarePaginator
     {
-        $query = User::with(['campaign', 'area', 'position', 'sede', 'ubicacion', 'roles']);
+        $query = User::with(['campaign', 'area', 'position', 'site', 'location', 'roles']);
 
         if ($actor) {
             $this->clientScope->applyUserScope($query, $actor);
@@ -58,8 +58,8 @@ class UserListingService
                 'campaign' => $user->campaign->name ?? 'Sin Asignar',
                 'area' => $user->area->name ?? 'Sin Asignar',
                 'position' => $user->position->name ?? 'Sin Asignar',
-                'sede' => $user->sede->name ?? 'Sin Asignar',
-                'ubicacion' => $user->ubicacion->name ?? null,
+                'sede' => $user->site->name ?? 'Sin Asignar',
+                'ubicacion' => $user->location->name ?? null,
                 'status' => $user->status,
                 'is_blacklisted' => (bool) $user->is_blacklisted,
                 'roles' => $user->roles->map(fn ($r) => ['id' => $r->id, 'name' => $r->name])->values()->all(),
@@ -110,13 +110,13 @@ class UserListingService
             }
         }
         if ($request->filled('sede')) {
-            $sedeId = Sede::where('name', $request->input('sede'))->value('id');
+            $sedeId = Site::where('name', $request->input('sede'))->value('id');
             if ($sedeId !== null) {
                 $query->where('site_id', $sedeId);
             }
         }
         if ($request->filled('ubicacion')) {
-            $ubicacionId = Ubicacion::where('name', $request->input('ubicacion'))->value('id');
+            $ubicacionId = Location::where('name', $request->input('ubicacion'))->value('id');
             if ($ubicacionId !== null) {
                 $query->where('location_id', $ubicacionId);
             }

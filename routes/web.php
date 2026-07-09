@@ -10,7 +10,7 @@ use App\Http\Controllers\Inertia\CatalogPageController;
 use App\Http\Controllers\Inertia\ResolbebIndexController;
 use App\Http\Controllers\Inertia\UserController as InertiaUserController;
 use App\Http\Controllers\Onboarding\OperatorOnboardingController;
-use App\Http\Controllers\Web\ClienteController;
+use App\Http\Controllers\Web\ClientController;
 use App\Models\Plan;
 
 /*
@@ -100,18 +100,21 @@ Route::middleware('auth')->group(function () {
         ->name('onboarding.skip');
 
     Route::redirect('/clientes', '/clients');
+    Route::redirect('/sedes', '/sites');
+    Route::redirect('/ubicaciones', '/locations');
+    Route::redirect('/calendario', '/calendar');
 
     Route::prefix('clients')->name('clients.')->group(function () {
-        Route::get('/', [ClienteController::class, 'index'])->name('index');
-        Route::get('/create', [ClienteController::class, 'create'])->name('create');
-        Route::post('/', [ClienteController::class, 'store'])->name('store');
-        Route::get('/{client}', [ClienteController::class, 'show'])->name('show');
-        Route::get('/{client}/edit', [ClienteController::class, 'edit'])->name('edit');
-        Route::put('/{client}', [ClienteController::class, 'update'])->name('update');
-        Route::delete('/{client}', [ClienteController::class, 'destroy'])->name('destroy');
-        Route::patch('/{client}/cancel', [ClienteController::class, 'cancel'])->name('cancel');
-        Route::patch('/{client}/reactivate', [ClienteController::class, 'reactivate'])->name('reactivate');
-        Route::patch('/{client}/plan', [ClienteController::class, 'updatePlan'])->name('plan.update');
+        Route::get('/', [ClientController::class, 'index'])->name('index');
+        Route::get('/create', [ClientController::class, 'create'])->name('create');
+        Route::post('/', [ClientController::class, 'store'])->name('store');
+        Route::get('/{client}', [ClientController::class, 'show'])->name('show');
+        Route::get('/{client}/edit', [ClientController::class, 'edit'])->name('edit');
+        Route::put('/{client}', [ClientController::class, 'update'])->name('update');
+        Route::delete('/{client}', [ClientController::class, 'destroy'])->name('destroy');
+        Route::patch('/{client}/cancel', [ClientController::class, 'cancel'])->name('cancel');
+        Route::patch('/{client}/reactivate', [ClientController::class, 'reactivate'])->name('reactivate');
+        Route::patch('/{client}/plan', [ClientController::class, 'updatePlan'])->name('plan.update');
     });
 
     Route::prefix('company')->name('company.')->group(function () {
@@ -174,8 +177,8 @@ Route::middleware('auth')->group(function () {
         ->middleware('onboarding')
         ->name('resolbeb.detalle');
 
-    Route::get('/sedes', [$catalogPages, 'sedes'])->name('sedes.index');
-    Route::get('/ubicaciones', [$catalogPages, 'ubicaciones'])->name('ubicaciones.index');
+    Route::get('/sites', [$catalogPages, 'sites'])->name('sites.index');
+    Route::get('/locations', [$catalogPages, 'locations'])->name('locations.index');
     Route::get('/ticket-macros', [$catalogPages, 'ticketMacros'])->name('ticket-macros.index');
     Route::get('/priority-matrix', [$catalogPages, 'priorityMatrix'])->name('priority-matrix.index');
     Route::get('/permissions', [$catalogPages, 'permissions'])->name('permissions.index');
@@ -191,13 +194,13 @@ Route::middleware('auth')->group(function () {
     ]))->middleware('onboarding')->name('incidents.index');
 
     Route::get('/incidents/{id}', function (int $id, CatalogPageController $catalogs) {
-        return Inertia::render('Incidents/Detalle', [
+        return Inertia::render('Incidents/Show', [
             'incidentId' => $id,
             'catalogs' => $catalogs->incidentDetalleCatalogs(),
         ]);
     })->where('id', '[0-9]+')->middleware('onboarding')->name('incidents.detalle');
 
-    Route::get('/calendario', fn () => Inertia::render('Calendario'))->name('calendario.index');
+    Route::get('/calendar', fn () => Inertia::render('Calendar'))->name('calendar.index');
 
     Route::get('/profile', fn () => Inertia::render('Profile'))->name('profile.index');
 

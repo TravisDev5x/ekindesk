@@ -73,7 +73,7 @@ export default function Invitations() {
             try {
                 const [rolesRes, clientsRes] = await Promise.all([
                     axios.get("/api/roles"),
-                    axios.get("/api/clientes").catch(() => ({ data: [] })),
+                    axios.get("/api/clients").catch(() => ({ data: [] })),
                 ]);
                 setRoles(Array.isArray(rolesRes.data) ? rolesRes.data : rolesRes.data?.data ?? []);
                 const rawClients = clientsRes.data;

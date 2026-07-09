@@ -375,7 +375,7 @@ export function Sidebar({ collapsed, onToggle, onNavigate, currentPath: currentP
             ...(canSeeCompany
                 ? [{ href: '/company', label: 'Mi empresa', icon: Building2, external: true }]
                 : []),
-            inertiaNav('/calendario', { label: t('nav.calendar'), icon: CalendarDays, emphasis: true }),
+            inertiaNav('/calendar', { label: t('nav.calendar'), icon: CalendarDays, emphasis: true }),
             inertiaNav('/resolbeb/mis-tickets', { label: t('nav.myTickets'), icon: Ticket, emphasis: true }),
             inertiaNav('/resolbeb/tickets/new', { label: t('nav.createTicket'), icon: Layers, emphasis: true }),
         ]
@@ -430,10 +430,10 @@ export function Sidebar({ collapsed, onToggle, onNavigate, currentPath: currentP
         // BLOQUE: CATÁLOGOS (colapsable como los demás módulos; sin Roles ni Permisos, van en Sistema)
         const catalogChildren = [
             inertiaNav('/campaigns', { label: t('nav.campaigns'), icon: Megaphone }),
-            inertiaNav('/sedes', { label: t('nav.sedes'), icon: MapPin }),
+            inertiaNav('/sites', { label: t('nav.sites'), icon: MapPin }),
             inertiaNav('/areas', { label: t('nav.areas'), icon: Network }),
             inertiaNav('/positions', { label: t('nav.positions'), icon: Briefcase }),
-            inertiaNav('/ubicaciones', { label: t('nav.ubicaciones'), icon: MapPin }),
+            inertiaNav('/locations', { label: t('nav.locations'), icon: MapPin }),
         ]
         const catalogGroup = {
             label: t('nav.catalogs'),

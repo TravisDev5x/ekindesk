@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use App\Models\Cliente;
+use App\Models\Client;
 use App\Models\Plan;
 use App\Models\User;
 use App\Services\TenantContextService;
@@ -61,7 +61,7 @@ class TenantTestSeeder extends Seeder
             $planId = isset($data['plan_slug']) ? ($plans[$data['plan_slug']] ?? null) : null;
             unset($data['plan_slug']);
 
-            $cliente = Cliente::firstOrCreate(
+            $cliente = Client::firstOrCreate(
                 ['portal_slug' => $data['portal_slug']],
                 array_merge($data, [
                     'operator_user_id' => $operatorUser->id,

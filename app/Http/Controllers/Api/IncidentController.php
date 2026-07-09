@@ -38,7 +38,7 @@ class IncidentController extends Controller
 
         $query = Incident::with([
             'area:id,name',
-            'sede:id,name',
+            'site:id,name',
             'reporter:id,name,email',
             'involvedUser:id,name,email',
             'assignedUser:id,name,position_id',
@@ -97,7 +97,7 @@ class IncidentController extends Controller
 
         $incident->load([
             'area:id,name',
-            'sede:id,name',
+            'site:id,name',
             'reporter:id,name,email',
             'involvedUser:id,name,email',
             'assignedUser:id,name,position_id',
@@ -150,7 +150,7 @@ class IncidentController extends Controller
 
         $data['reporter_id'] = $user->id;
 
-        if (! $this->clientScope->assertSedeAccessible($user, (int) $data['site_id'])) {
+        if (! $this->clientScope->assertSiteAccessible($user, (int) $data['site_id'])) {
             return response()->json(['message' => 'La sede seleccionada no está disponible para tu organización.'], 422);
         }
 
@@ -193,7 +193,7 @@ class IncidentController extends Controller
 
             $incident->load(
                 'area:id,name',
-                'sede:id,name',
+                'site:id,name',
                 'reporter:id,name,email',
                 'involvedUser:id,name,email',
                 'assignedUser:id,name,position_id',
@@ -309,7 +309,7 @@ class IncidentController extends Controller
 
             $incident->load(
                 'area:id,name',
-                'sede:id,name',
+                'site:id,name',
                 'reporter:id,name,email',
                 'involvedUser:id,name,email',
                 'assignedUser:id,name,position_id',
@@ -356,7 +356,7 @@ class IncidentController extends Controller
 
             $incident->load(
                 'area:id,name',
-                'sede:id,name',
+                'site:id,name',
                 'reporter:id,name,email',
                 'involvedUser:id,name,email',
                 'assignedUser:id,name,position_id',
@@ -410,7 +410,7 @@ class IncidentController extends Controller
 
             $incident->load(
                 'area:id,name',
-                'sede:id,name',
+                'site:id,name',
                 'reporter:id,name,email',
                 'involvedUser:id,name,email',
                 'assignedUser:id,name,position_id',
@@ -453,7 +453,7 @@ class IncidentController extends Controller
 
             $incident->load(
                 'area:id,name',
-                'sede:id,name',
+                'site:id,name',
                 'reporter:id,name,email',
                 'involvedUser:id,name,email',
                 'assignedUser:id,name,position_id',
@@ -479,7 +479,7 @@ class IncidentController extends Controller
 
         foreach ($filters as $param => $column) {
             if ($request->filled($param)) {
-                if ($param === 'site_id' && !$user->can('incidents.filter_by_sede') && !$user->can('incidents.manage_all')) {
+                if ($param === 'site_id' && !$user->can('incidents.filter_by_site') && !$user->can('incidents.manage_all')) {
                     continue;
                 }
                 $query->where($column, $request->input($param));

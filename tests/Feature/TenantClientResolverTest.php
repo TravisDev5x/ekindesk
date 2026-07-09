@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Models\Cliente;
+use App\Models\Client;
 use App\Models\User;
 use App\Services\TenantClientResolver;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -18,13 +18,13 @@ class TenantClientResolverTest extends TestCase
     public function test_prefers_sede_client_over_users_client_id(): void
     {
         $operator = $this->createBareUser();
-        $clientSede = Cliente::create(['name' => 'Desde sede', 'operator_user_id' => $operator->id, 'is_active' => true]);
-        $clientUser = Cliente::create(['name' => 'Desde user', 'operator_user_id' => $operator->id, 'is_active' => true]);
+        $clientSede = Client::create(['name' => 'Desde sede', 'operator_user_id' => $operator->id, 'is_active' => true]);
+        $clientUser = Client::create(['name' => 'Desde user', 'operator_user_id' => $operator->id, 'is_active' => true]);
 
         $siteId = $this->createSite($clientSede->id);
         $user = $this->createBareUser([
             'email' => 'staff@test.local',
-            'sede_id' => $siteId,
+            'site_id' => $siteId,
             'client_id' => $clientUser->id,
         ]);
 
@@ -34,12 +34,12 @@ class TenantClientResolverTest extends TestCase
     public function test_falls_back_to_users_client_id_without_sede_client(): void
     {
         $operator = $this->createBareUser();
-        $client = Cliente::create(['name' => 'Solo user', 'operator_user_id' => $operator->id, 'is_active' => true]);
+        $client = Client::create(['name' => 'Solo user', 'operator_user_id' => $operator->id, 'is_active' => true]);
         $siteId = $this->createSite(null);
 
         $user = $this->createBareUser([
             'email' => 'nostede@test.local',
-            'sede_id' => $siteId,
+            'site_id' => $siteId,
             'client_id' => $client->id,
         ]);
 
@@ -49,8 +49,8 @@ class TenantClientResolverTest extends TestCase
     public function test_incident_policy_scope_excludes_other_tenant(): void
     {
         $operator = $this->createBareUser();
-        $clientA = Cliente::create(['name' => 'A', 'operator_user_id' => $operator->id, 'is_active' => true]);
-        $clientB = Cliente::create(['name' => 'B', 'operator_user_id' => $operator->id, 'is_active' => true]);
+        $clientA = Client::create(['name' => 'A', 'operator_user_id' => $operator->id, 'is_active' => true]);
+        $clientB = Client::create(['name' => 'B', 'operator_user_id' => $operator->id, 'is_active' => true]);
 
         $siteA = $this->createSite($clientA->id);
         $areaId = DB::table('areas')->insertGetId([
@@ -62,7 +62,7 @@ class TenantClientResolverTest extends TestCase
 
         $user = $this->createBareUser([
             'email' => 'area@test.local',
-            'sede_id' => $siteA,
+            'site_id' => $siteA,
             'area_id' => $areaId,
         ]);
         Permission::firstOrCreate(['name' => 'incidents.view_area', 'guard_name' => 'web']);
@@ -80,10 +80,10 @@ class TenantClientResolverTest extends TestCase
         $siteB = $this->createSite($clientB->id);
 
         DB::table('incidents')->insert([
-            ['subject' => 'En A', 'reporter_id' => $user->id, 'area_id' => $areaId, 'sede_id' => $siteA, 'client_id' => $clientA->id,
+            ['subject' => 'En A', 'reporter_id' => $user->id, 'area_id' => $areaId, 'site_id' => $siteA, 'client_id' => $clientA->id,
                 'incident_type_id' => $typeId, 'incident_severity_id' => $sevId, 'incident_status_id' => $statusId,
                 'enabled_at' => now(), 'created_at' => now(), 'updated_at' => now()],
-            ['subject' => 'En B', 'reporter_id' => $user->id, 'area_id' => $areaId, 'sede_id' => $siteB, 'client_id' => $clientB->id,
+            ['subject' => 'En B', 'reporter_id' => $user->id, 'area_id' => $areaId, 'site_id' => $siteB, 'client_id' => $clientB->id,
                 'incident_type_id' => $typeId, 'incident_severity_id' => $sevId, 'incident_status_id' => $statusId,
                 'enabled_at' => now(), 'created_at' => now(), 'updated_at' => now()],
         ]);
@@ -110,7 +110,7 @@ class TenantClientResolverTest extends TestCase
             'employee_number' => (string) random_int(100000, 999999),
             'area_id' => $areaId,
             'position_id' => $positionId,
-            'sede_id' => $siteId,
+            'site_id' => $siteId,
             'status' => 'active',
         ], $overrides));
     }

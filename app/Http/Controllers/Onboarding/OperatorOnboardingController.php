@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\Onboarding;
 
 use App\Http\Controllers\Controller;
-use App\Models\Cliente;
+use App\Models\Client;
 use App\Models\OperatorProfile;
 use App\Models\Plan;
-use App\Models\Sede;
+use App\Models\Site;
 use App\Services\OnboardingRedirectService;
 use App\Services\TenantContextService;
 use Illuminate\Http\Request;
@@ -145,7 +145,7 @@ class OperatorOnboardingController extends Controller
         return Inertia::render('Onboarding/ClientsStep', [
             'step' => 2,
             'operator_name' => $user->operatorProfile->business_name,
-            'existing_clients' => Cliente::forOperator($user->id)->count(),
+            'existing_clients' => Client::forOperator($user->id)->count(),
         ]);
     }
 
@@ -169,7 +169,7 @@ class OperatorOnboardingController extends Controller
         ]);
 
         DB::transaction(function () use ($user, $validated) {
-            $cliente = Cliente::create([
+            $client = Client::create([
                 'name' => $validated['business_name'],
                 'industry' => $validated['industry'] ?? null,
                 'contact_name' => $validated['contact_name'] ?? null,
@@ -181,8 +181,8 @@ class OperatorOnboardingController extends Controller
             ]);
 
             if (! empty($validated['site_name'])) {
-                Sede::create([
-                    'client_id' => $cliente->id,
+                Site::create([
+                    'client_id' => $client->id,
                     'name' => $validated['site_name'],
                     'address' => $validated['site_address'] ?? null,
                     'city' => $validated['site_city'] ?? null,

@@ -9,25 +9,25 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * Activo de inventario (TI o mobiliario).
  *
  * @property int $id
- * @property string $tipo
- * @property string|null $subtipo
- * @property string $nombre
- * @property string|null $numero_serie
- * @property string $estado
- * @property string|null $ubicacion
+ * @property string $type
+ * @property string|null $subtype
+ * @property string $name
+ * @property string|null $serial_number
+ * @property string $status
+ * @property string|null $location
  */
 class Asset extends Model
 {
-    protected $table = 'sigan_assets';
+    protected $table = 'assets';
 
     protected $fillable = [
-        'tipo',
-        'subtipo',
-        'nombre',
-        'numero_serie',
-        'estado',
-        'ubicacion',
-        'observaciones',
+        'type',
+        'subtype',
+        'name',
+        'serial_number',
+        'status',
+        'location',
+        'notes',
     ];
 
     public function components(): HasMany

@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Models\Cliente;
+use App\Models\Client;
 use App\Models\User;
 use App\Models\UserInvitation;
 use Illuminate\Validation\ValidationException;
@@ -35,7 +35,7 @@ class InvitationTenancyService
             return null;
         }
 
-        $client = Cliente::find($requestedClientId);
+        $client = Client::find($requestedClientId);
         if (! $client) {
             throw ValidationException::withMessages([
                 'client_id' => ['Cliente no válido.'],

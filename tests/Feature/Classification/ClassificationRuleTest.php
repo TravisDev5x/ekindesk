@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Classification;
 
-use App\Models\Cliente;
+use App\Models\Client;
 use App\Models\TicketClassificationRule;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -11,7 +11,7 @@ class ClassificationRuleTest extends TestCase
 {
     use RefreshDatabase;
 
-    private Cliente $client;
+    private Client $client;
 
     protected function setUp(): void
     {
@@ -30,7 +30,7 @@ class ClassificationRuleTest extends TestCase
             ['id' => 4, 'name' => 'Baja', 'level' => 4, 'is_active' => 1, 'created_at' => now(), 'updated_at' => now()],
         ]);
 
-        $this->client = Cliente::factory()->create();
+        $this->client = Client::factory()->create();
     }
 
     // ─── evaluate() ──────────────────────────────────────────────────────────
@@ -85,7 +85,7 @@ class ClassificationRuleTest extends TestCase
 
     public function test_evaluate_ignores_other_tenant_rules(): void
     {
-        $otherClient = Cliente::factory()->create();
+        $otherClient = Client::factory()->create();
         $this->createRule([
             'keywords'       => ['disco'],
             'ticket_type_id' => 1,
@@ -145,7 +145,7 @@ class ClassificationRuleTest extends TestCase
 
     public function test_scope_for_client_filters_by_client(): void
     {
-        $otherClient = Cliente::factory()->create();
+        $otherClient = Client::factory()->create();
         $this->createRule([], $this->client->id);
         $this->createRule([], $otherClient->id);
 

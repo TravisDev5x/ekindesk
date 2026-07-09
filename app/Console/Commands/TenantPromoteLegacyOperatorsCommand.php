@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Models\Cliente;
+use App\Models\Client;
 use App\Services\OperatorScopeService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -56,7 +56,7 @@ class TenantPromoteLegacyOperatorsCommand extends Command
 
             if ($this->option('assign-orphan-clients') && $candidates->count() === 1) {
                 $operatorId = (int) $candidates->first()->id;
-                $updated = Cliente::query()
+                $updated = Client::query()
                     ->whereNull('operator_user_id')
                     ->update(['operator_user_id' => $operatorId]);
                 $this->info("Clientes huérfanos actualizados: {$updated}");

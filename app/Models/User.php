@@ -155,14 +155,14 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->belongsTo(Position::class);
     }
 
-    public function sede(): BelongsTo
+    public function site(): BelongsTo
     {
-        return $this->belongsTo(Sede::class, 'site_id');
+        return $this->belongsTo(Site::class, 'site_id');
     }
 
     public function client(): BelongsTo
     {
-        return $this->belongsTo(Cliente::class, 'client_id');
+        return $this->belongsTo(Client::class, 'client_id');
     }
 
     public function operatorProfile(): HasOne
@@ -175,9 +175,9 @@ class User extends Authenticatable implements MustVerifyEmail
         return (bool) $this->onboarding_completed;
     }
 
-    public function ubicacion(): BelongsTo
+    public function location(): BelongsTo
     {
-        return $this->belongsTo(Ubicacion::class, 'location_id');
+        return $this->belongsTo(Location::class, 'location_id');
     }
 
     public function getCachedRoleNames(): Collection

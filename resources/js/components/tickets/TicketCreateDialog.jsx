@@ -148,8 +148,8 @@ export function TicketCreateDialog({
                             ) : (
                                 <Field label="Sede" required className="sm:col-span-2">
                                     <Select
-                                        value={form.sede_id}
-                                        onValueChange={(v) => setForm({ ...form, sede_id: v })}
+                                        value={form.site_id}
+                                        onValueChange={(v) => setForm({ ...form, site_id: v })}
                                     >
                                         <div className="relative">
                                             <MapPin className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden />

@@ -12,8 +12,8 @@ use App\Models\{
     Position,
     Priority,
     Role,
-    Sede,
-    Ubicacion,
+    Site,
+    Location,
     TicketState,
     TicketType,
     User,
@@ -66,18 +66,18 @@ class TicketDemoSeeder extends Seeder
             ['name' => 'Remoto',        'code' => 'REMOTO', 'type' => 'virtual'],
         ];
         foreach ($sedes as $s) {
-            Sede::firstOrCreate(
+            Site::firstOrCreate(
                 ['name' => $s['name']],
                 ['code' => $s['code'], 'type' => $s['type'], 'is_active' => true]
             );
         }
 
         // Ubicaciones (solo sedes físicas)
-        $sfa = Sede::where('code', 'SFA')->first();
-        $sfb = Sede::where('code', 'SFB')->first();
+        $sfa = Site::where('code', 'SFA')->first();
+        $sfb = Site::where('code', 'SFB')->first();
         if ($sfa) {
             foreach (['Piso 1', 'Piso 2'] as $name) {
-                Ubicacion::firstOrCreate(
+                Location::firstOrCreate(
                     ['name' => $name, 'site_id' => $sfa->id],
                     ['is_active' => true]
                 );
@@ -85,7 +85,7 @@ class TicketDemoSeeder extends Seeder
         }
         if ($sfb) {
             foreach (['Edificio Norte', 'Edificio Sur'] as $name) {
-                Ubicacion::firstOrCreate(
+                Location::firstOrCreate(
                     ['name' => $name, 'site_id' => $sfb->id],
                     ['is_active' => true]
                 );
@@ -136,7 +136,7 @@ class TicketDemoSeeder extends Seeder
             'tickets.create',
             'tickets.view_own',
             'tickets.view_area',
-            'tickets.filter_by_sede',
+            'tickets.filter_by_site',
             'tickets.assign',
             'tickets.comment',
             'tickets.change_status',
@@ -155,9 +155,9 @@ class TicketDemoSeeder extends Seeder
         $roles = [
             'admin' => ['tickets.manage_all'],
             'usuario' => ['tickets.create', 'tickets.view_own'],
-            'agente_soporte' => ['tickets.view_area', 'tickets.comment', 'tickets.change_status', 'tickets.filter_by_sede'],
-            'supervisor_soporte' => ['tickets.assign', 'tickets.escalate', 'tickets.view_area', 'tickets.filter_by_sede', 'tickets.change_status'],
-            'agente_infraestructura' => ['tickets.view_area', 'tickets.comment', 'tickets.change_status', 'tickets.filter_by_sede'],
+            'agente_soporte' => ['tickets.view_area', 'tickets.comment', 'tickets.change_status', 'tickets.filter_by_site'],
+            'supervisor_soporte' => ['tickets.assign', 'tickets.escalate', 'tickets.view_area', 'tickets.filter_by_site', 'tickets.change_status'],
+            'agente_infraestructura' => ['tickets.view_area', 'tickets.comment', 'tickets.change_status', 'tickets.filter_by_site'],
         ];
 
         foreach ($roles as $name => $perms) {
@@ -190,12 +190,12 @@ class TicketDemoSeeder extends Seeder
         $posSup = Position::where('name', 'Supervisor')->first();
         $posApps = Position::where('name', 'Analista Apps')->first();
         $posRedes = Position::where('name', 'Analista Redes')->first();
-        $sedeA = Sede::where('code', 'SFA')->first();
-        $sedeB = Sede::where('code', 'SFB')->first();
-        $sedeRemoto = Sede::where('code', 'REMOTO')->first();
-        $ubiA1 = Ubicacion::where('name', 'Piso 1')->first();
-        $ubiA2 = Ubicacion::where('name', 'Piso 2')->first();
-        $ubiB1 = Ubicacion::where('name', 'Edificio Norte')->first();
+        $sedeA = Site::where('code', 'SFA')->first();
+        $sedeB = Site::where('code', 'SFB')->first();
+        $sedeRemoto = Site::where('code', 'REMOTO')->first();
+        $ubiA1 = Location::where('name', 'Piso 1')->first();
+        $ubiA2 = Location::where('name', 'Piso 2')->first();
+        $ubiB1 = Location::where('name', 'Edificio Norte')->first();
 
         $makeUser = function ($attrs, $roleName) use ($campaign) {
             $user = User::updateOrCreate(
@@ -366,12 +366,12 @@ class TicketDemoSeeder extends Seeder
         $areaApps = Area::where('name', 'Aplicaciones')->first();
         $areaRedes = Area::where('name', 'Redes')->first();
         $areaSeg = Area::where('name', 'Seguridad')->first();
-        $sedeA = Sede::where('code', 'SFA')->first();
-        $sedeB = Sede::where('code', 'SFB')->first();
-        $sedeRemoto = Sede::where('code', 'REMOTO')->first();
-        $ubiA1 = Ubicacion::where('name', 'Piso 1')->first();
-        $ubiA2 = Ubicacion::where('name', 'Piso 2')->first();
-        $ubiB1 = Ubicacion::where('name', 'Edificio Norte')->first();
+        $sedeA = Site::where('code', 'SFA')->first();
+        $sedeB = Site::where('code', 'SFB')->first();
+        $sedeRemoto = Site::where('code', 'REMOTO')->first();
+        $ubiA1 = Location::where('name', 'Piso 1')->first();
+        $ubiA2 = Location::where('name', 'Piso 2')->first();
+        $ubiB1 = Location::where('name', 'Edificio Norte')->first();
 
         // Helper para historial
         $addHistory = function (Ticket $ticket, User $actor, ?int $fromArea, ?int $toArea, ?int $stateId, ?string $note) {

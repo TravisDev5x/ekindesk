@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Models\Cliente;
+use App\Models\Client;
 use App\Models\User;
 use App\Services\TenantContextService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -28,12 +28,12 @@ class SessionMonitorScopeTest extends TestCase
         $operatorA = $this->bareUser(['is_operator' => true]);
         $operatorB = $this->bareUser(['is_operator' => true, 'email' => 'op-b-sessions@test.local']);
 
-        $clientA = Cliente::create([
+        $clientA = Client::create([
             'name' => 'Cliente A',
             'operator_user_id' => $operatorA->id,
             'is_active' => true,
         ]);
-        Cliente::create([
+        Client::create([
             'name' => 'Cliente B',
             'operator_user_id' => $operatorB->id,
             'is_active' => true,
@@ -53,13 +53,13 @@ class SessionMonitorScopeTest extends TestCase
             'code' => 'SB1',
             'type' => 'physical',
             'is_active' => true,
-            'client_id' => Cliente::where('operator_user_id', $operatorB->id)->value('id'),
+            'client_id' => Client::where('operator_user_id', $operatorB->id)->value('id'),
             'created_at' => now(),
             'updated_at' => now(),
         ]);
 
-        $userA = $this->bareUser(['email' => 'user-a@sessions.test', 'sede_id' => $siteA]);
-        $userB = $this->bareUser(['email' => 'user-b@sessions.test', 'sede_id' => $siteB]);
+        $userA = $this->bareUser(['email' => 'user-a@sessions.test', 'site_id' => $siteA]);
+        $userB = $this->bareUser(['email' => 'user-b@sessions.test', 'site_id' => $siteB]);
 
         $this->insertActiveSession($userA->id, 'sess-a');
         $this->insertActiveSession($userB->id, 'sess-b');
@@ -79,7 +79,7 @@ class SessionMonitorScopeTest extends TestCase
         $operatorA = $this->bareUser(['is_operator' => true]);
         $operatorB = $this->bareUser(['is_operator' => true, 'email' => 'op-b-logout@test.local']);
 
-        $clientB = Cliente::create([
+        $clientB = Client::create([
             'name' => 'Cliente B',
             'operator_user_id' => $operatorB->id,
             'is_active' => true,
@@ -93,7 +93,7 @@ class SessionMonitorScopeTest extends TestCase
             'created_at' => now(),
             'updated_at' => now(),
         ]);
-        $foreignUser = $this->bareUser(['email' => 'foreign@sessions.test', 'sede_id' => $siteB]);
+        $foreignUser = $this->bareUser(['email' => 'foreign@sessions.test', 'site_id' => $siteB]);
         $this->insertActiveSession($foreignUser->id, 'sess-foreign');
 
         $operatorA->givePermissionTo('users.manage');
@@ -114,13 +114,13 @@ class SessionMonitorScopeTest extends TestCase
         ]);
 
         $operator = $this->bareUser(['is_operator' => true]);
-        $clientA = Cliente::create([
+        $clientA = Client::create([
             'name' => 'Portal A',
             'portal_slug' => 'sess-portal-a',
             'operator_user_id' => $operator->id,
             'is_active' => true,
         ]);
-        $clientB = Cliente::create([
+        $clientB = Client::create([
             'name' => 'Portal B',
             'portal_slug' => 'sess-portal-b',
             'operator_user_id' => $operator->id,
@@ -146,13 +146,13 @@ class SessionMonitorScopeTest extends TestCase
             'updated_at' => now(),
         ]);
 
-        $userA = $this->bareUser(['email' => 'pa-user@sessions.test', 'sede_id' => $siteA, 'client_id' => $clientA->id]);
-        $userB = $this->bareUser(['email' => 'pb-user@sessions.test', 'sede_id' => $siteB, 'client_id' => $clientB->id]);
+        $userA = $this->bareUser(['email' => 'pa-user@sessions.test', 'site_id' => $siteA, 'client_id' => $clientA->id]);
+        $userB = $this->bareUser(['email' => 'pb-user@sessions.test', 'site_id' => $siteB, 'client_id' => $clientB->id]);
 
         $this->insertActiveSession($userA->id, 'sess-pa');
         $this->insertActiveSession($userB->id, 'sess-pb');
 
-        $admin = $this->bareUser(['email' => 'portal-admin@sessions.test', 'sede_id' => $siteA, 'client_id' => $clientA->id]);
+        $admin = $this->bareUser(['email' => 'portal-admin@sessions.test', 'site_id' => $siteA, 'client_id' => $clientA->id]);
         $admin->givePermissionTo('users.manage');
 
         $request = Request::create('http://sess-portal-a.tikara.test/api/sessions', 'GET');
@@ -194,7 +194,7 @@ class SessionMonitorScopeTest extends TestCase
             'first_name' => 'T', 'paternal_last_name' => 'U',
             'email' => uniqid().'@t.local', 'password' => Hash::make('x'),
             'employee_number' => (string) random_int(100000, 999999),
-            'area_id' => $areaId, 'position_id' => $positionId, 'sede_id' => $siteId, 'status' => 'active',
+            'area_id' => $areaId, 'position_id' => $positionId, 'site_id' => $siteId, 'status' => 'active',
             'email_verified_at' => now(),
         ], $overrides));
     }

@@ -2,7 +2,7 @@
 
 namespace Tests\Support;
 
-use App\Models\Cliente;
+use App\Models\Client;
 use App\Models\Incident;
 use App\Models\Ticket;
 use App\Models\User;
@@ -94,7 +94,7 @@ trait CreatesMspTwinClientFixtures
             'employee_number' => 'OP'.random_int(100000, 999999),
             'area_id' => $areaId,
             'position_id' => $positionId,
-            'sede_id' => $bootstrapSiteId,
+            'site_id' => $bootstrapSiteId,
             'status' => 'active',
             'is_operator' => true,
             'onboarding_completed' => true,
@@ -109,20 +109,20 @@ trait CreatesMspTwinClientFixtures
             'employee_number' => 'OO'.random_int(100000, 999999),
             'area_id' => $areaId,
             'position_id' => $positionId,
-            'sede_id' => $bootstrapSiteId,
+            'site_id' => $bootstrapSiteId,
             'status' => 'active',
             'is_operator' => true,
             'onboarding_completed' => true,
             'email_verified_at' => $now,
         ]);
 
-        $clientA = Cliente::create([
+        $clientA = Client::create([
             'name' => 'Empresa Alpha',
             'portal_slug' => 'alpha-'.uniqid(),
             'operator_user_id' => $operator->id,
             'is_active' => true,
         ]);
-        $clientB = Cliente::create([
+        $clientB = Client::create([
             'name' => 'Empresa Beta',
             'portal_slug' => 'beta-'.uniqid(),
             'operator_user_id' => $operator->id,
@@ -157,7 +157,7 @@ trait CreatesMspTwinClientFixtures
             'subject' => 'Ticket Alpha',
             'area_origin_id' => $areaId,
             'area_current_id' => $areaId,
-            'sede_id' => $siteA,
+            'site_id' => $siteA,
             'client_id' => $clientA->id,
             'requester_id' => $agentA->id,
             'ticket_type_id' => $catalog['ticket_type_id'],
@@ -168,7 +168,7 @@ trait CreatesMspTwinClientFixtures
             'subject' => 'Ticket Beta',
             'area_origin_id' => $areaId,
             'area_current_id' => $areaId,
-            'sede_id' => $siteB,
+            'site_id' => $siteB,
             'client_id' => $clientB->id,
             'requester_id' => $agentB->id,
             'ticket_type_id' => $catalog['ticket_type_id'],
@@ -182,7 +182,7 @@ trait CreatesMspTwinClientFixtures
             'occurred_at' => $now,
             'reporter_id' => $agentA->id,
             'area_id' => $areaId,
-            'sede_id' => $siteA,
+            'site_id' => $siteA,
             'client_id' => $clientA->id,
             'incident_type_id' => $catalog['incident_type_id'],
             'incident_severity_id' => $catalog['incident_severity_id'],
@@ -194,7 +194,7 @@ trait CreatesMspTwinClientFixtures
             'occurred_at' => $now,
             'reporter_id' => $agentB->id,
             'area_id' => $areaId,
-            'sede_id' => $siteB,
+            'site_id' => $siteB,
             'client_id' => $clientB->id,
             'incident_type_id' => $catalog['incident_type_id'],
             'incident_severity_id' => $catalog['incident_severity_id'],
@@ -218,7 +218,7 @@ trait CreatesMspTwinClientFixtures
         ];
     }
 
-    protected function portalApiUrl(Cliente $client, string $path): string
+    protected function portalApiUrl(Client $client, string $path): string
     {
         return 'http://'.$client->portal_slug.'.tikara.test'.'/'.ltrim($path, '/');
     }
@@ -233,7 +233,7 @@ trait CreatesMspTwinClientFixtures
             'employee_number' => strtoupper(substr($prefix, 0, 3)).random_int(10000, 99999),
             'area_id' => $areaId,
             'position_id' => $positionId,
-            'sede_id' => $siteId,
+            'site_id' => $siteId,
             'client_id' => $clientId,
             'status' => 'active',
             'email_verified_at' => now(),

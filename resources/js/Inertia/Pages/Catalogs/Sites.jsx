@@ -13,7 +13,7 @@ const TYPE_LABELS = {
     virtual: "Virtual",
 };
 
-function prepareSedePayload(formData) {
+function prepareSitePayload(formData) {
     return {
         name: String(formData.name ?? "").trim(),
         code: formData.code?.trim() || null,
@@ -31,8 +31,8 @@ function prepareSedePayload(formData) {
     };
 }
 
-function sedeToForm(sede) {
-    if (!sede) {
+function siteToForm(site) {
+    if (!site) {
         return {
             type: "physical",
             client_id: NO_CLIENT,
@@ -40,38 +40,38 @@ function sedeToForm(sede) {
         };
     }
     return {
-        name: sede.name ?? "",
-        code: sede.code ?? "",
-        type: sede.type ?? "physical",
-        client_id: sede.client_id ? String(sede.client_id) : NO_CLIENT,
-        address: sede.address ?? "",
-        city: sede.city ?? "",
-        contact_name: sede.contact_name ?? "",
-        contact_phone: sede.contact_phone ?? "",
-        contact_email: sede.contact_email ?? "",
-        is_active: Boolean(sede.is_active),
+        name: site.name ?? "",
+        code: site.code ?? "",
+        type: site.type ?? "physical",
+        client_id: site.client_id ? String(site.client_id) : NO_CLIENT,
+        address: site.address ?? "",
+        city: site.city ?? "",
+        contact_name: site.contact_name ?? "",
+        contact_phone: site.contact_phone ?? "",
+        contact_email: site.contact_email ?? "",
+        is_active: Boolean(site.is_active),
     };
 }
 
-export default function Sedes() {
-    const { sedes, clientes } = usePage().props;
+export default function Sites() {
+    const { sites, clients } = usePage().props;
 
-    const catalog = useCatalog("/api/sedes", () => router.reload({ only: ["sedes"] }));
+    const catalog = useCatalog("/api/sites", () => router.reload({ only: ["sites"] }));
 
     const clientOptions = useMemo(
         () => [
             { value: NO_CLIENT, label: "Sin cliente" },
-            ...(clientes ?? []).map((c) => ({ value: String(c.id), label: c.name })),
+            ...(clients ?? []).map((c) => ({ value: String(c.id), label: c.name })),
         ],
-        [clientes]
+        [clients]
     );
 
     const columns = [
         { key: "name", label: "Nombre" },
         {
-            key: "cliente",
+            key: "client",
             label: "Cliente",
-            render: (row) => row.cliente?.name ?? "—",
+            render: (row) => row.client?.name ?? "—",
         },
         { key: "city", label: "Ciudad" },
         {
@@ -156,7 +156,7 @@ export default function Sedes() {
         },
     ];
 
-    const onSubmit = (formData) => catalog.handleSubmit(prepareSedePayload(formData));
+    const onSubmit = (formData) => catalog.handleSubmit(prepareSitePayload(formData));
 
     return (
         <>
@@ -164,7 +164,7 @@ export default function Sedes() {
                 title="Sedes"
                 description="Sitios físicos o virtuales asociados a clientes"
                 columns={columns}
-                data={sedes ?? []}
+                data={sites ?? []}
                 onAdd={catalog.openCreate}
                 onEdit={catalog.openEdit}
                 onDelete={catalog.handleDelete}
@@ -180,7 +180,7 @@ export default function Sedes() {
                 onClose={catalog.closeDialog}
                 title={catalog.editTarget ? "Editar sede" : "Nueva sede"}
                 fields={fields}
-                initialValues={sedeToForm(catalog.editTarget)}
+                initialValues={siteToForm(catalog.editTarget)}
                 onSubmit={onSubmit}
                 loading={catalog.loading}
                 errors={catalog.dialogErrors}
@@ -190,4 +190,4 @@ export default function Sedes() {
     );
 }
 
-Sedes.layout = (page) => <AuthenticatedLayout title="Sedes">{page}</AuthenticatedLayout>;
+Sites.layout = (page) => <AuthenticatedLayout title="Sedes">{page}</AuthenticatedLayout>;

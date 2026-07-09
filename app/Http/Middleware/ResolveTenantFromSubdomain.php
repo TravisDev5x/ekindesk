@@ -2,7 +2,7 @@
 
 namespace App\Http\Middleware;
 
-use App\Models\Cliente;
+use App\Models\Client;
 use App\Services\Tenant\TenantContextService;
 use Closure;
 use Illuminate\Http\Request;
@@ -10,10 +10,10 @@ use Illuminate\Support\Facades\Cache;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Resuelve el tenant (Cliente) desde el subdominio de la request.
+ * Resuelve el tenant (Client) desde el subdominio de la request.
  *
  * Flujo:
- *   {slug}.tikara.test → busca Cliente por portal_slug={slug}
+ *   {slug}.tikara.test → busca Client por portal_slug={slug}
  *   tikara.test        → sin tenant (dominio raíz)
  *   admin.tikara.test  → sin tenant (reservado)
  *
@@ -44,7 +44,7 @@ class ResolveTenantFromSubdomain
         }
 
         $cliente = Cache::remember("tenant.portal.{$slug}", 300, function () use ($slug) {
-            return Cliente::where('portal_slug', $slug)
+            return Client::where('portal_slug', $slug)
                 ->where('is_active', true)
                 ->whereNull('cancelled_at')
                 ->first();

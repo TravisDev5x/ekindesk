@@ -2,7 +2,7 @@
 
 namespace App\Jobs;
 
-use App\Models\Cliente;
+use App\Models\Client;
 use App\Models\Ticket;
 use App\Models\TicketHistory;
 use App\Models\TicketState;
@@ -33,7 +33,7 @@ class ProcessInboundReply implements ShouldQueue
 
     public function handle(): void
     {
-        $tenant = Cliente::find($this->clientId);
+        $tenant = Client::find($this->clientId);
         if (! $tenant) {
             return;
         }

@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Models\Cliente;
+use App\Models\Client;
 use App\Models\User;
 use App\Services\OperatorScopeService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -35,8 +35,8 @@ class OperatorScopeServiceTest extends TestCase
         $operatorA = $this->createUser(['is_operator' => true]);
         $operatorB = $this->createUser(['is_operator' => true, 'email' => 'op-b@test.local']);
 
-        $clientA = Cliente::create(['name' => 'Cliente A', 'operator_user_id' => $operatorA->id, 'is_active' => true]);
-        Cliente::create(['name' => 'Cliente B', 'operator_user_id' => $operatorB->id, 'is_active' => true]);
+        $clientA = Client::create(['name' => 'Cliente A', 'operator_user_id' => $operatorA->id, 'is_active' => true]);
+        Client::create(['name' => 'Cliente B', 'operator_user_id' => $operatorB->id, 'is_active' => true]);
 
         $operatorA->givePermissionTo('clients.view_all');
 
@@ -51,22 +51,22 @@ class OperatorScopeServiceTest extends TestCase
         $operatorA = $this->createUser(['is_operator' => true]);
         $operatorB = $this->createUser(['is_operator' => true, 'email' => 'op2@test.local']);
 
-        Cliente::create(['name' => 'A1', 'operator_user_id' => $operatorA->id, 'is_active' => true]);
-        Cliente::create(['name' => 'B1', 'operator_user_id' => $operatorB->id, 'is_active' => true]);
+        Client::create(['name' => 'A1', 'operator_user_id' => $operatorA->id, 'is_active' => true]);
+        Client::create(['name' => 'B1', 'operator_user_id' => $operatorB->id, 'is_active' => true]);
 
         $siteId = DB::table('sites')->insertGetId([
             'name' => 'Sede staff',
             'code' => 'STF',
             'type' => 'physical',
             'is_active' => true,
-            'client_id' => Cliente::where('operator_user_id', $operatorA->id)->value('id'),
+            'client_id' => Client::where('operator_user_id', $operatorA->id)->value('id'),
             'created_at' => now(),
             'updated_at' => now(),
         ]);
 
         $adminStaff = $this->createUser([
             'email' => 'admin-staff@test.local',
-            'sede_id' => $siteId,
+            'site_id' => $siteId,
         ]);
         $adminStaff->givePermissionTo('tickets.manage_all');
 
@@ -77,8 +77,8 @@ class OperatorScopeServiceTest extends TestCase
 
     public function test_legacy_admin_without_operator_link_sees_all_clients(): void
     {
-        Cliente::create(['name' => 'Legacy Corp', 'is_active' => true]);
-        Cliente::create(['name' => 'Other Corp', 'is_active' => true]);
+        Client::create(['name' => 'Legacy Corp', 'is_active' => true]);
+        Client::create(['name' => 'Other Corp', 'is_active' => true]);
 
         $legacyAdmin = $this->createUser(['email' => 'legacy-admin@test.local']);
         $legacyAdmin->givePermissionTo('tickets.manage_all');
@@ -94,7 +94,7 @@ class OperatorScopeServiceTest extends TestCase
 
     public function test_legacy_msp_wide_access_disabled_by_default(): void
     {
-        Cliente::create(['name' => 'Legacy Corp', 'is_active' => true]);
+        Client::create(['name' => 'Legacy Corp', 'is_active' => true]);
 
         $legacyAdmin = $this->createUser(['email' => 'legacy-admin-off@test.local']);
         $legacyAdmin->givePermissionTo('tickets.manage_all');
@@ -110,7 +110,7 @@ class OperatorScopeServiceTest extends TestCase
 
     public function test_promote_legacy_operators_command(): void
     {
-        Cliente::create(['name' => 'Orphan Corp', 'is_active' => true]);
+        Client::create(['name' => 'Orphan Corp', 'is_active' => true]);
 
         $legacyAdmin = $this->createUser(['email' => 'promote-me@test.local']);
         $legacyAdmin->givePermissionTo('tickets.manage_all');
@@ -128,7 +128,7 @@ class OperatorScopeServiceTest extends TestCase
 
         $legacyAdmin->refresh();
         $this->assertTrue($legacyAdmin->is_operator);
-        $this->assertSame($legacyAdmin->id, (int) Cliente::where('name', 'Orphan Corp')->value('operator_user_id'));
+        $this->assertSame($legacyAdmin->id, (int) Client::where('name', 'Orphan Corp')->value('operator_user_id'));
     }
 
     public function test_super_admin_sees_all_clients(): void
@@ -136,8 +136,8 @@ class OperatorScopeServiceTest extends TestCase
         $operatorA = $this->createUser(['is_operator' => true]);
         $operatorB = $this->createUser(['is_operator' => true, 'email' => 'op3@test.local']);
 
-        Cliente::create(['name' => 'A1', 'operator_user_id' => $operatorA->id, 'is_active' => true]);
-        Cliente::create(['name' => 'B1', 'operator_user_id' => $operatorB->id, 'is_active' => true]);
+        Client::create(['name' => 'A1', 'operator_user_id' => $operatorA->id, 'is_active' => true]);
+        Client::create(['name' => 'B1', 'operator_user_id' => $operatorB->id, 'is_active' => true]);
 
         $super = $this->createUser(['email' => 'super@test.local']);
         $super->assignRole('super_admin');
@@ -180,7 +180,7 @@ class OperatorScopeServiceTest extends TestCase
             'employee_number' => (string) random_int(100000, 999999),
             'area_id' => $areaId,
             'position_id' => $positionId,
-            'sede_id' => $siteId,
+            'site_id' => $siteId,
             'status' => 'active',
             'is_operator' => false,
         ], $overrides));

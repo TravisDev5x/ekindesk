@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Models\Cliente;
+use App\Models\Client;
 use App\Models\User;
 use App\Support\Tenancy\TenantContext;
 use App\Support\Tenancy\TenantContext as Ctx;
@@ -95,13 +95,13 @@ class TenantContextService
         if ($user->is_operator || $user->can('clients.view_all') || $user->can('tickets.manage_all')) {
             $operatorId = app(OperatorScopeService::class)->resolveOperatorUserId($user);
 
-            return $operatorId && (int) Cliente::where('id', $clientId)->value('operator_user_id') === (int) $operatorId;
+            return $operatorId && (int) Client::where('id', $clientId)->value('operator_user_id') === (int) $operatorId;
         }
 
         return false;
     }
 
-    public function loginUrlForClient(Cliente $client): ?string
+    public function loginUrlForClient(Client $client): ?string
     {
         if (! $client->portal_slug || ! config('tenancy.base_domain')) {
             return null;
@@ -144,14 +144,14 @@ class TenantContextService
         Cache::forget("tenant.portal.{$slug}");
     }
 
-    private function findClientByPortalSlug(string $slug): ?Cliente
+    private function findClientByPortalSlug(string $slug): ?Client
     {
         if (! Schema::hasColumn('clients', 'portal_slug')) {
             return null;
         }
 
         return Cache::remember("tenant.portal.{$slug}", 300, function () use ($slug) {
-            return Cliente::query()
+            return Client::query()
                 ->where('portal_slug', $slug)
                 ->where('is_active', true)
                 ->first();
@@ -167,7 +167,7 @@ class TenantContextService
 
         $slug = $base;
         $n = 0;
-        while (Cliente::query()
+        while (Client::query()
             ->when($ignoreClientId, fn ($q) => $q->where('id', '!=', $ignoreClientId))
             ->where('portal_slug', $slug)
             ->exists()) {

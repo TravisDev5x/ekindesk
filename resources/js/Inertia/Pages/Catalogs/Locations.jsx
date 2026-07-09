@@ -6,45 +6,45 @@ import CatalogDialog from "@/Inertia/components/CatalogDialog";
 import useCatalog from "@/Inertia/hooks/useCatalog";
 import { Badge } from "@/components/ui/badge";
 
-function prepareUbicacionPayload(formData) {
+function prepareLocationPayload(formData) {
     return {
-        sede_id: Number(formData.sede_id),
+        site_id: Number(formData.site_id),
         name: String(formData.name ?? "").trim(),
         code: formData.code?.trim() || null,
         is_active: Boolean(formData.is_active),
     };
 }
 
-function ubicacionToForm(row) {
+function locationToForm(row) {
     if (!row) {
         return { is_active: true };
     }
     return {
         name: row.name ?? "",
         code: row.code ?? "",
-        sede_id: row.sede_id ? String(row.sede_id) : "",
+        site_id: row.site_id ? String(row.site_id) : "",
         is_active: Boolean(row.is_active),
     };
 }
 
-export default function Ubicaciones() {
-    const { ubicaciones, sedes } = usePage().props;
+export default function Locations() {
+    const { locations, sites } = usePage().props;
 
-    const catalog = useCatalog("/api/ubicaciones", () =>
-        router.reload({ only: ["ubicaciones"] })
+    const catalog = useCatalog("/api/locations", () =>
+        router.reload({ only: ["locations"] })
     );
 
-    const sedeOptions = useMemo(
-        () => (sedes ?? []).map((s) => ({ value: String(s.id), label: s.name })),
-        [sedes]
+    const siteOptions = useMemo(
+        () => (sites ?? []).map((s) => ({ value: String(s.id), label: s.name })),
+        [sites]
     );
 
     const columns = [
         { key: "name", label: "Nombre" },
         {
-            key: "sede",
+            key: "site",
             label: "Sede",
-            render: (row) => row.sede?.name ?? "—",
+            render: (row) => row.site?.name ?? "—",
         },
         {
             key: "is_active",
@@ -70,11 +70,11 @@ export default function Ubicaciones() {
             placeholder: "Opcional",
         },
         {
-            key: "sede_id",
+            key: "site_id",
             label: "Sede",
             type: "select",
             required: true,
-            options: sedeOptions,
+            options: siteOptions,
         },
         {
             key: "is_active",
@@ -84,7 +84,7 @@ export default function Ubicaciones() {
         },
     ];
 
-    const onSubmit = (formData) => catalog.handleSubmit(prepareUbicacionPayload(formData));
+    const onSubmit = (formData) => catalog.handleSubmit(prepareLocationPayload(formData));
 
     return (
         <>
@@ -92,7 +92,7 @@ export default function Ubicaciones() {
                 title="Ubicaciones"
                 description="Ubicaciones dentro de cada sede"
                 columns={columns}
-                data={ubicaciones ?? []}
+                data={locations ?? []}
                 onAdd={catalog.openCreate}
                 onEdit={catalog.openEdit}
                 onDelete={catalog.handleDelete}
@@ -108,7 +108,7 @@ export default function Ubicaciones() {
                 onClose={catalog.closeDialog}
                 title={catalog.editTarget ? "Editar ubicación" : "Nueva ubicación"}
                 fields={fields}
-                initialValues={ubicacionToForm(catalog.editTarget)}
+                initialValues={locationToForm(catalog.editTarget)}
                 onSubmit={onSubmit}
                 loading={catalog.loading}
                 errors={catalog.dialogErrors}
@@ -118,4 +118,4 @@ export default function Ubicaciones() {
     );
 }
 
-Ubicaciones.layout = (page) => <AuthenticatedLayout title="Ubicaciones">{page}</AuthenticatedLayout>;
+Locations.layout = (page) => <AuthenticatedLayout title="Ubicaciones">{page}</AuthenticatedLayout>;

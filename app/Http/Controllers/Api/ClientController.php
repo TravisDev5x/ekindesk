@@ -3,22 +3,22 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Cliente;
+use App\Models\Client;
 use App\Services\OperatorScopeService;
 use App\Services\TenantContextService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
-class ClienteController extends Controller
+class ClientController extends Controller
 {
     public function __construct(
         protected OperatorScopeService $operatorScope
     ) {}
 
-    private function withSedes(Cliente $cliente): Cliente
+    private function withSites(Client $client): Client
     {
-        return $cliente->loadCount('sedes')->load([
-            'sedes' => fn ($q) => $q->select('id', 'name', 'code', 'client_id', 'type', 'is_active', 'address', 'city', 'contact_name', 'contact_phone')->orderBy('name'),
+        return $client->loadCount('sites')->load([
+            'sites' => fn ($q) => $q->select('id', 'name', 'code', 'client_id', 'type', 'is_active', 'address', 'city', 'contact_name', 'contact_phone')->orderBy('name'),
         ]);
     }
 
@@ -30,8 +30,8 @@ class ClienteController extends Controller
         }
 
         $query = $this->operatorScope->applyOnClients(
-            Cliente::withCount('sedes')
-                ->with(['sedes' => fn ($q) => $q->select('id', 'name', 'code', 'client_id', 'type', 'is_active', 'address', 'city', 'contact_name', 'contact_phone')->orderBy('name')]),
+            Client::withCount('sites')
+                ->with(['sites' => fn ($q) => $q->select('id', 'name', 'code', 'client_id', 'type', 'is_active', 'address', 'city', 'contact_name', 'contact_phone')->orderBy('name')]),
             $user
         );
 
@@ -62,23 +62,23 @@ class ClienteController extends Controller
             $data['portal_slug'] = TenantContextService::generateUniquePortalSlug($data['name']);
         }
 
-        $cliente = Cliente::create($data);
+        $client = Client::create($data);
 
-        return response()->json($this->withSedes($cliente), 201);
+        return response()->json($this->withSites($client), 201);
     }
 
-    public function update(Request $request, Cliente $cliente)
+    public function update(Request $request, Client $client)
     {
         $user = Auth::user();
         if (! $user) {
             return response()->json(['message' => 'No autorizado'], 401);
         }
 
-        $this->operatorScope->authorizeClient($user, $cliente);
+        $this->operatorScope->authorizeClient($user, $client);
 
         $data = $request->validate([
-            'name' => $this->operatorScope->nameRules($user, $cliente->id),
-            'code' => $this->operatorScope->codeRules($user, $cliente->id),
+            'name' => $this->operatorScope->nameRules($user, $client->id),
+            'code' => $this->operatorScope->codeRules($user, $client->id),
             'legal_name' => ['nullable', 'string', 'max:255'],
             'tax_id' => ['nullable', 'string', 'max:20'],
             'contact_name' => ['nullable', 'string', 'max:255'],
@@ -88,25 +88,25 @@ class ClienteController extends Controller
             'is_active' => ['boolean'],
         ]);
 
-        $cliente->update($data);
+        $client->update($data);
 
-        return response()->json($this->withSedes($cliente));
+        return response()->json($this->withSites($client));
     }
 
-    public function destroy(Cliente $cliente)
+    public function destroy(Client $client)
     {
         $user = Auth::user();
         if (! $user) {
             return response()->json(['message' => 'No autorizado'], 401);
         }
 
-        $this->operatorScope->authorizeClient($user, $cliente);
+        $this->operatorScope->authorizeClient($user, $client);
 
-        if ($cliente->sedes()->exists()) {
+        if ($client->sites()->exists()) {
             return response()->json(['message' => 'No se puede eliminar: hay sedes asignadas a este cliente'], 422);
         }
 
-        $cliente->delete();
+        $client->delete();
 
         return response()->noContent();
     }

@@ -93,7 +93,7 @@ export function DashboardOperativo({ variant = "soporte" }) {
                         <NavLink href="/resolbeb/tickets">Ver listado completo</NavLink>
                     </Button>
                     <Button asChild variant="outline" size="sm">
-                        <NavLink href="/calendario">
+                        <NavLink href="/calendar">
                             <CalendarDays className="h-4 w-4 mr-2" />
                             Calendario
                         </NavLink>

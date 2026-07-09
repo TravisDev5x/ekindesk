@@ -6,18 +6,18 @@ use App\Http\Controllers\Controller;
 use App\Models\Area;
 use App\Services\OperatorScopeService;
 use App\Models\Campaign;
-use App\Models\Cliente;
+use App\Models\Client;
 use App\Models\ImpactLevel;
 use App\Models\Permission;
 use App\Models\Position;
 use App\Models\Priority;
 use App\Models\PriorityMatrix;
 use App\Models\Role;
-use App\Models\Sede;
+use App\Models\Site;
 use App\Models\TicketMacro;
 use App\Models\TicketState;
 use App\Models\TicketType;
-use App\Models\Ubicacion;
+use App\Models\Location;
 use App\Models\UrgencyLevel;
 use App\Models\User;
 use Inertia\Inertia;
@@ -102,28 +102,28 @@ class CatalogPageController extends Controller
         ]);
     }
 
-    public function sedes(): Response
+    public function sites(): Response
     {
         $user = auth()->user();
 
-        $sedesQuery = $this->operatorScope->applyOnSites(
-            Sede::with('cliente:id,name'),
+        $sitesQuery = $this->operatorScope->applyOnSites(
+            Site::with('client:id,name'),
             $user
         );
 
-        return Inertia::render('Catalogs/Sedes', [
-            'sedes' => $sedesQuery->orderBy('type')->orderBy('name')->get(),
-            'clientes' => $user
+        return Inertia::render('Catalogs/Sites', [
+            'sites' => $sitesQuery->orderBy('type')->orderBy('name')->get(),
+            'clients' => $user
                 ? $this->operatorScope->clientsForCatalog($user)
                 : [],
         ]);
     }
 
-    public function ubicaciones(): Response
+    public function locations(): Response
     {
-        return Inertia::render('Catalogs/Ubicaciones', [
-            'ubicaciones' => Ubicacion::with('sede:id,name,type')->orderBy('site_id')->orderBy('name')->get(),
-            'sedes' => Sede::where('is_active', true)->orderBy('name')->get(['id', 'name']),
+        return Inertia::render('Catalogs/Locations', [
+            'locations' => Location::with('site:id,name,type')->orderBy('site_id')->orderBy('name')->get(),
+            'sites' => Site::where('is_active', true)->orderBy('name')->get(['id', 'name']),
         ]);
     }
 
@@ -179,7 +179,7 @@ class CatalogPageController extends Controller
             'areas' => Area::where('is_active', true)->orderBy('name')->get(['id', 'name']),
             'ticket_types' => TicketType::where('is_active', true)->orderBy('name')->get(['id', 'name']),
             'priorities' => Priority::where('is_active', true)->orderBy('level')->orderBy('name')->get(['id', 'name', 'level']),
-            'sedes' => Sede::where('is_active', true)->orderBy('name')->get(['id', 'name']),
+            'sedes' => Site::where('is_active', true)->orderBy('name')->get(['id', 'name']),
             'impact_levels' => ImpactLevel::where('is_active', true)->orderBy('weight')->orderBy('name')->get(['id', 'name']),
             'urgency_levels' => UrgencyLevel::where('is_active', true)->orderBy('weight')->orderBy('name')->get(['id', 'name']),
             'ticket_states' => TicketState::orderBy('name')->get(['id', 'name', 'code', 'is_final']),
@@ -190,7 +190,7 @@ class CatalogPageController extends Controller
     public function resolbebDashboardCatalogs(): array
     {
         return [
-            'sedes' => Sede::where('is_active', true)->orderBy('name')->get(['id', 'name']),
+            'sedes' => Site::where('is_active', true)->orderBy('name')->get(['id', 'name']),
             'area_users' => User::where('status', 'active')
                 ->whereNotNull('area_id')
                 ->orderBy('name')
@@ -202,7 +202,7 @@ class CatalogPageController extends Controller
     {
         return [
             'areas' => Area::where('is_active', true)->orderBy('name')->get(['id', 'name']),
-            'sedes' => Sede::where('is_active', true)->orderBy('name')->get(['id', 'name']),
+            'sedes' => Site::where('is_active', true)->orderBy('name')->get(['id', 'name']),
             'incident_types' => \App\Models\IncidentType::where('is_active', true)->orderBy('name')->get(['id', 'name']),
             'incident_severities' => \App\Models\IncidentSeverity::where('is_active', true)->orderBy('level')->get(['id', 'name', 'level', 'code']),
             'incident_statuses' => \App\Models\IncidentStatus::where('is_active', true)->orderBy('name')->get(['id', 'name', 'code', 'is_final']),

@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Models\Cliente;
+use App\Models\Client;
 use App\Models\Priority;
 use App\Models\User;
 use App\Services\OperatorCatalogScopeService;
@@ -50,7 +50,7 @@ class TenantCatalogScopeTest extends TestCase
             'first_name' => 'T', 'paternal_last_name' => 'U',
             'email' => uniqid().'@t.local', 'password' => Hash::make('x'),
             'employee_number' => (string) random_int(100000, 999999),
-            'area_id' => $areaId, 'position_id' => $positionId, 'sede_id' => $siteId, 'status' => 'active',
+            'area_id' => $areaId, 'position_id' => $positionId, 'site_id' => $siteId, 'status' => 'active',
         ], $overrides));
     }
 }

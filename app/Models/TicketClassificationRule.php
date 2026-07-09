@@ -23,9 +23,9 @@ class TicketClassificationRule extends Model
         'is_active' => 'boolean',
     ];
 
-    public function cliente(): BelongsTo
+    public function client(): BelongsTo
     {
-        return $this->belongsTo(Cliente::class, 'client_id');
+        return $this->belongsTo(Client::class, 'client_id');
     }
 
     public function ticketType(): BelongsTo

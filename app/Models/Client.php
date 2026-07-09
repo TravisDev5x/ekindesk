@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Cliente extends Model
+class Client extends Model
 {
     use HasFactory;
 
@@ -81,15 +81,9 @@ class Cliente extends Model
         return $this->belongsTo(Plan::class);
     }
 
-    public function sedes(): HasMany
-    {
-        return $this->hasMany(Sede::class, 'client_id');
-    }
-
-    /** Alias for sedes (API naming). */
     public function sites(): HasMany
     {
-        return $this->sedes();
+        return $this->hasMany(Site::class, 'client_id');
     }
 
     public function tickets(): HasMany

@@ -39,8 +39,8 @@ class Incident extends Model
     public function involvedUser(): BelongsTo { return $this->belongsTo(User::class, 'involved_user_id'); }
     public function assignedUser(): BelongsTo { return $this->belongsTo(User::class, 'assigned_user_id'); }
     public function area(): BelongsTo { return $this->belongsTo(Area::class, 'area_id'); }
-    public function sede(): BelongsTo { return $this->belongsTo(Sede::class, 'site_id'); }
-    public function client(): BelongsTo { return $this->belongsTo(Cliente::class, 'client_id'); }
+    public function site(): BelongsTo { return $this->belongsTo(Site::class, 'site_id'); }
+    public function client(): BelongsTo { return $this->belongsTo(Client::class, 'client_id'); }
 
     protected static function booted(): void
     {
@@ -49,7 +49,7 @@ class Incident extends Model
                 return;
             }
             if ($incident->isDirty('site_id') || $incident->client_id === null) {
-                $incident->client_id = app(ClientScopeService::class)->syncClientIdFromSede((int) $incident->site_id);
+                $incident->client_id = app(ClientScopeService::class)->syncClientIdFromSite((int) $incident->site_id);
             }
         });
     }

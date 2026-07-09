@@ -2,7 +2,7 @@
 
 namespace App\Jobs;
 
-use App\Models\Cliente;
+use App\Models\Client;
 use App\Models\Ticket;
 use App\Models\TicketSequence;
 use App\Models\User;
@@ -32,7 +32,7 @@ class ProcessInboundTicket implements ShouldQueue
 
     public function handle(TicketClassifierService $classifier): void
     {
-        $tenant = Cliente::find($this->clientId);
+        $tenant = Client::find($this->clientId);
         if (! $tenant) {
             Log::error('ProcessInboundTicket: tenant no encontrado', [
                 'client_id' => $this->clientId,
@@ -121,7 +121,7 @@ class ProcessInboundTicket implements ShouldQueue
      * site_id es NOT NULL en users: usa la primera sede activa del tenant.
      * Si el tenant no tiene sedes, lanza excepción (el job reintentará).
      */
-    private function findOrCreateRequester(Cliente $tenant): User
+    private function findOrCreateRequester(Client $tenant): User
     {
         $sedeId = DB::table('sites')
             ->where('client_id', $tenant->id)

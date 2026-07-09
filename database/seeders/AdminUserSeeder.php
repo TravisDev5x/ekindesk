@@ -6,7 +6,7 @@ use App\Models\User;
 use App\Models\Campaign;
 use App\Models\Area;
 use App\Models\Position;
-use App\Models\Sede;
+use App\Models\Site;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -31,9 +31,9 @@ class AdminUserSeeder extends Seeder
             return;
         }
 
-        $sede = Sede::where('code', 'REMOTO')->orWhere('name', 'Remoto')->first();
+        $sede = Site::where('code', 'REMOTO')->orWhere('name', 'Remoto')->first();
         if (!$sede) {
-            $sede = Sede::first();
+            $sede = Site::first();
         }
         if (!$sede) {
             $this->command->error('No hay ninguna sede. Ejecuta las migraciones primero.');

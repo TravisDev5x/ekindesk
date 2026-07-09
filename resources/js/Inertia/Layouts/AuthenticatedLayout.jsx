@@ -38,7 +38,7 @@ import {
 const TITLE_MAP = {
     "/": "Inicio",
     "/home": "Inicio",
-    "/calendario": "Calendario",
+    "/calendar": "Calendario",
     "/profile": "Mi perfil",
     "/company": "Mi empresa",
     "/company/edit": "Editar empresa",

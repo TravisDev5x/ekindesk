@@ -58,8 +58,8 @@ class TicketSequence extends Model
         return str_pad((string) $number, 5, '0', STR_PAD_LEFT);
     }
 
-    public function cliente(): BelongsTo
+    public function client(): BelongsTo
     {
-        return $this->belongsTo(Cliente::class, 'client_id');
+        return $this->belongsTo(Client::class, 'client_id');
     }
 }

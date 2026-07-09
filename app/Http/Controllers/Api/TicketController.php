@@ -55,9 +55,9 @@ class TicketController extends Controller
         $query = Ticket::with([
             'areaOrigin:id,name',
             'areaCurrent:id,name',
-            'sede:id,name,client_id',
-            'cliente:id,name',
-            'ubicacion:id,name,site_id',
+            'site:id,name,client_id',
+            'client:id,name',
+            'location:id,name,site_id',
             'requester:id,name,email',
             'assignedUser:id,name,position_id',
             'ticketType:id,name',
@@ -216,7 +216,7 @@ class TicketController extends Controller
         $query = Ticket::with([
             'areaOrigin:id,name',
             'areaCurrent:id,name',
-            'sede:id,name',
+            'site:id,name',
             'ticketType:id,name',
             'priority:id,name',
             'state:id,name',
@@ -268,7 +268,7 @@ class TicketController extends Controller
                         $t->resolved_at?->toIso8601String() ?? '',
                         $t->areaOrigin->name ?? '',
                         $t->areaCurrent->name ?? '',
-                        $t->sede->name ?? '',
+                        $t->site->name ?? '',
                         $t->ticketType->name ?? '',
                         $t->priority->name ?? '',
                         $t->state->name ?? '',
@@ -294,9 +294,9 @@ class TicketController extends Controller
         $ticket->load([
             'areaOrigin:id,name',
             'areaCurrent:id,name',
-            'sede:id,name,client_id',
-            'cliente:id,name',
-            'ubicacion:id,name,site_id',
+            'site:id,name,client_id',
+            'client:id,name',
+            'location:id,name,site_id',
             'requester:id,name,email',
             'requesterPosition:id,name',
             'assignedUser:id,name,position_id',
@@ -499,9 +499,9 @@ class TicketController extends Controller
             $ticket->load(
                 'areaOrigin:id,name',
                 'areaCurrent:id,name',
-                'sede:id,name,client_id',
-                'cliente:id,name',
-                'ubicacion:id,name',
+                'site:id,name,client_id',
+                'client:id,name',
+                'location:id,name',
                 'ticketType:id,name',
                 'priority:id,name,level',
                 'impactLevel:id,name',
@@ -526,10 +526,10 @@ class TicketController extends Controller
         $data = $request->validated();
 
         if (isset($data['site_id'])) {
-            if (! $this->clientScope->assertSedeAccessible($user, (int) $data['site_id'])) {
+            if (! $this->clientScope->assertSiteAccessible($user, (int) $data['site_id'])) {
                 return response()->json(['message' => 'La sede seleccionada no pertenece a tu cliente'], 422);
             }
-            $data['client_id'] = $this->clientScope->syncTicketClientFromSede((int) $data['site_id']);
+            $data['client_id'] = $this->clientScope->syncTicketClientFromSite((int) $data['site_id']);
         }
 
         if (!empty($data['impact_level_id']) && !empty($data['urgency_level_id'])) {
@@ -707,8 +707,8 @@ class TicketController extends Controller
             $ticket->load(
                 'areaOrigin:id,name',
                 'areaCurrent:id,name',
-                'sede:id,name',
-                'ubicacion:id,name',
+                'site:id,name',
+                'location:id,name',
                 'assignedUser:id,name,position_id',
                 'assignedUser.position:id,name',
                 'ticketType:id,name',
@@ -776,8 +776,8 @@ class TicketController extends Controller
             $ticket->load(
                 'areaOrigin:id,name',
                 'areaCurrent:id,name',
-                'sede:id,name',
-                'ubicacion:id,name',
+                'site:id,name',
+                'location:id,name',
                 'assignedUser:id,name,position_id',
                 'assignedUser.position:id,name',
                 'ticketType:id,name',
@@ -849,8 +849,8 @@ class TicketController extends Controller
             $ticket->load(
                 'areaOrigin:id,name',
                 'areaCurrent:id,name',
-                'sede:id,name',
-                'ubicacion:id,name',
+                'site:id,name',
+                'location:id,name',
                 'assignedUser:id,name,position_id',
                 'assignedUser.position:id,name',
                 'ticketType:id,name',
@@ -905,8 +905,8 @@ class TicketController extends Controller
             $ticket->load(
                 'areaOrigin:id,name',
                 'areaCurrent:id,name',
-                'sede:id,name',
-                'ubicacion:id,name',
+                'site:id,name',
+                'location:id,name',
                 'assignedUser:id,name,position_id',
                 'assignedUser.position:id,name',
                 'ticketType:id,name',
@@ -989,8 +989,8 @@ class TicketController extends Controller
         $ticket->load([
             'areaOrigin:id,name',
             'areaCurrent:id,name',
-            'sede:id,name',
-            'ubicacion:id,name',
+            'site:id,name',
+            'location:id,name',
             'requester:id,name,email',
             'assignedUser:id,name,position_id',
             'ticketType:id,name',
@@ -1045,8 +1045,8 @@ class TicketController extends Controller
             $ticket->load([
                 'areaOrigin:id,name',
                 'areaCurrent:id,name',
-                'sede:id,name',
-                'ubicacion:id,name',
+                'site:id,name',
+                'location:id,name',
                 'requester:id,name,email',
                 'assignedUser:id,name,position_id',
                 'ticketType:id,name',
@@ -1130,8 +1130,8 @@ class TicketController extends Controller
             $ticket->load(
                 'areaOrigin:id,name',
                 'areaCurrent:id,name',
-                'sede:id,name',
-                'ubicacion:id,name',
+                'site:id,name',
+                'location:id,name',
                 'assignedUser:id,name,position_id',
                 'assignedUser.position:id,name',
                 'ticketType:id,name',
@@ -1156,7 +1156,7 @@ class TicketController extends Controller
             'tickets.create',
             'tickets.view_own',
             'tickets.view_area',
-            'tickets.filter_by_sede',
+            'tickets.filter_by_site',
             'tickets.assign',
             'tickets.comment',
             'tickets.change_status',
@@ -1185,11 +1185,11 @@ class TicketController extends Controller
         }
 
         if ($request->filled('site_id')) {
-            $canFilterSede = $user->can('tickets.filter_by_sede')
+            $canFilterSite = $user->can('tickets.filter_by_site')
                 || $user->can('tickets.manage_all')
                 || $user->can('tickets.view_area');
-            if ($canFilterSede) {
-                $this->clientScope->applySedeFilter($request, $user, $query);
+            if ($canFilterSite) {
+                $this->clientScope->applySiteFilter($request, $user, $query);
             }
         }
 

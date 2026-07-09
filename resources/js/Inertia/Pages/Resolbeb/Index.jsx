@@ -202,7 +202,7 @@ export default function ResolbebIndex({ mode = "tickets", catalogs: catalogsProp
 
     const [form, setForm] = useState({
         subject: "", description: "", area_origin_id: "", area_current_id: "",
-        sede_id: "", ubicacion_id: "none", ticket_type_id: "", priority_id: "", ticket_state_id: ""
+        site_id: "", location_id: "none", ticket_type_id: "", priority_id: "", ticket_state_id: ""
     });
 
     const loadData = useCallback(async () => {
@@ -214,7 +214,7 @@ export default function ResolbebIndex({ mode = "tickets", catalogs: catalogsProp
             else if (!canManageAll && userClientId) params.client_id = userClientId;
             if (canManageAll) {
                 if (filters.area !== "all") params.area_current_id = filters.area;
-                if (filters.sede !== "all") params.sede_id = filters.sede;
+                if (filters.sede !== "all") params.site_id = filters.sede;
                 if (filters.type !== "all") params.ticket_type_id = filters.type;
                 if (filters.priority !== "all") params.priority_id = filters.priority;
                 if (filters.state !== "all") params.ticket_state_id = filters.state;
@@ -223,7 +223,7 @@ export default function ResolbebIndex({ mode = "tickets", catalogs: catalogsProp
                 if (filters.assignment === "unassigned") params.assigned_status = "unassigned";
                 if (filters.assignment === "user" && filters.assignee !== "all") params.assigned_user_id = filters.assignee;
             } else {
-                if (filters.sede !== "all") params.sede_id = filters.sede;
+                if (filters.sede !== "all") params.site_id = filters.sede;
                 if (filters.type !== "all") params.ticket_type_id = filters.type;
             }
             if (canViewArea && !canManageAll && user?.area_id) params.area_current_id = user.area_id;
@@ -275,19 +275,19 @@ export default function ResolbebIndex({ mode = "tickets", catalogs: catalogsProp
         setForm({
             ...form,
             subject: "", description: "",
-            sede_id: String(user?.sede_id || user?.sede?.id || ""),
+            site_id: String(user?.site_id || user?.sede?.id || ""),
             area_origin_id: String(user?.area_id || ""),
             area_current_id: String(user?.area_id || ""),
             ticket_type_id: String(catalogs.ticket_types?.[0]?.id || ""),
             priority_id: String(catalogs.priorities?.[0]?.id || ""),
             ticket_state_id: String(openState?.id ?? ""),
-            ubicacion_id: form.ubicacion_id || "none",
+            location_id: form.location_id || "none",
         });
         setOpen(true);
     };
 
     const ticketSiteContext = useMemo(() => {
-        const sedeId = user?.sede_id || user?.sede?.id;
+        const sedeId = user?.site_id || user?.sede?.id;
         if (!sedeId) return null;
         const sede = (catalogs.sedes || []).find((s) => String(s.id) === String(sedeId));
         const client = (catalogs.clients || []).find((c) => String(c.id) === String(user?.client_id || sede?.client_id));
@@ -316,7 +316,7 @@ export default function ResolbebIndex({ mode = "tickets", catalogs: catalogsProp
             priority_id: Number(form.priority_id),
             ticket_type_id: Number(form.ticket_type_id),
             ticket_state_id: Number(form.ticket_state_id),
-            ubicacion_id: form.ubicacion_id === "none" || !form.ubicacion_id ? null : Number(form.ubicacion_id),
+            location_id: form.location_id === "none" || !form.location_id ? null : Number(form.location_id),
             created_at: new Date().toISOString(),
         };
         const promise = axios.post("/api/tickets", payload);
@@ -353,7 +353,7 @@ export default function ResolbebIndex({ mode = "tickets", catalogs: catalogsProp
         if (filters.client !== "all") params.client_id = filters.client;
         else if (!canManageAll && userClientId) params.client_id = userClientId;
         if (filters.area !== "all") params.area_current_id = filters.area;
-        if (filters.sede !== "all") params.sede_id = filters.sede;
+        if (filters.sede !== "all") params.site_id = filters.sede;
         if (filters.type !== "all") params.ticket_type_id = filters.type;
         if (filters.priority !== "all") params.priority_id = filters.priority;
         if (filters.state !== "all") params.ticket_state_id = filters.state;

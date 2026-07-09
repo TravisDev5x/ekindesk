@@ -27,7 +27,7 @@ return new class extends Migration
             'tickets.create',
             'tickets.view_own',
             'tickets.view_area',
-            'tickets.filter_by_sede',
+            'tickets.filter_by_site',
             'tickets.assign',
             'tickets.comment',
             'tickets.change_status',

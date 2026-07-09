@@ -47,8 +47,8 @@ class HandleInertiaRequests extends Middleware
         if ($user) {
             $user->loadMissing([
                 'area:id,name',
-                'sede:id,name,client_id',
-                'sede.cliente:id,name',
+                'site:id,name,client_id',
+                'site.client:id,name',
             ]);
         }
 
@@ -77,15 +77,15 @@ class HandleInertiaRequests extends Middleware
                     'sidebar_position' => $user->sidebar_position,
                     'sidebar_hover_preview' => $user->sidebar_hover_preview,
                     'is_operator' => $user->is_operator,
-                    'client_id' => $user->client_id ?? $user->sede?->client_id,
-                    'client_name' => $user->sede?->cliente?->name,
+                    'client_id' => $user->client_id ?? $user->site?->client_id,
+                    'client_name' => $user->site?->client?->name,
                     'onboarding_completed' => $user->onboarding_completed,
                     'onboarding_redirect' => $onboarding->redirectPath($user),
                     'is_blacklisted' => $user->is_blacklisted,
                     'force_password_change' => $user->force_password_change ?? false,
                     'area' => $user->area?->name,
                     'area_id' => $user->area_id,
-                    'sede' => $user->sede?->name,
+                    'sede' => $user->site?->name,
                     'site_id' => $user->site_id,
                     'availability' => $user->availability,
                     'roles' => $user->getCachedRoleNames()->values()->all(),

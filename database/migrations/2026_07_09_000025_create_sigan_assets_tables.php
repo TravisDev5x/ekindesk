@@ -11,44 +11,44 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('sigan_assets', function (Blueprint $table) {
+        Schema::create('assets', function (Blueprint $table) {
             $table->id();
-            $table->string('tipo', 32); // ti | mobiliario
-            $table->string('subtipo', 64)->nullable(); // laptop, pc, silla, ups
-            $table->string('nombre');
-            $table->string('numero_serie')->nullable();
-            $table->enum('estado', ['activo', 'scrap', 'baja', 'mantenimiento'])->default('activo');
-            $table->string('ubicacion')->nullable();
-            $table->text('observaciones')->nullable();
+            $table->string('type', 32); // it | furniture
+            $table->string('subtype', 64)->nullable(); // laptop, pc, chair, ups
+            $table->string('name');
+            $table->string('serial_number')->nullable();
+            $table->enum('status', ['active', 'scrap', 'decommissioned', 'maintenance'])->default('active');
+            $table->string('location')->nullable();
+            $table->text('notes')->nullable();
             $table->timestamps();
         });
 
-        Schema::create('sigan_asset_components', function (Blueprint $table) {
+        Schema::create('asset_components', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('asset_id')->constrained('sigan_assets')->cascadeOnDelete();
-            $table->string('tipo_componente', 64); // ram, ssd, disco, etc.
-            $table->string('descripcion')->nullable();
-            $table->enum('estado', ['instalado', 'extraido'])->default('instalado');
-            $table->foreignId('usado_en_asset_id')->nullable()->constrained('sigan_assets')->nullOnDelete();
+            $table->foreignId('asset_id')->constrained('assets')->cascadeOnDelete();
+            $table->string('component_type', 64); // ram, ssd, disk, etc.
+            $table->string('description')->nullable();
+            $table->enum('status', ['installed', 'removed'])->default('installed');
+            $table->foreignId('reused_in_asset_id')->nullable()->constrained('assets')->nullOnDelete();
             $table->timestamps();
         });
 
-        Schema::create('sigan_maintenance', function (Blueprint $table) {
+        Schema::create('asset_maintenance', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('asset_id')->constrained('sigan_assets')->cascadeOnDelete();
-            $table->enum('tipo', ['interno', 'externo']);
-            $table->string('proveedor')->nullable();
-            $table->date('fecha');
-            $table->text('descripcion')->nullable();
-            $table->string('resultado', 255)->nullable();
+            $table->foreignId('asset_id')->constrained('assets')->cascadeOnDelete();
+            $table->enum('type', ['internal', 'external']);
+            $table->string('provider')->nullable();
+            $table->date('performed_at');
+            $table->text('description')->nullable();
+            $table->string('result', 255)->nullable();
             $table->timestamps();
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('sigan_maintenance');
-        Schema::dropIfExists('sigan_asset_components');
-        Schema::dropIfExists('sigan_assets');
+        Schema::dropIfExists('asset_maintenance');
+        Schema::dropIfExists('asset_components');
+        Schema::dropIfExists('assets');
     }
 };

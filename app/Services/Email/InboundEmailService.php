@@ -2,7 +2,7 @@
 
 namespace App\Services\Email;
 
-use App\Models\Cliente;
+use App\Models\Client;
 use App\Models\EmailDomain;
 
 class InboundEmailService
@@ -27,17 +27,17 @@ class InboundEmailService
     }
 
     /**
-     * Resuelve el tenant (Cliente) desde la dirección destino del email.
+     * Resuelve el tenant (Client) desde la dirección destino del email.
      *
      * Prioridad:
      * 1. EmailDomain registrado y verificado (dominio propio del cliente)
      * 2. Subdominio de tikara: techsolve.tikara.mx → portal_slug='techsolve'
      */
-    public function resolveTenant(string $toEmail): ?Cliente
+    public function resolveTenant(string $toEmail): ?Client
     {
         $emailDomain = EmailDomain::resolveFromAddress($toEmail);
         if ($emailDomain) {
-            return $emailDomain->cliente;
+            return $emailDomain->client;
         }
 
         $atPos = strpos($toEmail, '@');
@@ -49,7 +49,7 @@ class InboundEmailService
 
         if (str_ends_with($domain, '.' . $appDomain)) {
             $slug = substr($domain, 0, -(strlen($appDomain) + 1));
-            return Cliente::where('portal_slug', $slug)
+            return Client::where('portal_slug', $slug)
                 ->where('is_active', true)
                 ->whereNull('cancelled_at')
                 ->first();

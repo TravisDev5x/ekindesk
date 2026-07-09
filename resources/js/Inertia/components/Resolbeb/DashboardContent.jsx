@@ -156,13 +156,13 @@ export default function DashboardContent({ isStandalone = false }) {
   const [isTvMode, setIsTvMode] = useState(false);
 
   const canSeeTickets = can("tickets.manage_all") || can("tickets.view_area");
-  const canFilterSede = can("tickets.filter_by_sede") || can("tickets.manage_all");
+  const canFilterSite = can("tickets.filter_by_site") || can("tickets.manage_all");
 
   const fetchDashboard = useCallback(async () => {
     setLoading(true);
     setError(null);
     const params = {};
-    if (filters.sede_id != null && filters.sede_id !== "") params.sede_id = filters.sede_id;
+    if (filters.site_id != null && filters.site_id !== "") params.site_id = filters.site_id;
     if (filters.assigned_user_id != null && filters.assigned_user_id !== "") params.assigned_user_id = filters.assigned_user_id;
     if (filters.assigned_to) params.assigned_to = filters.assigned_to;
     if (filters.assigned_status) params.assigned_status = filters.assigned_status;
@@ -191,7 +191,7 @@ export default function DashboardContent({ isStandalone = false }) {
       setLastRefresh(new Date());
       setLoading(false);
     }
-  }, [filters.sede_id, filters.assigned_user_id, filters.assigned_to, filters.assigned_status, isStandalone]);
+  }, [filters.site_id, filters.assigned_user_id, filters.assigned_to, filters.assigned_status, isStandalone]);
 
   useEffect(() => {
     if (canSeeTickets) fetchDashboard();
@@ -320,12 +320,12 @@ export default function DashboardContent({ isStandalone = false }) {
           <CardTitle className="text-sm font-medium flex items-center gap-2">Filtros rápidos</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-wrap gap-4">
-          {canFilterSede && sedes.length > 0 && (
+          {canFilterSite && sedes.length > 0 && (
             <div className="space-y-2">
               <Label className="text-xs">Sede</Label>
               <Select
-                value={filters.sede_id != null ? String(filters.sede_id) : "all"}
-                onValueChange={(v) => setFilters((f) => ({ ...f, sede_id: v === "all" ? null : v }))}
+                value={filters.site_id != null ? String(filters.site_id) : "all"}
+                onValueChange={(v) => setFilters((f) => ({ ...f, site_id: v === "all" ? null : v }))}
               >
                 <SelectTrigger className="w-[180px] h-9">
                   <SelectValue placeholder="Todas las sedes" />

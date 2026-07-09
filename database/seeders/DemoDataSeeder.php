@@ -10,11 +10,11 @@ use App\Models\IncidentStatus;
 use App\Models\IncidentType;
 use App\Models\Position;
 use App\Models\Priority;
-use App\Models\Sede;
+use App\Models\Site;
 use App\Models\Ticket;
 use App\Models\TicketState;
 use App\Models\TicketType;
-use App\Models\Ubicacion;
+use App\Models\Location;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
@@ -67,17 +67,17 @@ class DemoDataSeeder extends Seeder
             ['name' => 'Remoto', 'code' => 'REMOTO', 'type' => 'virtual'],
         ];
         foreach ($sedes as $s) {
-            Sede::firstOrCreate(
+            Site::firstOrCreate(
                 ['name' => $s['name']],
                 ['code' => $s['code'], 'type' => $s['type'], 'is_active' => true]
             );
         }
 
-        $sfa = Sede::where('code', 'SFA')->first();
-        $sfb = Sede::where('code', 'SFB')->first();
+        $sfa = Site::where('code', 'SFA')->first();
+        $sfb = Site::where('code', 'SFB')->first();
         if ($sfa) {
             foreach (['Piso 1', 'Piso 2', 'Piso 3'] as $name) {
-                Ubicacion::firstOrCreate(
+                Location::firstOrCreate(
                     ['site_id' => $sfa->id, 'name' => $name],
                     ['is_active' => true]
                 );
@@ -85,7 +85,7 @@ class DemoDataSeeder extends Seeder
         }
         if ($sfb) {
             foreach (['Edificio Norte', 'Edificio Sur'] as $name) {
-                Ubicacion::firstOrCreate(
+                Location::firstOrCreate(
                     ['site_id' => $sfb->id, 'name' => $name],
                     ['is_active' => true]
                 );
@@ -191,7 +191,7 @@ class DemoDataSeeder extends Seeder
         $this->command->info('  → Creando ~220 tickets de ejemplo...');
 
         $areas = Area::all();
-        $sedes = Sede::all();
+        $sedes = Site::all();
         $priorities = Priority::all();
         $states = TicketState::all();
         $types = TicketType::all();
@@ -210,7 +210,7 @@ class DemoDataSeeder extends Seeder
             $requester = $users[array_rand($users)];
             $area = $areas->random();
             $sede = $sedes->random();
-            $ubicacionesSede = Ubicacion::where('site_id', $sede->id)->get();
+            $ubicacionesSede = Location::where('site_id', $sede->id)->get();
             $ubicacion = $ubicacionesSede->isNotEmpty() ? $ubicacionesSede->random() : null;
 
             Ticket::create([
@@ -240,7 +240,7 @@ class DemoDataSeeder extends Seeder
         $this->command->info('  → Creando ~90 incidencias de ejemplo...');
 
         $areas = Area::all();
-        $sedes = Sede::all();
+        $sedes = Site::all();
         $severities = IncidentSeverity::all();
         $statuses = IncidentStatus::all();
         $types = IncidentType::all();

@@ -4,14 +4,14 @@ namespace Tests\Feature;
 
 use App\Models\Area;
 use App\Models\Campaign;
-use App\Models\Cliente;
+use App\Models\Client;
 use App\Models\Position;
 use App\Models\Priority;
-use App\Models\Sede;
+use App\Models\Site;
 use App\Models\Ticket;
 use App\Models\TicketState;
 use App\Models\TicketType;
-use App\Models\Ubicacion;
+use App\Models\Location;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
@@ -25,7 +25,7 @@ class TicketApiTest extends TestCase
     private User $user;
     private Area $areaOrigin;
     private Area $areaCurrent;
-    private Sede $sede;
+    private Site $site;
     private TicketType $ticketType;
     private Priority $priority;
     private TicketState $ticketState;
@@ -43,10 +43,10 @@ class TicketApiTest extends TestCase
         $this->areaOrigin = Area::firstOrCreate(['name' => 'Area Origin'], ['is_active' => true]);
         $this->areaCurrent = Area::firstOrCreate(['name' => 'Area Current'], ['is_active' => true]);
         Position::firstOrCreate(['name' => 'Test Position'], ['is_active' => true]);
-        $this->sede = Sede::where('code', 'REMOTO')->first();
-        if ($this->sede) {
-            Ubicacion::firstOrCreate(
-                ['sede_id' => $this->sede->id, 'name' => 'Virtual'],
+        $this->site = Site::where('code', 'REMOTO')->first();
+        if ($this->site) {
+            Location::firstOrCreate(
+                ['site_id' => $this->site->id, 'name' => 'Virtual'],
                 ['is_active' => true]
             );
         }
@@ -81,14 +81,14 @@ class TicketApiTest extends TestCase
             $this->user->assignRole($adminRole);
         }
 
-        $client = Cliente::create([
+        $client = Client::create([
             'name' => 'Cliente ticket test',
             'operator_user_id' => $this->user->id,
             'is_active' => true,
         ]);
 
-        if ($this->sede) {
-            $this->sede->update(['client_id' => $client->id]);
+        if ($this->site) {
+            $this->site->update(['client_id' => $client->id]);
         }
     }
 
@@ -123,8 +123,8 @@ class TicketApiTest extends TestCase
             'description' => 'Descripción opcional',
             'area_origin_id' => $this->areaOrigin->id,
             'area_current_id' => $this->areaCurrent->id,
-            'sede_id' => $this->sede->id,
-            'ubicacion_id' => null,
+            'site_id' => $this->site->id,
+            'location_id' => null,
             'ticket_type_id' => $this->ticketType->id,
             'priority_id' => $this->priority->id,
             'ticket_state_id' => $this->ticketState->id,
@@ -136,7 +136,7 @@ class TicketApiTest extends TestCase
         $response->assertStatus(201)
             ->assertJsonPath('subject', 'Ticket de prueba')
             ->assertJsonPath('area_origin_id', $this->areaOrigin->id)
-            ->assertJsonPath('sede_id', $this->sede->id);
+            ->assertJsonPath('site_id', $this->site->id);
 
         $this->assertDatabaseHas('tickets', ['subject' => 'Ticket de prueba']);
     }
@@ -150,8 +150,8 @@ class TicketApiTest extends TestCase
             'subject' => 'Ticket show test',
             'area_origin_id' => $this->areaOrigin->id,
             'area_current_id' => $this->areaCurrent->id,
-            'sede_id' => $this->sede->id,
-            'client_id' => $this->sede?->client_id,
+            'site_id' => $this->site->id,
+            'client_id' => $this->site?->client_id,
             'requester_id' => $this->user->id,
             'ticket_type_id' => $this->ticketType->id,
             'priority_id' => $this->priority->id,

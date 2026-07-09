@@ -2,8 +2,8 @@
 
 namespace Database\Seeders\Concerns;
 
-use App\Models\Cliente;
-use App\Models\Sede;
+use App\Models\Client;
+use App\Models\Site;
 use App\Support\Database\TenantBackfill;
 use App\Support\Database\TenantIntegrity;
 use Illuminate\Support\Facades\Schema;
@@ -14,10 +14,10 @@ trait AssignsTenantToSites
     {
         TenantIntegrity::ensurePlatformClientOnSites();
 
-        $clientId = Cliente::where('code', TenantIntegrity::PLATFORM_CLIENT_CODE)->value('id');
+        $clientId = Client::where('code', TenantIntegrity::PLATFORM_CLIENT_CODE)->value('id');
 
         if ($clientId) {
-            Sede::whereNull('client_id')->update(['client_id' => $clientId]);
+            Site::whereNull('client_id')->update(['client_id' => $clientId]);
         }
 
         if (Schema::hasColumn('tickets', 'client_id')) {

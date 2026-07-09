@@ -3,7 +3,7 @@
 namespace App\Services;
 
 use App\Models\Role;
-use App\Models\Sede;
+use App\Models\Site;
 use App\Models\User;
 use App\Models\UserInvitation;
 use Illuminate\Support\Facades\DB;
@@ -79,15 +79,15 @@ class InvitationAcceptanceService
     public function resolveSedeIdForInvitation(UserInvitation $invitation): int
     {
         if ($invitation->client_id) {
-            $sedeId = Sede::where('client_id', $invitation->client_id)->value('id');
+            $sedeId = Site::where('client_id', $invitation->client_id)->value('id');
             if ($sedeId) {
                 return (int) $sedeId;
             }
         }
 
-        $remotoId = Sede::where('code', 'REMOTO')->value('id');
+        $remotoId = Site::where('code', 'REMOTO')->value('id');
 
-        return (int) ($remotoId ?? Sede::query()->value('id'));
+        return (int) ($remotoId ?? Site::query()->value('id'));
     }
 
     protected function resolveRoleForGuard(int $roleId): ?Role

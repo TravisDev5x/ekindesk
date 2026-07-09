@@ -10,25 +10,25 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  *
  * @property int $id
  * @property int $asset_id
- * @property string $tipo
- * @property string|null $proveedor
- * @property string $fecha
+ * @property string $type
+ * @property string|null $provider
+ * @property string $performed_at
  */
 class MaintenanceRecord extends Model
 {
-    protected $table = 'sigan_maintenance';
+    protected $table = 'asset_maintenance';
 
     protected $fillable = [
         'asset_id',
-        'tipo',
-        'proveedor',
-        'fecha',
-        'descripcion',
-        'resultado',
+        'type',
+        'provider',
+        'performed_at',
+        'description',
+        'result',
     ];
 
     protected $casts = [
-        'fecha' => 'date',
+        'performed_at' => 'date',
     ];
 
     public function asset(): BelongsTo

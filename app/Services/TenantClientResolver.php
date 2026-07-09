@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Models\Cliente;
+use App\Models\Client;
 use App\Models\User;
 use Illuminate\Support\Facades\Log;
 
@@ -19,24 +19,24 @@ class TenantClientResolver
 
     public function resolve(User $user): ?int
     {
-        $user->loadMissing('sede:id,client_id');
+        $user->loadMissing('site:id,client_id');
 
-        $fromSede = $user->site_id && $user->sede?->client_id
-            ? (int) $user->sede->client_id
+        $fromSite = $user->site_id && $user->site?->client_id
+            ? (int) $user->site->client_id
             : null;
 
         $fromUser = $user->client_id ? (int) $user->client_id : null;
 
-        if ($fromSede && $fromUser && $fromSede !== $fromUser) {
-            Log::debug('tenant.client_id mismatch: sede vs users.client_id', [
+        if ($fromSite && $fromUser && $fromSite !== $fromUser) {
+            Log::debug('tenant.client_id mismatch: site vs users.client_id', [
                 'user_id' => $user->id,
-                'sede_client_id' => $fromSede,
+                'site_client_id' => $fromSite,
                 'user_client_id' => $fromUser,
             ]);
         }
 
-        if ($fromSede) {
-            return $this->validClientId($fromSede);
+        if ($fromSite) {
+            return $this->validClientId($fromSite);
         }
 
         if ($fromUser) {
@@ -76,7 +76,7 @@ class TenantClientResolver
     private function validClientId(int $clientId): ?int
     {
         if (! array_key_exists($clientId, $this->validClientCache)) {
-            $this->validClientCache[$clientId] = Cliente::where('id', $clientId)
+            $this->validClientCache[$clientId] = Client::where('id', $clientId)
                 ->where('is_active', true)
                 ->exists()
                 ? $clientId

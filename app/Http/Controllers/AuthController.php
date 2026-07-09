@@ -97,13 +97,13 @@ class AuthController extends Controller
 
         $authUser = Auth::user()->load([
             'roles:id,name,guard_name',
-            'sede:id,name,client_id',
-            'sede.cliente:id,name',
+            'site:id,name,client_id',
+            'site.client:id,name',
             'operatorProfile:id,user_id',
         ]);
         $authPayload = $authUser->toArray();
-        $authPayload['client_id'] = $authUser->sede?->client_id;
-        $authPayload['client_name'] = $authUser->sede?->cliente?->name;
+        $authPayload['client_id'] = $authUser->site?->client_id;
+        $authPayload['client_name'] = $authUser->site?->client?->name;
         $permissions = $authUser->getAllPermissions()->pluck('name')->values();
 
         $onboarding = app(OnboardingRedirectService::class);
@@ -137,7 +137,7 @@ class AuthController extends Controller
             ],
         ]);
 
-        $sedeId = $validated['site_id'] ?? \App\Models\Sede::where('code', 'REMOTO')->value('id');
+        $sedeId = $validated['site_id'] ?? \App\Models\Site::where('code', 'REMOTO')->value('id');
 
         if ($request->filled('plan')) {
             session(['invited_plan_slug' => $request->input('plan')]);
@@ -250,7 +250,7 @@ class AuthController extends Controller
         }
 
         $authPayload = $user->toArray();
-        $authPayload['client_id'] = $user->sede?->client_id;
+        $authPayload['client_id'] = $user->site?->client_id;
 
         if ($request->expectsJson()) {
             return response()->json([

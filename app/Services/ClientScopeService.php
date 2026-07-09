@@ -2,8 +2,8 @@
 
 namespace App\Services;
 
-use App\Models\Cliente;
-use App\Models\Sede;
+use App\Models\Client;
+use App\Models\Site;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -38,13 +38,13 @@ class ClientScopeService
     }
 
     /**
-     * Asigna sede y cliente del usuario solicitante al crear un ticket.
+     * Asigna sitio y cliente del usuario solicitante al crear un ticket.
      *
      * @return \Illuminate\Http\JsonResponse|null Error 422 o null si OK
      */
     public function stampTicketSiteFromUser(User $user, array &$data): ?\Illuminate\Http\JsonResponse
     {
-        $user->loadMissing('sede:id,name,client_id');
+        $user->loadMissing('site:id,name,client_id');
 
         if (! $user->site_id) {
             return response()->json([
@@ -89,14 +89,14 @@ class ClientScopeService
         return null;
     }
 
-    public function syncTicketClientFromSede(int $sedeId): ?int
+    public function syncTicketClientFromSite(int $siteId): ?int
     {
-        return $this->syncClientIdFromSede($sedeId);
+        return $this->syncClientIdFromSite($siteId);
     }
 
-    public function syncClientIdFromSede(int $sedeId): ?int
+    public function syncClientIdFromSite(int $siteId): ?int
     {
-        $clientId = Sede::where('id', $sedeId)->value('client_id');
+        $clientId = Site::where('id', $siteId)->value('client_id');
 
         return $clientId ? (int) $clientId : null;
     }
@@ -120,7 +120,7 @@ class ClientScopeService
         if ($clientId) {
             return $query->where(function ($q) use ($clientId) {
                 $q->where('client_id', $clientId)
-                    ->orWhereIn('site_id', $this->sedeIdsSubquery($clientId));
+                    ->orWhereIn('site_id', $this->siteIdsSubquery($clientId));
             });
         }
 
@@ -147,16 +147,16 @@ class ClientScopeService
                 if (! $operatorId) {
                     return false;
                 }
-                $incident->loadMissing('sede:id,client_id', 'client:id,operator_user_id');
+                $incident->loadMissing('site:id,client_id', 'client:id,operator_user_id');
 
                 if ($incident->client_id) {
-                    $op = Cliente::query()->where('id', $incident->client_id)->value('operator_user_id');
+                    $op = Client::query()->where('id', $incident->client_id)->value('operator_user_id');
 
                     return (int) $op === $operatorId;
                 }
 
-                if ($incident->sede?->client_id) {
-                    $op = Cliente::where('id', $incident->sede->client_id)->value('operator_user_id');
+                if ($incident->site?->client_id) {
+                    $op = Client::where('id', $incident->site->client_id)->value('operator_user_id');
 
                     return (int) $op === $operatorId;
                 }
@@ -170,9 +170,9 @@ class ClientScopeService
             if ($incident->client_id) {
                 return (int) $incident->client_id === $clientId;
             }
-            $incident->loadMissing('sede:id,client_id');
+            $incident->loadMissing('site:id,client_id');
 
-            return $incident->sede && (int) $incident->sede->client_id === $clientId;
+            return $incident->site && (int) $incident->site->client_id === $clientId;
         }
 
         if ($this->tenantResolver->isAreaScopedWithoutTenant($user, 'incidents')) {
@@ -200,7 +200,7 @@ class ClientScopeService
         if ($enforced = $this->tenantContext->enforcedClientId()) {
             return $query->where(function ($q) use ($enforced) {
                 $q->where('users.client_id', $enforced)
-                    ->orWhereIn('users.site_id', $this->sedeIdsSubquery($enforced));
+                    ->orWhereIn('users.site_id', $this->siteIdsSubquery($enforced));
             });
         }
 
@@ -231,7 +231,7 @@ class ClientScopeService
             return $query->where('users.id', $user->id);
         }
 
-        return $query->whereIn('users.site_id', $this->sedeIdsSubquery($clientId));
+        return $query->whereIn('users.site_id', $this->siteIdsSubquery($clientId));
     }
 
     public function ticketVisibleToUser(User $user, \App\Models\Ticket $ticket): bool
@@ -254,16 +254,16 @@ class ClientScopeService
                 if (! $operatorId) {
                     return false;
                 }
-                $ticket->loadMissing('sede:id,client_id', 'cliente:id,operator_user_id');
+                $ticket->loadMissing('site:id,client_id', 'client:id,operator_user_id');
 
                 if ($ticket->client_id) {
-                    $op = \App\Models\Cliente::where('id', $ticket->client_id)->value('operator_user_id');
+                    $op = \App\Models\Client::where('id', $ticket->client_id)->value('operator_user_id');
 
                     return (int) $op === $operatorId;
                 }
 
-                if ($ticket->sede?->client_id) {
-                    $op = \App\Models\Cliente::where('id', $ticket->sede->client_id)->value('operator_user_id');
+                if ($ticket->site?->client_id) {
+                    $op = \App\Models\Client::where('id', $ticket->site->client_id)->value('operator_user_id');
 
                     return (int) $op === $operatorId;
                 }
@@ -281,20 +281,20 @@ class ClientScopeService
             return (int) $ticket->client_id === $clientId;
         }
 
-        $ticket->loadMissing('sede:id,client_id');
+        $ticket->loadMissing('site:id,client_id');
 
-        return $ticket->sede && (int) $ticket->sede->client_id === $clientId;
+        return $ticket->site && (int) $ticket->site->client_id === $clientId;
     }
 
-    public function assertSedeAccessible(User $user, int $sedeId): bool
+    public function assertSiteAccessible(User $user, int $siteId): bool
     {
         if ($this->operatorScope->bypassesOperatorScope($user)) {
-            return Sede::where('id', $sedeId)->exists();
+            return Site::where('id', $siteId)->exists();
         }
 
         if ($this->operatorScope->usesOperatorMspWideScope($user)) {
             if ($this->operatorScope->usesLegacyMspWideAccess($user)) {
-                return Sede::where('id', $sedeId)->exists();
+                return Site::where('id', $siteId)->exists();
             }
 
             $operatorId = $this->operatorScope->resolveOperatorUserId($user);
@@ -302,7 +302,7 @@ class ClientScopeService
                 return false;
             }
 
-            return Sede::where('id', $sedeId)
+            return Site::where('id', $siteId)
                 ->whereIn('client_id', function ($sub) use ($operatorId) {
                     $sub->select('id')->from('clients')->where('operator_user_id', $operatorId);
                 })
@@ -311,7 +311,7 @@ class ClientScopeService
 
         $clientId = $this->resolveUserClientId($user);
         if ($clientId) {
-            return Sede::where('id', $sedeId)->where('client_id', $clientId)->exists();
+            return Site::where('id', $siteId)->where('client_id', $clientId)->exists();
         }
 
         if ($this->tenantResolver->isAreaScopedWithoutTenant($user, 'tickets')
@@ -319,7 +319,7 @@ class ClientScopeService
             return false;
         }
 
-        return (int) $user->site_id === $sedeId;
+        return (int) $user->site_id === $siteId;
     }
 
     public function assertUserAccessible(User $user, int $targetUserId): bool
@@ -333,7 +333,7 @@ class ClientScopeService
                 ->where('id', $targetUserId)
                 ->where(function ($q) use ($enforced) {
                     $q->where('client_id', $enforced)
-                        ->orWhereIn('site_id', $this->sedeIdsSubquery($enforced));
+                        ->orWhereIn('site_id', $this->siteIdsSubquery($enforced));
                 })
                 ->exists();
         }
@@ -374,7 +374,7 @@ class ClientScopeService
 
         return DB::table('users')
             ->where('id', $targetUserId)
-            ->whereIn('site_id', $this->sedeIdsSubquery($clientId))
+            ->whereIn('site_id', $this->siteIdsSubquery($clientId))
             ->exists();
     }
 
@@ -406,24 +406,24 @@ class ClientScopeService
         $query->where(function ($q) use ($clientId) {
             $q->where('client_id', $clientId)
                 ->orWhere(function ($sub) use ($clientId) {
-                    $this->whereTicketSedeInClient($sub, $clientId);
+                    $this->whereTicketSiteInClient($sub, $clientId);
                 });
         });
     }
 
     /** Valida site_id en filtros de listados. */
-    public function applySedeFilter(Request $request, User $user, Builder $query, string $column = 'site_id'): void
+    public function applySiteFilter(Request $request, User $user, Builder $query, string $column = 'site_id'): void
     {
         if (! $request->filled('site_id')) {
             return;
         }
 
-        $sedeId = (int) $request->input('site_id');
-        if ($sedeId < 1 || ! $this->assertSedeAccessible($user, $sedeId)) {
+        $siteId = (int) $request->input('site_id');
+        if ($siteId < 1 || ! $this->assertSiteAccessible($user, $siteId)) {
             return;
         }
 
-        $query->where($column, $sedeId);
+        $query->where($column, $siteId);
     }
 
     public function clientsForCatalog(?User $user): array
@@ -435,7 +435,7 @@ class ClientScopeService
         return $this->operatorScope->clientsForCatalog($user);
     }
 
-    public function sedesQueryForUser(?User $user): \Illuminate\Database\Query\Builder
+    public function sitesQueryForUser(?User $user): \Illuminate\Database\Query\Builder
     {
         $q = DB::table('sites')->where('is_active', true);
 
@@ -508,7 +508,7 @@ class ClientScopeService
             }
             $clientId = $this->resolveUserClientId($user);
             if ($clientId) {
-                $q->whereIn('site_id', $this->sedeIdsSubquery($clientId));
+                $q->whereIn('site_id', $this->siteIdsSubquery($clientId));
             }
 
             return $q;
@@ -517,9 +517,9 @@ class ClientScopeService
         return $q->whereRaw('0 = 1');
     }
 
-    private function whereTicketSedeInClient(Builder $query, int $clientId): Builder
+    private function whereTicketSiteInClient(Builder $query, int $clientId): Builder
     {
-        return $query->whereIn('site_id', $this->sedeIdsSubquery($clientId));
+        return $query->whereIn('site_id', $this->siteIdsSubquery($clientId));
     }
 
     private function applyIncidentsWithoutTenant(Builder $query, User $user): Builder
@@ -535,7 +535,7 @@ class ClientScopeService
         return $query->whereRaw('0 = 1');
     }
 
-    private function sedeIdsSubquery(int $clientId): \Closure
+    private function siteIdsSubquery(int $clientId): \Closure
     {
         return function ($sub) use ($clientId) {
             $sub->select('id')->from('sites')->where('client_id', $clientId);
@@ -548,9 +548,9 @@ class ClientScopeService
             return (int) $ticket->client_id === $clientId;
         }
 
-        $ticket->loadMissing('sede:id,client_id');
+        $ticket->loadMissing('site:id,client_id');
 
-        return $ticket->sede && (int) $ticket->sede->client_id === $clientId;
+        return $ticket->site && (int) $ticket->site->client_id === $clientId;
     }
 
     private function incidentBelongsToClient(\App\Models\Incident $incident, int $clientId): bool
@@ -559,8 +559,8 @@ class ClientScopeService
             return (int) $incident->client_id === $clientId;
         }
 
-        $incident->loadMissing('sede:id,client_id');
+        $incident->loadMissing('site:id,client_id');
 
-        return $incident->sede && (int) $incident->sede->client_id === $clientId;
+        return $incident->site && (int) $incident->site->client_id === $clientId;
     }
 }

@@ -70,7 +70,7 @@ export function TicketCalendarPreview({ ticketLinkBase = "/resolbeb/tickets" }) 
                         </CardDescription>
                     </div>
                     <Button asChild variant="outline" size="sm" className="h-8 text-xs shrink-0">
-                        <NavLink href="/calendario">Ver calendario completo</NavLink>
+                        <NavLink href="/calendar">Ver calendario completo</NavLink>
                     </Button>
                 </div>
             </CardHeader>

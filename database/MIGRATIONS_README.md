@@ -33,7 +33,7 @@ forma final (sin ALTERs posteriores) y en inglés donde antes había español.
 | `..._000022_create_ticket_classification_rules_table.php` | ticket_classification_rules |
 | `..._000023_create_ticket_sequences_table.php` | ticket_sequences (folio por cliente) |
 | `..._000024_create_email_domains_table.php` | email_domains |
-| `..._000025_create_sigan_assets_tables.php` | sigan_assets, sigan_asset_components, sigan_maintenance |
+| `..._000025_create_sigan_assets_tables.php` | assets, asset_components, asset_maintenance |
 | `..._000026_enable_pgsql_rls_tickets_incidents_sites.php` | RLS (solo PostgreSQL, `TENANCY_PGSQL_RLS=true`) |
 | `..._000027_enforce_tenant_client_id_not_null.php` | Backfill + `client_id NOT NULL` en tickets/incidents |
 
@@ -54,11 +54,13 @@ que `users` ya existe.
 
 ## Tablas en inglés
 
-- **sites** (antes "sedes"), **locations** (antes "ubicaciones"). Los modelos `Sede`/`Ubicacion`
-  siguen existiendo como alias en español del dominio (ver `app/Models/`), pero las columnas
-  `site_id`/`location_id` en `users`, `tickets` e `incidents` ya están en inglés en toda la base.
-- **sigan_assets / sigan_asset_components / sigan_maintenance** siguen con columnas en español
-  (`tipo`, `nombre`, `estado`, etc.) — pendiente de traducción en una pasada posterior.
+- **sites** (antes "sedes"), **locations** (antes "ubicaciones"). Modelos `App\Models\Site` /
+  `App\Models\Location` (antes `Sede`/`Ubicacion`); columnas `site_id`/`location_id` en `users`,
+  `tickets` e `incidents` en inglés en toda la base.
+- **assets / asset_components / asset_maintenance** (antes `sigan_assets` / `sigan_asset_components`
+  / `sigan_maintenance`): columnas y valores enum también traducidos (`tipo`→`type`, `estado`→`status`,
+  `activo`→`active`, `interno`→`internal`, etc.). El nombre del archivo de migración conserva
+  `sigan` por continuidad histórica del nombre de archivo, no del esquema.
 
 ## Uso
 

@@ -2,7 +2,7 @@
 
 namespace App\Support\Tenancy;
 
-use App\Models\Cliente;
+use App\Models\Client;
 
 /**
  * Contexto de tenant resuelto desde subdominio / cabecera.
@@ -21,7 +21,7 @@ final class TenantContext
         public readonly string $mode,
         public readonly ?string $subdomain = null,
         public readonly ?int $clientId = null,
-        public readonly ?Cliente $client = null,
+        public readonly ?Client $client = null,
     ) {}
 
     public function isClientPortal(): bool

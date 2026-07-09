@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Models\Cliente;
+use App\Models\Client;
 use App\Models\Priority;
 use App\Models\User;
 use App\Services\OperatorCatalogScopeService;
@@ -31,14 +31,14 @@ class CatalogPortalTenancyTest extends TestCase
         }
 
         $op = $this->bareUser(['is_operator' => true]);
-        $clientA = Cliente::create([
+        $clientA = Client::create([
             'name' => 'Portal A',
             'portal_slug' => 'portal-a',
             'operator_user_id' => $op->id,
             'is_active' => true,
         ]);
         $otherOp = $this->bareUser(['is_operator' => true, 'email' => 'other-msp@test.local']);
-        Cliente::create([
+        Client::create([
             'name' => 'Portal B',
             'portal_slug' => 'portal-b',
             'operator_user_id' => $otherOp->id,
@@ -77,7 +77,7 @@ class CatalogPortalTenancyTest extends TestCase
         }
 
         $op = $this->bareUser(['is_operator' => true]);
-        $client = Cliente::create([
+        $client = Client::create([
             'name' => 'Portal C',
             'portal_slug' => 'portal-c',
             'operator_user_id' => $op->id,
@@ -111,8 +111,8 @@ class CatalogPortalTenancyTest extends TestCase
         ]);
 
         $op = $this->bareUser(['is_operator' => true]);
-        $clientA = Cliente::create(['name' => 'A', 'portal_slug' => 'pc-a', 'operator_user_id' => $op->id, 'is_active' => true]);
-        $clientB = Cliente::create(['name' => 'B', 'portal_slug' => 'pc-b', 'operator_user_id' => $op->id, 'is_active' => true]);
+        $clientA = Client::create(['name' => 'A', 'portal_slug' => 'pc-a', 'operator_user_id' => $op->id, 'is_active' => true]);
+        $clientB = Client::create(['name' => 'B', 'portal_slug' => 'pc-b', 'operator_user_id' => $op->id, 'is_active' => true]);
 
         Priority::create(['name' => 'Para A', 'level' => 3, 'is_active' => true, 'operator_user_id' => $op->id, 'client_id' => $clientA->id]);
         Priority::create(['name' => 'Para B', 'level' => 2, 'is_active' => true, 'operator_user_id' => $op->id, 'client_id' => $clientB->id]);
@@ -153,7 +153,7 @@ class CatalogPortalTenancyTest extends TestCase
             'first_name' => 'T', 'paternal_last_name' => 'U',
             'email' => uniqid().'@t.local', 'password' => Hash::make('x'),
             'employee_number' => (string) random_int(100000, 999999),
-            'area_id' => $areaId, 'position_id' => $positionId, 'sede_id' => $siteId, 'status' => 'active',
+            'area_id' => $areaId, 'position_id' => $positionId, 'site_id' => $siteId, 'status' => 'active',
         ], $overrides));
     }
 }

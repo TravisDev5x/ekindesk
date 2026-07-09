@@ -9,8 +9,8 @@ use Illuminate\Support\Str;
 use App\Models\Campaign;
 use App\Models\Area;
 use App\Models\Position;
-use App\Models\Sede;
-use App\Models\Ubicacion;
+use App\Models\Site;
+use App\Models\Location;
 
 class UserFactory extends Factory
 {
@@ -35,8 +35,8 @@ class UserFactory extends Factory
             'campaign_id' => Campaign::inRandomOrder()->first()?->id ?? Campaign::first()?->id,
             'area_id' => Area::inRandomOrder()->first()?->id ?? Area::first()?->id,
             'position_id' => Position::inRandomOrder()->first()?->id ?? Position::first()?->id,
-            'site_id' => Sede::inRandomOrder()->first()?->id ?? Sede::first()?->id,
-            'location_id' => Ubicacion::inRandomOrder()->first()?->id,
+            'site_id' => Site::inRandomOrder()->first()?->id ?? Site::first()?->id,
+            'location_id' => Location::inRandomOrder()->first()?->id,
             // -----------------------
 
             'email_verified_at' => now(),

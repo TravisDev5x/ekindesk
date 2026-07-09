@@ -193,7 +193,7 @@ export default function Index() {
     const canManageAll = can("incidents.manage_all");
     const canCreate = can("incidents.create") || canManageAll;
     const canViewArea = can("incidents.view_area") || canManageAll;
-    const canFilterSede = can("incidents.filter_by_sede") || canManageAll;
+    const canFilterSite = can("incidents.filter_by_site") || canManageAll;
     const canAssign = can("incidents.assign") || canManageAll;
 
     const areaUsers = cats.area_users || [];
@@ -205,7 +205,7 @@ export default function Index() {
         occurred_at: "",
         enabled_at: "",
         area_id: "",
-        sede_id: "",
+        site_id: "",
         incident_type_id: "",
         incident_severity_id: "",
         incident_status_id: "",
@@ -222,7 +222,7 @@ export default function Index() {
                 per_page: perPage,
                 search: filters.search,
                 ...(filters.area !== "all" && { area_id: filters.area }),
-                ...(filters.sede !== "all" && { sede_id: filters.sede }),
+                ...(filters.sede !== "all" && { site_id: filters.sede }),
                 ...(filters.type !== "all" && { incident_type_id: filters.type }),
                 ...(filters.severity !== "all" && { incident_severity_id: filters.severity }),
                 ...(filters.status !== "all" && { incident_status_id: filters.status }),
@@ -263,7 +263,7 @@ export default function Index() {
             occurred_at: "",
             enabled_at: "",
             area_id: String(user?.area_id || cats.areas?.[0]?.id || ""),
-            sede_id: String(user?.sede?.id || cats.sedes?.[0]?.id || ""),
+            site_id: String(user?.sede?.id || cats.sedes?.[0]?.id || ""),
             incident_type_id: String(cats.incident_types?.[0]?.id || ""),
             incident_severity_id: String(cats.incident_severities?.[0]?.id || ""),
             incident_status_id: String(cats.incident_statuses?.[0]?.id || ""),
@@ -288,7 +288,7 @@ export default function Index() {
             if (form.occurred_at) payload.append("occurred_at", form.occurred_at);
             payload.append("enabled_at", form.enabled_at);
             payload.append("area_id", form.area_id);
-            payload.append("sede_id", form.sede_id);
+            payload.append("site_id", form.site_id);
             payload.append("incident_type_id", form.incident_type_id);
             payload.append("incident_severity_id", form.incident_severity_id);
             payload.append("incident_status_id", form.incident_status_id);
@@ -422,7 +422,7 @@ export default function Index() {
                                 </Select>
                             )}
 
-                            {canFilterSede && (
+                            {canFilterSite && (
                                 <Select value={filters.sede} onValueChange={(v) => setFilters(f => ({ ...f, sede: v }))}>
                                     <SelectTrigger className="h-8 text-xs bg-background"><SelectValue placeholder="Sede" /></SelectTrigger>
                                     <SelectContent>
@@ -643,7 +643,7 @@ export default function Index() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-5 bg-muted/20 p-4 rounded-lg border border-border/50">
                                 <div className="space-y-2">
                                     <Label className="text-xs font-bold uppercase text-muted-foreground">Sede</Label>
-                                    <Select value={form.sede_id} onValueChange={v => setForm({ ...form, sede_id: v })}>
+                                    <Select value={form.site_id} onValueChange={v => setForm({ ...form, site_id: v })}>
                                         <SelectTrigger className="bg-background"><SelectValue placeholder="Seleccionar Sede" /></SelectTrigger>
                                         <SelectContent>{(cats.sedes || []).map(s => <SelectItem key={s.id} value={String(s.id)}>{s.name}</SelectItem>)}</SelectContent>
                                     </Select>

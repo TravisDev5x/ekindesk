@@ -7,7 +7,7 @@ use App\Models\Area;
 use App\Models\Campaign;
 use App\Models\Position;
 use App\Models\Role;
-use App\Models\Sede;
+use App\Models\Site;
 use App\Services\ClientScopeService;
 use App\Services\UserListingService;
 use Illuminate\Http\Request;
@@ -29,7 +29,7 @@ class UserController extends Controller
         $actor = $request->user();
         $users = $this->listing->paginate($request, $actor);
 
-        $sedeIds = $this->clientScope->sedesQueryForUser($actor)->pluck('id');
+        $sedeIds = $this->clientScope->sitesQueryForUser($actor)->pluck('id');
 
         $ubicacionesQuery = DB::table('locations')
             ->join('sites', 'sites.id', '=', 'locations.site_id')
@@ -50,7 +50,7 @@ class UserController extends Controller
                 'areas' => Area::where('is_active', true)->orderBy('name')->get(['id', 'name']),
                 'campaigns' => Campaign::where('is_active', true)->orderBy('name')->get(['id', 'name']),
                 'positions' => Position::where('is_active', true)->orderBy('name')->get(['id', 'name']),
-                'sedes' => Sede::query()
+                'sedes' => Site::query()
                     ->when(! $this->clientScope->bypassesClientScope($actor), function ($q) use ($actor) {
                         $clientId = $this->clientScope->resolveUserClientId($actor);
                         if ($clientId) {

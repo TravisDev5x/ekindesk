@@ -52,7 +52,7 @@ class MyTicketsController extends Controller
         $query->with([
                 'areaOrigin:id,name',
                 'areaCurrent:id,name',
-                'sede:id,name',
+                'site:id,name',
                 'ticketType:id,name',
                 'priority:id,name,level',
                 'state:id,name,code',
@@ -89,8 +89,8 @@ class MyTicketsController extends Controller
         $ticket->load([
             'areaOrigin:id,name',
             'areaCurrent:id,name',
-            'sede:id,name',
-            'ubicacion:id,name,site_id',
+            'site:id,name',
+            'location:id,name,site_id',
             'requester:id,name,email',
             'assignedUser:id,name,position_id',
             'ticketType:id,name',
@@ -175,9 +175,9 @@ class MyTicketsController extends Controller
             $ticket->load(
                 'areaOrigin:id,name',
                 'areaCurrent:id,name',
-                'sede:id,name,client_id',
-                'cliente:id,name',
-                'ubicacion:id,name',
+                'site:id,name,client_id',
+                'client:id,name',
+                'location:id,name',
                 'ticketType:id,name',
                 'priority:id,name,level',
                 'state:id,name'
@@ -213,8 +213,8 @@ class MyTicketsController extends Controller
         $ticket->load([
             'areaOrigin:id,name',
             'areaCurrent:id,name',
-            'sede:id,name',
-            'ubicacion:id,name',
+            'site:id,name',
+            'location:id,name',
             'requester:id,name,email',
             'assignedUser:id,name,position_id',
             'ticketType:id,name',
@@ -327,8 +327,8 @@ class MyTicketsController extends Controller
         $ticket->load([
             'areaOrigin:id,name',
             'areaCurrent:id,name',
-            'sede:id,name',
-            'ubicacion:id,name',
+            'site:id,name',
+            'location:id,name',
             'requester:id,name,email',
             'assignedUser:id,name,position_id',
             'ticketType:id,name',

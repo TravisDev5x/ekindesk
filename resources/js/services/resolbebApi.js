@@ -8,13 +8,13 @@ const PREFIX = "/api/tickets";
 
 /**
  * Obtiene los datos del dashboard operativo.
- * @param {Object} [filters] - { sede_id, assigned_user_id }
+ * @param {Object} [filters] - { site_id, assigned_user_id }
  * @returns {Promise<{ data: Object | null, error: string | null }>}
  */
 export async function getResolbebDashboard(filters = {}) {
   try {
     const params = {};
-    if (filters.sede_id != null && filters.sede_id !== "") params.sede_id = filters.sede_id;
+    if (filters.site_id != null && filters.site_id !== "") params.site_id = filters.site_id;
     if (filters.assigned_user_id != null && filters.assigned_user_id !== "") params.assigned_user_id = filters.assigned_user_id;
 
     const response = await axios.get(`${PREFIX}/dashboard-operativo`, {

@@ -40,7 +40,7 @@ class UserInvitation extends Model
 
     public function client(): BelongsTo
     {
-        return $this->belongsTo(Cliente::class, 'client_id');
+        return $this->belongsTo(Client::class, 'client_id');
     }
 
     public function role(): BelongsTo

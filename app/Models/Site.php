@@ -7,17 +7,22 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Ubicacion extends Model
+class Site extends Model
 {
     use HasFactory;
 
-    /** Table name in English (was: ubicaciones) */
-    protected $table = 'locations';
+    protected $table = 'sites';
 
     protected $fillable = [
-        'site_id',
+        'client_id',
         'name',
         'code',
+        'type',      // physical | virtual
+        'address',
+        'city',
+        'contact_name',
+        'contact_phone',
+        'contact_email',
         'is_active',
     ];
 
@@ -25,13 +30,13 @@ class Ubicacion extends Model
         'is_active' => 'boolean',
     ];
 
-    public function sede(): BelongsTo
+    public function client(): BelongsTo
     {
-        return $this->belongsTo(Sede::class, 'site_id');
+        return $this->belongsTo(Client::class, 'client_id');
     }
 
     public function users(): HasMany
     {
-        return $this->hasMany(User::class, 'location_id');
+        return $this->hasMany(User::class);
     }
 }

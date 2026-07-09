@@ -378,7 +378,7 @@ function relativeTime(dateStr) {
 const CREATE_FORM_INITIAL = {
     subject: "",
     description: "",
-    sede_id: "",
+    site_id: "",
     area_origin_id: "",
     area_current_id: "",
     ticket_type_id: "",
@@ -449,7 +449,7 @@ function DashboardSolicitante() {
             const openState = (data.ticket_states || []).find((s) => (s.code || "").toLowerCase() === "abierto") || (data.ticket_states || [])[0];
             setCreateForm({
                 ...CREATE_FORM_INITIAL,
-                sede_id: String(user?.sede_id || user?.sede?.id || ""),
+                site_id: String(user?.site_id || user?.sede?.id || ""),
                 area_origin_id: String(user?.area_id || ""),
                 ticket_type_id: String((data.ticket_types || [])[0]?.id || ""),
                 priority_id: String((data.priorities || [])[0]?.id || ""),
@@ -468,7 +468,7 @@ function DashboardSolicitante() {
             })
             .catch(() => notify.error("No se pudieron cargar los catálogos"))
             .finally(() => setCreateCatalogsLoading(false));
-    }, [user?.sede_id, user?.sede?.id, user?.area_id, createCatalogs]);
+    }, [user?.site_id, user?.sede?.id, user?.area_id, createCatalogs]);
 
     const handleCreateSubmit = async (e) => {
         e.preventDefault();
@@ -476,7 +476,7 @@ function DashboardSolicitante() {
             notify.error("El asunto es obligatorio");
             return;
         }
-        if (!createForm.sede_id || !createForm.area_origin_id || !createForm.area_current_id || !createForm.ticket_type_id || !createForm.priority_id || !createForm.ticket_state_id) {
+        if (!createForm.site_id || !createForm.area_origin_id || !createForm.area_current_id || !createForm.ticket_type_id || !createForm.priority_id || !createForm.ticket_state_id) {
             notify.error("Completa todos los campos obligatorios (sede, área responsable, área origen, tipo, prioridad).");
             return;
         }
@@ -485,7 +485,7 @@ function DashboardSolicitante() {
             const payload = {
                 subject: createForm.subject.trim(),
                 description: createForm.description?.trim() || null,
-                sede_id: Number(createForm.sede_id),
+                site_id: Number(createForm.site_id),
                 area_origin_id: Number(createForm.area_origin_id),
                 area_current_id: Number(createForm.area_current_id),
                 priority_id: Number(createForm.priority_id),
@@ -693,7 +693,7 @@ function DashboardSolicitante() {
                         </CardTitle>
                         <CardDescription>
                             Listado de incidencias que has reportado. Por fechas:{" "}
-                            <NavLink href="/calendario" className="text-primary underline underline-offset-2 hover:no-underline">
+                            <NavLink href="/calendar" className="text-primary underline underline-offset-2 hover:no-underline">
                                 Calendario
                             </NavLink>.
                         </CardDescription>
@@ -886,7 +886,7 @@ function DashboardSolicitante() {
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-muted/20 p-3 rounded-lg border border-border/50">
                                         <div className="space-y-2">
                                             <Label className="flex items-center gap-1 text-xs"><MapPin className="w-3 h-3" /> Sede <span className="text-destructive">*</span></Label>
-                                            <Select value={createForm.sede_id} onValueChange={(v) => setCreateForm((f) => ({ ...f, sede_id: v }))} disabled={createCatalogsLoading}>
+                                            <Select value={createForm.site_id} onValueChange={(v) => setCreateForm((f) => ({ ...f, site_id: v }))} disabled={createCatalogsLoading}>
                                                 <SelectTrigger className="bg-muted/40 border-border/60"><SelectValue placeholder="Sede" /></SelectTrigger>
                                                 <SelectContent>
                                                     {(createCatalogs.sedes || []).map((s) => (
@@ -1055,7 +1055,7 @@ function DashboardIntermedio() {
                                 <NavLink href="/resolbeb/tickets?assignment=me">Ver listado</NavLink>
                             </Button>
                             <Button asChild variant="outline" size="sm" className="h-8 text-xs">
-                                <NavLink href="/calendario">Calendario</NavLink>
+                                <NavLink href="/calendar">Calendario</NavLink>
                             </Button>
                         </div>
                     </div>
@@ -1125,7 +1125,7 @@ function DashboardAdmin() {
     const { user, can } = useAuth();
     const canManageAll = can("tickets.manage_all");
     const canViewArea = can("tickets.view_area") || canManageAll;
-    const canFilterSede = can("tickets.filter_by_sede") || canManageAll;
+    const canFilterSite = can("tickets.filter_by_site") || canManageAll;
 
     const [catalogs, setCatalogs] = useState({
         areas: [], sedes: [], priorities: [], ticket_states: [], ticket_types: [],
@@ -1203,12 +1203,12 @@ function DashboardAdmin() {
         if (filtersToApply.priority !== "all") params.priority_id = filtersToApply.priority;
         if (filtersToApply.type !== "all") params.ticket_type_id = filtersToApply.type;
         if (filtersToApply.area !== "all") params.area_current_id = filtersToApply.area;
-        if (filtersToApply.sede !== "all") params.sede_id = filtersToApply.sede;
+        if (filtersToApply.sede !== "all") params.site_id = filtersToApply.sede;
 
         if (!canManageAll && canViewArea && user?.area_id) params.area_current_id = user.area_id;
-        if (!canFilterSede) delete params.sede_id;
+        if (!canFilterSite) delete params.site_id;
         return params;
-    }, [canFilterSede, canManageAll, canViewArea, user?.area_id]);
+    }, [canFilterSite, canManageAll, canViewArea, user?.area_id]);
 
     const loadAnalytics = useCallback(async (nextFilters = appliedFilters) => {
         setLoading(true);
@@ -1364,7 +1364,7 @@ function DashboardAdmin() {
                         </div>
 
                         {/* Filtros colapsables en móviles o extra filtros */}
-                        {(canViewArea || canFilterSede) && (
+                        {(canViewArea || canFilterSite) && (
                             <div className="contents xl:contents">
                                 {canViewArea && (
                                     <div className="space-y-1.5">
@@ -1380,7 +1380,7 @@ function DashboardAdmin() {
                                         </Select>
                                     </div>
                                 )}
-                                {canFilterSede && (
+                                {canFilterSite && (
                                     <div className="space-y-1.5">
                                         <Label className="text-[10px] uppercase font-bold text-muted-foreground ml-1">Sede</Label>
                                         <Select value={filters.sede} onValueChange={(v) => setFilters(p => ({ ...p, sede: v }))}>

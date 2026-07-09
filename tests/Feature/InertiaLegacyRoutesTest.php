@@ -49,7 +49,7 @@ class InertiaLegacyRoutesTest extends TestCase
             'first_name' => 'T', 'paternal_last_name' => 'U',
             'email' => 'legacy-route@test.local', 'password' => Hash::make('x'),
             'employee_number' => '999001',
-            'area_id' => $areaId, 'position_id' => $positionId, 'sede_id' => $siteId,
+            'area_id' => $areaId, 'position_id' => $positionId, 'site_id' => $siteId,
             'status' => 'active', 'email_verified_at' => now(),
         ]);
     }

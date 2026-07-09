@@ -198,11 +198,11 @@ class TicketAnalyticsController extends Controller
         }
 
         if ($request->filled('site_id')) {
-            $canFilterSede = $user->can('tickets.filter_by_sede')
+            $canFilterSite = $user->can('tickets.filter_by_site')
                 || $user->can('tickets.manage_all')
                 || $user->can('tickets.view_area');
-            if ($canFilterSede) {
-                $this->clientScope->applySedeFilter($request, $user, $query);
+            if ($canFilterSite) {
+                $this->clientScope->applySiteFilter($request, $user, $query);
             }
         }
 

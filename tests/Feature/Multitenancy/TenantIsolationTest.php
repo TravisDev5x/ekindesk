@@ -3,7 +3,7 @@
 namespace Tests\Feature\Multitenancy;
 
 use App\Http\Middleware\ResolveTenantFromSubdomain;
-use App\Models\Cliente;
+use App\Models\Client;
 use App\Services\Tenant\TenantContextService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
@@ -32,7 +32,7 @@ class TenantIsolationTest extends TestCase
 
     public function test_tenant_resolves_from_subdomain(): void
     {
-        $cliente = Cliente::create([
+        $cliente = Client::create([
             'name'        => 'TechSolve',
             'portal_slug' => 'techsolve',
             'is_active'   => true,
@@ -63,7 +63,7 @@ class TenantIsolationTest extends TestCase
     {
         $this->assertFalse(TenantContextService::isResolved());
 
-        $cliente = Cliente::create([
+        $cliente = Client::create([
             'name'        => 'ConstructMX',
             'portal_slug' => 'constructmx',
             'is_active'   => true,
@@ -91,7 +91,7 @@ class TenantIsolationTest extends TestCase
 
     public function test_inactive_tenant_returns_404(): void
     {
-        Cliente::create([
+        Client::create([
             'name'        => 'Suspendido SA',
             'portal_slug' => 'suspendido',
             'is_active'   => false,
@@ -106,7 +106,7 @@ class TenantIsolationTest extends TestCase
 
     public function test_x_tenant_subdomain_header_takes_priority_over_host(): void
     {
-        $cliente = Cliente::create([
+        $cliente = Client::create([
             'name'        => 'TechGroup',
             'portal_slug' => 'techgroup',
             'is_active'   => true,

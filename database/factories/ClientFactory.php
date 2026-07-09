@@ -2,13 +2,13 @@
 
 namespace Database\Factories;
 
-use App\Models\Cliente;
+use App\Models\Client;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
-class ClienteFactory extends Factory
+class ClientFactory extends Factory
 {
-    protected $model = Cliente::class;
+    protected $model = Client::class;
 
     public function definition(): array
     {

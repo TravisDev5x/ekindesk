@@ -3,13 +3,13 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Sede;
+use App\Models\Site;
 use App\Services\OperatorScopeService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 
-class SedeController extends Controller
+class SiteController extends Controller
 {
     public function __construct(
         protected OperatorScopeService $operatorScope
@@ -47,7 +47,7 @@ class SedeController extends Controller
         }
 
         $query = $this->operatorScope->applyOnSites(
-            Sede::with('cliente:id,name'),
+            Site::with('client:id,name'),
             $user
         );
 
@@ -68,41 +68,41 @@ class SedeController extends Controller
             return response()->json(['message' => 'Cliente no válido para tu organización'], 422);
         }
 
-        $sede = Sede::create($data);
-        $sede->load('cliente:id,name');
+        $site = Site::create($data);
+        $site->load('client:id,name');
 
-        return response()->json($sede, 201);
+        return response()->json($site, 201);
     }
 
-    public function update(Request $request, Sede $sede)
+    public function update(Request $request, Site $site)
     {
         $user = Auth::user();
         if (! $user) {
             return response()->json(['message' => 'No autorizado'], 401);
         }
 
-        $this->operatorScope->authorizeSite($user, $sede);
+        $this->operatorScope->authorizeSite($user, $site);
 
-        $data = $request->validate($this->siteRules(true, $sede->id));
+        $data = $request->validate($this->siteRules(true, $site->id));
         if (! empty($data['client_id']) && ! $this->operatorScope->assertClientIdInScope($user, (int) $data['client_id'])) {
             return response()->json(['message' => 'Cliente no válido para tu organización'], 422);
         }
 
-        $sede->update($data);
-        $sede->load('cliente:id,name');
+        $site->update($data);
+        $site->load('client:id,name');
 
-        return response()->json($sede);
+        return response()->json($site);
     }
 
-    public function destroy(Sede $sede)
+    public function destroy(Site $site)
     {
-        if ($sede->code === 'REMOTO') {
+        if ($site->code === 'REMOTO') {
             return response()->json(['message' => 'La sede Remoto no puede eliminarse'], 422);
         }
-        if ($sede->users()->exists()) {
+        if ($site->users()->exists()) {
             return response()->json(['message' => 'No se puede eliminar: hay usuarios asignados'], 422);
         }
-        $sede->delete();
+        $site->delete();
 
         return response()->noContent();
     }

@@ -52,7 +52,7 @@ class ResolbebIndexController extends Controller
                 ->get(['id', 'name', 'area_id', 'position_id']);
         }
 
-        $sedes = $this->clientScope->sedesQueryForUser($user)->orderBy('name')->get(['id', 'name', 'type', 'client_id']);
+        $sedes = $this->clientScope->sitesQueryForUser($user)->orderBy('name')->get(['id', 'name', 'type', 'client_id']);
         $sedeIds = $sedes->pluck('id');
 
         $ubicacionesQuery = DB::table('locations')

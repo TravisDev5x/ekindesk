@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Sede;
+use App\Models\Site;
 use App\Models\Ticket;
 use App\Models\TicketHistory;
 use App\Models\TicketState;
@@ -178,7 +178,7 @@ class ResolbebController extends Controller
             ->pluck('id');
         $criticosQuery = (clone $base)
             ->whereNotIn('ticket_state_id', $finalStateIds)
-            ->with(['state:id,name,code', 'priority:id,name', 'assignedUser:id,name', 'sede:id,name'])
+            ->with(['state:id,name,code', 'priority:id,name', 'assignedUser:id,name', 'site:id,name'])
             ->orderBy('created_at')
             ->limit(10);
         if ($prioridadAltaIds->isNotEmpty()) {
@@ -191,7 +191,7 @@ class ResolbebController extends Controller
                 'state' => $t->state ? ['name' => $t->state->name, 'code' => $t->state->code] : null,
                 'priority' => $t->priority ? ['name' => $t->priority->name] : null,
                 'assigned_user' => $t->assignedUser ? ['name' => $t->assignedUser->name] : null,
-                'sede' => $t->sede ? ['name' => $t->sede->name] : null,
+                'sede' => $t->site ? ['name' => $t->site->name] : null,
                 'sla_status_text' => $t->sla_status_text,
                 'is_overdue' => $t->is_overdue,
                 'due_at' => $t->due_at?->toIso8601String(),
@@ -231,7 +231,7 @@ class ResolbebController extends Controller
             ->orderByDesc('total')
             ->get();
         $sedeIds = $topSedesRaw->pluck('site_id')->filter()->unique()->values()->all();
-        $sedeNames = $sedeIds ? Sede::whereIn('id', $sedeIds)->pluck('name', 'id')->all() : [];
+        $sedeNames = $sedeIds ? Site::whereIn('id', $sedeIds)->pluck('name', 'id')->all() : [];
         $topSedes = $topSedesRaw->map(function ($row) use ($sedeNames) {
             return [
                 'sede' => $row->site_id ? ($sedeNames[$row->site_id] ?? 'Sede #'.$row->site_id) : 'Sin sede',
@@ -345,7 +345,7 @@ class ResolbebController extends Controller
         ];
         foreach ($filters as $param => $column) {
             if ($request->filled($param)) {
-                if ($param === 'site_id' && ! $user->can('tickets.filter_by_sede') && ! $user->can('tickets.manage_all')) {
+                if ($param === 'site_id' && ! $user->can('tickets.filter_by_site') && ! $user->can('tickets.manage_all')) {
                     continue;
                 }
                 $query->where($column, $request->input($param));

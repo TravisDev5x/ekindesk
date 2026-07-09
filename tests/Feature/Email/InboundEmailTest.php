@@ -2,7 +2,7 @@
 
 namespace Tests\Feature\Email;
 
-use App\Models\Cliente;
+use App\Models\Client;
 use App\Models\TicketSequence;
 use App\Services\Email\InboundEmailService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -84,7 +84,7 @@ class InboundEmailTest extends TestCase
 
     public function test_ticket_sequence_increments_atomically(): void
     {
-        $tenant = Cliente::factory()->create([
+        $tenant = Client::factory()->create([
             'portal_slug' => 'test-seq',
             'is_active'   => true,
         ]);
@@ -102,8 +102,8 @@ class InboundEmailTest extends TestCase
 
     public function test_ticket_sequences_are_isolated_per_tenant(): void
     {
-        $tenantA = Cliente::factory()->create(['portal_slug' => 'tenant-a', 'is_active' => true]);
-        $tenantB = Cliente::factory()->create(['portal_slug' => 'tenant-b', 'is_active' => true]);
+        $tenantA = Client::factory()->create(['portal_slug' => 'tenant-a', 'is_active' => true]);
+        $tenantB = Client::factory()->create(['portal_slug' => 'tenant-b', 'is_active' => true]);
 
         $folioA1 = TicketSequence::nextFor($tenantA->id);
         $folioA2 = TicketSequence::nextFor($tenantA->id);
@@ -121,7 +121,7 @@ class InboundEmailTest extends TestCase
     {
         config(['tenancy.base_domain' => 'tikara.mx']);
 
-        $tenant = Cliente::factory()->create([
+        $tenant = Client::factory()->create([
             'portal_slug' => 'miempresa',
             'is_active'   => true,
         ]);

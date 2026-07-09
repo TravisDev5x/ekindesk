@@ -3,18 +3,18 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Ubicacion;
+use App\Models\Location;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
-class UbicacionController extends Controller
+class LocationController extends Controller
 {
     public function index(Request $request)
     {
-        $sedeId = $request->query('site_id');
-        $query = Ubicacion::with('sede:id,name,type');
-        if ($sedeId) {
-            $query->where('site_id', $sedeId);
+        $siteId = $request->query('site_id');
+        $query = Location::with('site:id,name,type');
+        if ($siteId) {
+            $query->where('site_id', $siteId);
         }
         return $query->orderBy('site_id')->orderBy('name')->get();
     }
@@ -29,40 +29,40 @@ class UbicacionController extends Controller
         ]);
         $data['is_active'] = $data['is_active'] ?? true;
 
-        $sedeId = $data['site_id'];
-        // unique per sede
+        $siteId = $data['site_id'];
+        // unique per site
         $request->validate([
-            'name' => Rule::unique('locations', 'name')->where('site_id', $sedeId),
+            'name' => Rule::unique('locations', 'name')->where('site_id', $siteId),
         ]);
 
-        $ubicacion = Ubicacion::create($data);
-        return response()->json($ubicacion, 201);
+        $location = Location::create($data);
+        return response()->json($location, 201);
     }
 
-    public function update(Request $request, Ubicacion $ubicacione)
+    public function update(Request $request, Location $location)
     {
         $data = $request->validate([
             'site_id' => ['required', 'exists:sites,id'],
             'name' => ['required', 'min:2'],
-            'code' => ['nullable', 'max:20', Rule::unique('locations', 'code')->ignore($ubicacione->id)],
+            'code' => ['nullable', 'max:20', Rule::unique('locations', 'code')->ignore($location->id)],
             'is_active' => ['boolean'],
         ]);
         $request->validate([
             'name' => Rule::unique('locations', 'name')
                 ->where('site_id', $data['site_id'])
-                ->ignore($ubicacione->id),
+                ->ignore($location->id),
         ]);
 
-        $ubicacione->update($data);
-        return response()->json($ubicacione);
+        $location->update($data);
+        return response()->json($location);
     }
 
-    public function destroy(Ubicacion $ubicacione)
+    public function destroy(Location $location)
     {
-        if ($ubicacione->users()->exists()) {
+        if ($location->users()->exists()) {
             return response()->json(['message' => 'No se puede eliminar: hay usuarios asignados'], 422);
         }
-        $ubicacione->delete();
+        $location->delete();
         return response()->noContent();
     }
 }

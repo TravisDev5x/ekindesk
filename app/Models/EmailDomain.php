@@ -25,9 +25,9 @@ class EmailDomain extends Model
         'verified_at' => 'datetime',
     ];
 
-    public function cliente(): BelongsTo
+    public function client(): BelongsTo
     {
-        return $this->belongsTo(Cliente::class, 'client_id');
+        return $this->belongsTo(Client::class, 'client_id');
     }
 
     public function scopeVerified(Builder $query): Builder

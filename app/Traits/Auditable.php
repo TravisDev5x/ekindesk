@@ -87,8 +87,8 @@ trait Auditable
 
             if ($model instanceof Ticket) {
                 $payload['client_id'] = $model->client_id
-                    ?? ($model->relationLoaded('sede') ? $model->sede?->client_id : null)
-                    ?? \App\Models\Sede::where('id', $model->site_id)->value('client_id');
+                    ?? ($model->relationLoaded('site') ? $model->site?->client_id : null)
+                    ?? \App\Models\Site::where('id', $model->site_id)->value('client_id');
             }
 
             AuditLog::create($payload);

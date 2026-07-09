@@ -7,7 +7,7 @@ use App\Models\Campaign;
 use App\Models\Position;
 use App\Models\Priority;
 use App\Models\Role;
-use App\Models\Sede;
+use App\Models\Site;
 use App\Models\TicketState;
 use App\Models\TicketType;
 use App\Models\User;
@@ -64,7 +64,7 @@ class FullDemoSeeder extends Seeder
         ];
 
         foreach ($sedes as $s) {
-            Sede::firstOrCreate(
+            Site::firstOrCreate(
                 ['name' => $s['name']],
                 ['code' => $s['code'], 'type' => $s['type'], 'is_active' => true]
             );
@@ -126,7 +126,7 @@ class FullDemoSeeder extends Seeder
             'tickets.create',
             'tickets.view_own',
             'tickets.view_area',
-            'tickets.filter_by_sede',
+            'tickets.filter_by_site',
             'tickets.assign',
             'tickets.comment',
             'tickets.change_status',
@@ -166,7 +166,7 @@ class FullDemoSeeder extends Seeder
             'tickets.comment',
             'tickets.change_status',
             'tickets.assign',
-            'tickets.filter_by_sede',
+            'tickets.filter_by_site',
             'tickets.escalate',
         ];
 
@@ -174,7 +174,7 @@ class FullDemoSeeder extends Seeder
             $soportePerms,
             [
                 'tickets.manage_all',
-                'tickets.filter_by_sede',
+                'tickets.filter_by_site',
                 'incidents.view_area',
                 'incidents.manage_all',
             ]
@@ -221,7 +221,7 @@ class FullDemoSeeder extends Seeder
         $campaign = Campaign::first();
         $area = Area::where('name', 'Sistemas / TI')->first() ?: Area::first();
         $position = Position::where('name', 'Supervisor')->first() ?: Position::first();
-        $sede = Sede::where('name', 'Tlalpan')->first() ?: Sede::first();
+        $sede = Site::where('name', 'Tlalpan')->first() ?: Site::first();
 
         $user = User::updateOrCreate(
             ['email' => $email],

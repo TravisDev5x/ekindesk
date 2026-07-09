@@ -66,16 +66,16 @@ class Ticket extends Model
                 return;
             }
             if ($ticket->isDirty('site_id') || $ticket->client_id === null) {
-                $ticket->client_id = app(ClientScopeService::class)->syncClientIdFromSede((int) $ticket->site_id);
+                $ticket->client_id = app(ClientScopeService::class)->syncClientIdFromSite((int) $ticket->site_id);
             }
         });
     }
 
     public function areaOrigin(): BelongsTo { return $this->belongsTo(\App\Models\Area::class, 'area_origin_id'); }
     public function areaCurrent(): BelongsTo { return $this->belongsTo(\App\Models\Area::class, 'area_current_id'); }
-    public function sede(): BelongsTo { return $this->belongsTo(\App\Models\Sede::class, 'site_id'); }
-    public function cliente(): BelongsTo { return $this->belongsTo(\App\Models\Cliente::class, 'client_id'); }
-    public function ubicacion(): BelongsTo { return $this->belongsTo(\App\Models\Ubicacion::class, 'location_id'); }
+    public function site(): BelongsTo { return $this->belongsTo(\App\Models\Site::class, 'site_id'); }
+    public function client(): BelongsTo { return $this->belongsTo(\App\Models\Client::class, 'client_id'); }
+    public function location(): BelongsTo { return $this->belongsTo(\App\Models\Location::class, 'location_id'); }
     public function requester(): BelongsTo { return $this->belongsTo(\App\Models\User::class, 'requester_id'); }
     public function requesterPosition(): BelongsTo { return $this->belongsTo(\App\Models\Position::class, 'requester_position_id'); }
     public function assignedUser(): BelongsTo { return $this->belongsTo(\App\Models\User::class, 'assigned_user_id'); }
