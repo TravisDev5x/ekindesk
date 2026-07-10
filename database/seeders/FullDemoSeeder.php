@@ -243,7 +243,7 @@ class FullDemoSeeder extends Seeder
             ]
         );
 
-        $user->syncRoles(['admin']);
+        $user->syncRoles(['admin', 'super_admin']);
 
         if ($this->command) {
             $this->command->newLine();

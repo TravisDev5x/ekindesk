@@ -141,7 +141,7 @@ class FakerFullSeeder extends Seeder
             $user->update(['password' => Hash::make(self::ADMIN_PASSWORD)]);
         }
 
-        $user->syncRoles(['admin']);
+        $user->syncRoles(['admin', 'super_admin']);
 
         // Asignar TODOS los permisos al rol admin (helpdesk + SIGUA + asistencias y cualquier otro)
         $adminRole = \Spatie\Permission\Models\Role::where('name', 'admin')->where('guard_name', 'web')->first();

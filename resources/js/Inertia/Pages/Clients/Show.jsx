@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { PlanTypeBadge } from "@/components/badges/EntityBadges";
 import { ExternalLink, Pencil, Trash2 } from "lucide-react";
 
 function initials(name) {
@@ -13,7 +14,19 @@ function initials(name) {
     return (parts[0][0] + (parts[1]?.[0] || "")).toUpperCase();
 }
 
-export default function Show({ client, tickets_summary, sites }) {
+function formatMoney(value) {
+    const n = Number(value);
+    if (!n) return null;
+    return new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(n);
+}
+
+function userFullName(user) {
+    return [user.first_name, user.paternal_last_name, user.maternal_last_name]
+        .filter(Boolean)
+        .join(" ");
+}
+
+export default function Show({ client, tickets_summary, sites, users, can }) {
     useFlash();
     const name = client.business_name || client.name;
 
@@ -117,40 +130,99 @@ export default function Show({ client, tickets_summary, sites }) {
                 </Card>
 
                 <div className="lg:col-span-2 space-y-6">
-                    <div className="grid gap-4 sm:grid-cols-3">
-                        <Card>
-                            <CardHeader className="pb-2">
-                                <CardTitle className="text-sm font-medium text-muted-foreground">
-                                    Tickets abiertos
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <p className="text-2xl font-bold">{tickets_summary.open}</p>
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardHeader className="pb-2">
-                                <CardTitle className="text-sm font-medium text-muted-foreground">
-                                    Tickets cerrados
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <p className="text-2xl font-bold">{tickets_summary.closed}</p>
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardHeader className="pb-2">
-                                <CardTitle className="text-sm font-medium text-muted-foreground">
-                                    Vencidos
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <p className="text-2xl font-bold text-destructive">
-                                    {tickets_summary.overdue}
-                                </p>
-                            </CardContent>
-                        </Card>
-                    </div>
+                    {can?.view_internals && tickets_summary && (
+                        <div className="grid gap-4 sm:grid-cols-3">
+                            <Card>
+                                <CardHeader className="pb-2">
+                                    <CardTitle className="text-sm font-medium text-muted-foreground">
+                                        Tickets abiertos
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <p className="text-2xl font-bold">{tickets_summary.open}</p>
+                                </CardContent>
+                            </Card>
+                            <Card>
+                                <CardHeader className="pb-2">
+                                    <CardTitle className="text-sm font-medium text-muted-foreground">
+                                        Tickets cerrados
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <p className="text-2xl font-bold">{tickets_summary.closed}</p>
+                                </CardContent>
+                            </Card>
+                            <Card>
+                                <CardHeader className="pb-2">
+                                    <CardTitle className="text-sm font-medium text-muted-foreground">
+                                        Vencidos
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <p className="text-2xl font-bold text-destructive">
+                                        {tickets_summary.overdue}
+                                    </p>
+                                </CardContent>
+                            </Card>
+                        </div>
+                    )}
+
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between">
+                            <CardTitle>Plan</CardTitle>
+                            {client.plan && <PlanTypeBadge type={client.plan.type} />}
+                        </CardHeader>
+                        <CardContent>
+                            {!client.plan ? (
+                                <p className="text-sm text-muted-foreground">Sin plan asignado</p>
+                            ) : (
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                    <span className="font-semibold text-lg">{client.plan.name}</span>
+                                    <span className="text-sm text-muted-foreground">
+                                        {Number(client.plan.price_monthly) > 0
+                                            ? `${formatMoney(client.plan.price_monthly)}/mes`
+                                            : "Contactar"}
+                                        {client.subscription_expires_at && (
+                                            <> · vence {new Intl.DateTimeFormat("es-MX", { dateStyle: "medium" }).format(new Date(client.subscription_expires_at))}</>
+                                        )}
+                                    </span>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between">
+                            <CardTitle>Usuarios</CardTitle>
+                            <Badge variant="outline">{users?.length ?? 0}</Badge>
+                        </CardHeader>
+                        <CardContent>
+                            {!users?.length ? (
+                                <p className="text-sm text-muted-foreground">Sin usuarios registrados</p>
+                            ) : (
+                                <ul className="space-y-3">
+                                    {users.map((user) => (
+                                        <li
+                                            key={user.id}
+                                            className="flex items-center justify-between gap-3 border-b border-border/40 pb-3 last:border-0"
+                                        >
+                                            <div className="min-w-0">
+                                                <p className="font-medium truncate">{userFullName(user)}</p>
+                                                <p className="text-sm text-muted-foreground truncate">{user.email}</p>
+                                            </div>
+                                            <div className="flex flex-wrap gap-1 justify-end shrink-0">
+                                                {(user.roles ?? []).map((role) => (
+                                                    <Badge key={role.id} variant="secondary" className="text-[10px]">
+                                                        {role.name}
+                                                    </Badge>
+                                                ))}
+                                            </div>
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                        </CardContent>
+                    </Card>
 
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between">
@@ -187,16 +259,18 @@ export default function Show({ client, tickets_summary, sites }) {
                         </CardContent>
                     </Card>
 
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Tickets recientes</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <p className="text-sm text-muted-foreground italic">
-                                Próximamente — integración con módulo de tickets
-                            </p>
-                        </CardContent>
-                    </Card>
+                    {can?.view_internals && (
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Tickets recientes</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <p className="text-sm text-muted-foreground italic">
+                                    Próximamente — integración con módulo de tickets
+                                </p>
+                            </CardContent>
+                        </Card>
+                    )}
                 </div>
             </div>
         </AuthenticatedLayout>

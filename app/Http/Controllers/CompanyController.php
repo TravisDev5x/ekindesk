@@ -34,6 +34,14 @@ class CompanyController extends Controller
     public function show(): Response|RedirectResponse
     {
         $user = auth()->user();
+
+        // Un super_admin administra la plataforma, no una empresa propia: "Mi empresa"
+        // para esta cuenta es la vista de tenants (clientes) que ya existe en /clients,
+        // no un perfil de operador que nunca tendrá.
+        if ($user->hasRole('super_admin')) {
+            return redirect()->route('clients.index');
+        }
+
         [$operatorId, $profile] = $this->resolveOperatorAndProfile();
 
         if ($operatorId === null) {

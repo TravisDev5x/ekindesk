@@ -55,7 +55,8 @@ return new class extends Migration
         ];
 
         $allPerms = array_unique(array_merge(
-            $core, $ticketPerms, $incidentPerms, $clientPerms, ['clients.view_all'], $companyPerms
+            $core, $ticketPerms, $incidentPerms, $clientPerms,
+            ['clients.view_all', 'platform.view_internals'], $companyPerms
         ));
 
         foreach ($guards as $guard) {
@@ -82,6 +83,30 @@ return new class extends Migration
             DB::table('role_has_permissions')->insertOrIgnore([
                 'permission_id' => $pid,
                 'role_id' => $adminRoleId,
+            ]);
+        }
+
+        // super_admin: rol de plataforma referenciado en OperatorScopeService::bypassesOperatorScope()
+        // y las policies de ticket/incidencia, pero nunca creado por ninguna migración/seeder
+        // anterior — se asumía que ya existía. Recibe los mismos permisos que 'admin' salvo
+        // 'platform.view_internals', que debe otorgarse explícitamente (ver isPlatformAdminBlockedFromInternals()).
+        $superAdminRoleId = DB::table('roles')->insertGetId([
+            'name' => 'super_admin',
+            'slug' => 'super_admin',
+            'guard_name' => 'web',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $internalsPermId = DB::table('permissions')
+            ->where('guard_name', 'web')->where('name', 'platform.view_internals')->value('id');
+        foreach ($permIds as $pid) {
+            if ($pid === $internalsPermId) {
+                continue;
+            }
+            DB::table('role_has_permissions')->insertOrIgnore([
+                'permission_id' => $pid,
+                'role_id' => $superAdminRoleId,
             ]);
         }
 
@@ -129,8 +154,9 @@ return new class extends Migration
 
     public function down(): void
     {
-        DB::table('role_has_permissions')->whereIn('role_id', DB::table('roles')->where('name', 'admin')->pluck('id'))->delete();
-        DB::table('roles')->where('name', 'admin')->delete();
+        $roleIds = DB::table('roles')->whereIn('name', ['admin', 'super_admin'])->pluck('id');
+        DB::table('role_has_permissions')->whereIn('role_id', $roleIds)->delete();
+        DB::table('roles')->whereIn('name', ['admin', 'super_admin'])->delete();
         DB::table('permissions')->delete();
     }
 };

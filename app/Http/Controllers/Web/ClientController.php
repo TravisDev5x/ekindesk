@@ -148,30 +148,41 @@ class ClientController extends Controller
     public function show(Client $client): Response
     {
         $this->authorizeClient($client);
-        $client->load('sites');
+        $client->load(['sites', 'plan', 'users' => fn ($q) => $q->select(
+            'id', 'first_name', 'paternal_last_name', 'maternal_last_name', 'email', 'status', 'client_id'
+        )->with('roles:id,name')]);
 
-        $finalStateIds = TicketState::where('is_final', true)->pluck('id');
+        $blockedFromInternals = $this->operatorScope->isPlatformAdminBlockedFromInternals(auth()->user());
 
-        $ticketsSummary = [
-            'open' => $client->tickets()->whereNotIn('ticket_state_id', $finalStateIds)->count(),
-            'closed' => $client->tickets()->whereIn('ticket_state_id', $finalStateIds)->count(),
-            'overdue' => $client->tickets()
-                ->whereNotIn('ticket_state_id', $finalStateIds)
-                ->where(function ($q) {
-                    $q->whereNotNull('due_at')->where('due_at', '<', now())
-                        ->orWhere(function ($q2) {
-                            $q2->whereNull('due_at')
-                                ->where('created_at', '<', now()->subHours(72));
-                        });
-                })
-                ->count(),
-        ];
+        $ticketsSummary = null;
+        if (! $blockedFromInternals) {
+            $finalStateIds = TicketState::where('is_final', true)->pluck('id');
+
+            $ticketsSummary = [
+                'open' => $client->tickets()->whereNotIn('ticket_state_id', $finalStateIds)->count(),
+                'closed' => $client->tickets()->whereIn('ticket_state_id', $finalStateIds)->count(),
+                'overdue' => $client->tickets()
+                    ->whereNotIn('ticket_state_id', $finalStateIds)
+                    ->where(function ($q) {
+                        $q->whereNotNull('due_at')->where('due_at', '<', now())
+                            ->orWhere(function ($q2) {
+                                $q2->whereNull('due_at')
+                                    ->where('created_at', '<', now()->subHours(72));
+                            });
+                    })
+                    ->count(),
+            ];
+        }
 
         return Inertia::render('Clients/Show', [
             'client' => $client,
             'tickets_summary' => $ticketsSummary,
             'sites' => $client->sites,
+            'users' => $client->users,
             'industries' => self::INDUSTRIES,
+            'can' => [
+                'view_internals' => ! $blockedFromInternals,
+            ],
         ]);
     }
 
