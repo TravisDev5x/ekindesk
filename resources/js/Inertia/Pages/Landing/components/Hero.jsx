@@ -90,7 +90,7 @@ export default function Hero() {
                 <h1 className="text-6xl sm:text-7xl lg:text-8xl font-black text-foreground leading-[1.15] tracking-tighter">
                     Soporte IT
                     <br />
-                    <span className={`${brandGradientText} inline-block pb-2`}>sin caos</span>
+                    <span className={`${brandGradientText} inline-block pb-2 pr-1`}>sin caos</span>
                 </h1>
 
                 {/* Subtitle */}
