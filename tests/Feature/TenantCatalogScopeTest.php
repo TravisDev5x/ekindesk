@@ -42,7 +42,7 @@ class TenantCatalogScopeTest extends TestCase
         $areaId = DB::table('areas')->insertGetId(['name' => 'A'.uniqid(), 'is_active' => true, 'created_at' => $now, 'updated_at' => $now]);
         $positionId = DB::table('positions')->insertGetId(['name' => 'P'.uniqid(), 'is_active' => true, 'created_at' => $now, 'updated_at' => $now]);
         $siteId = DB::table('sites')->insertGetId([
-            'name' => 'S'.uniqid(), 'code' => 'X'.random_int(100, 999), 'type' => 'physical',
+            'name' => 'S'.uniqid(), 'code' => 'X'.uniqid(), 'type' => 'physical',
             'is_active' => true, 'created_at' => $now, 'updated_at' => $now,
         ]);
 

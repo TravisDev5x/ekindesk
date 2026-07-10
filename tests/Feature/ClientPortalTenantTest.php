@@ -105,7 +105,7 @@ class ClientPortalTenantTest extends TestCase
         $positionId = DB::table('positions')->insertGetId(['name' => 'P'.uniqid(), 'is_active' => true, 'created_at' => $now, 'updated_at' => $now]);
         $siteId = DB::table('sites')->insertGetId([
             'name' => 'Sede '.uniqid(),
-            'code' => 'C'.random_int(100, 999),
+            'code' => 'C'.uniqid(),
             'type' => 'physical',
             'is_active' => true,
             'created_at' => $now,

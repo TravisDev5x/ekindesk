@@ -1,25 +1,25 @@
 # PostgreSQL local para validar migraciones multi-tenant (staging/dev).
 # Uso: docker compose -f docker-compose.postgres.yml up -d
-# .env: DB_CONNECTION=pgsql DB_HOST=127.0.0.1 DB_PORT=5432 DB_DATABASE=ekindesk DB_USERNAME=ekindesk DB_PASSWORD=secret
+# .env: DB_CONNECTION=pgsql DB_HOST=127.0.0.1 DB_PORT=5432 DB_DATABASE=tikara DB_USERNAME=tikara DB_PASSWORD=secret
 
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: ekindesk-postgres
+    container_name: tikara-postgres-dev
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ekindesk
-      POSTGRES_USER: ekindesk
+      POSTGRES_DB: tikara
+      POSTGRES_USER: tikara
       POSTGRES_PASSWORD: secret
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
-      - ekindesk_pgdata:/var/lib/postgresql/data
+      - tikara_pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ekindesk -d ekindesk"]
+      test: ["CMD-SHELL", "pg_isready -U tikara -d tikara"]
       interval: 5s
       timeout: 5s
       retries: 5
 
 volumes:
-  ekindesk_pgdata:
+  tikara_pgdata:

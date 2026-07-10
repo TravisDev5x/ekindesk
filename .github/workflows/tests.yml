@@ -68,13 +68,13 @@ jobs:
       postgres:
         image: postgres:16-alpine
         env:
-          POSTGRES_DB: ekindesk_test
+          POSTGRES_DB: tikara_test
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U postgres -d ekindesk_test"
+          --health-cmd "pg_isready -U postgres -d tikara_test"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -83,8 +83,8 @@ jobs:
       DB_CONNECTION: pgsql
       DB_HOST: 127.0.0.1
       DB_PORT: 5432
-      DB_DATABASE: ekindesk_test
-      DB_USERNAME: ekindesk_app
+      DB_DATABASE: tikara_test
+      DB_USERNAME: tikara_app
       DB_PASSWORD: secret
       TENANCY_PGSQL_RLS: true
 
@@ -105,14 +105,14 @@ jobs:
           psql -h 127.0.0.1 -U postgres -v ON_ERROR_STOP=1 <<'SQL'
           DO $$
           BEGIN
-            IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'ekindesk_app') THEN
-              CREATE USER ekindesk_app WITH PASSWORD 'secret' NOSUPERUSER INHERIT;
+            IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'tikara_app') THEN
+              CREATE USER tikara_app WITH PASSWORD 'secret' NOSUPERUSER INHERIT;
             END IF;
           END
           $$;
-          ALTER DATABASE ekindesk_test OWNER TO ekindesk_app;
-          \c ekindesk_test
-          ALTER SCHEMA public OWNER TO ekindesk_app;
+          ALTER DATABASE tikara_test OWNER TO tikara_app;
+          \c tikara_test
+          ALTER SCHEMA public OWNER TO tikara_app;
           SQL
 
       - name: Get Composer cache directory
