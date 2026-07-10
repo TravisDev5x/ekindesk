@@ -58,6 +58,10 @@ services:
       POSTGRES_DB: ${DB_DATABASE:-tikara}
       POSTGRES_USER: ${DB_USERNAME:-tikara}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      # Solo loopback de la VM — nunca expuesto a la red pública.
+      # Acceso externo únicamente vía túnel SSH (ver docs/DEPLOY_OCI.md).
+      - "127.0.0.1:5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
