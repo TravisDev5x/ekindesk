@@ -1,7 +1,13 @@
-# Despliegue de producción en la VM de OCI (Always Free).
+# Despliegue de producción en la VM de OCI (Always Free, Ampere A1 arm64).
 # Uso:
 #   docker compose -f docker-compose.prod.yml up -d --build
 # Requiere un archivo .env en la misma carpeta (no se commitea, ver docs/DEPLOY_OCI.md).
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
 
 services:
   app:
@@ -12,6 +18,8 @@ services:
     container_name: tikara-app
     restart: unless-stopped
     env_file: .env
+    mem_limit: 512m
+    logging: *default-logging
     volumes:
       - storage_data:/var/www/html/storage
     depends_on:
@@ -27,6 +35,8 @@ services:
     restart: unless-stopped
     env_file: .env
     command: ["php", "artisan", "queue:work", "--tries=1", "--sleep=3"]
+    mem_limit: 512m
+    logging: *default-logging
     volumes:
       - storage_data:/var/www/html/storage
     depends_on:
@@ -43,6 +53,8 @@ services:
     ports:
       - "80:80"
       - "443:443"
+    mem_limit: 128m
+    logging: *default-logging
     volumes:
       - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
       - certbot_www:/var/www/certbot
@@ -58,10 +70,24 @@ services:
       POSTGRES_DB: ${DB_DATABASE:-tikara}
       POSTGRES_USER: ${DB_USERNAME:-tikara}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
+    # Tuning acorde a los 12GB reales de la VM (defaults de la imagen son para
+    # instancias pequeñas genéricas: shared_buffers=128MB, work_mem=4MB).
+    command:
+      - postgres
+      - -c
+      - shared_buffers=1GB
+      - -c
+      - work_mem=16MB
+      - -c
+      - effective_cache_size=6GB
+      - -c
+      - maintenance_work_mem=128MB
     ports:
       # Solo loopback de la VM — nunca expuesto a la red pública.
       # Acceso externo únicamente vía túnel SSH (ver docs/DEPLOY_OCI.md).
       - "127.0.0.1:5432:5432"
+    mem_limit: 2g
+    logging: *default-logging
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -73,6 +99,7 @@ services:
   certbot:
     image: certbot/certbot
     container_name: tikara-certbot
+    logging: *default-logging
     volumes:
       - certbot_www:/var/www/certbot
       - certbot_conf:/etc/letsencrypt

@@ -43,6 +43,20 @@ RUN mkdir -p storage/framework/cache/data storage/framework/sessions storage/fra
 # the response. Buffering the whole response defers header commit until send.
 RUN echo 'output_buffering = 4096' > /usr/local/etc/php/conf.d/zz-buffering.ini
 
+# Cada deploy recrea el contenedor (opcache arranca vacío de nuevo), así que
+# revalidar mtimes en cada request es I/O de más sin beneficio en producción.
+RUN echo 'opcache.validate_timestamps=0' > /usr/local/etc/php/conf.d/zz-opcache.ini
+
+# Pool de FPM dimensionado para la VM ARM (2 OCPU / 12GB) en vez del default
+# genérico de la imagen (pm.max_children=5) — memory_limit=128M por worker
+# deja margen de sobra para más concurrencia.
+RUN sed -i \
+        -e 's/^pm\.max_children = .*/pm.max_children = 10/' \
+        -e 's/^pm\.start_servers = .*/pm.start_servers = 3/' \
+        -e 's/^pm\.min_spare_servers = .*/pm.min_spare_servers = 2/' \
+        -e 's/^pm\.max_spare_servers = .*/pm.max_spare_servers = 6/' \
+        /usr/local/etc/php-fpm.d/www.conf
+
 USER www-data
 
 EXPOSE 9000
