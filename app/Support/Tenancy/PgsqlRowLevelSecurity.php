@@ -44,12 +44,20 @@ final class PgsqlRowLevelSecurity
 
         $operatorScope = app(OperatorScopeService::class);
         $tenant = app(TenantContextService::class)->current();
+        $strictPortal = $tenant->enforcesStrictClientIsolation();
 
         $bypass = $operatorScope->bypassesOperatorScope($user)
             || $operatorScope->usesLegacyMspWideAccess($user);
 
-        $portalClientId = $tenant->enforcesStrictClientIsolation() ? $tenant->clientId : null;
-        $operatorUserId = $operatorScope->resolveOperatorUserId($user);
+        $portalClientId = $strictPortal ? $tenant->clientId : null;
+
+        // RLS es el backstop de BD (defensa en profundidad), no un espejo del scope
+        // de aplicación: solo confía en is_operator real (staff MSP), nunca en permisos
+        // como tickets.manage_all — de lo contrario un agente de UN cliente con ese
+        // permiso vería, a nivel de BD, los tickets de TODOS los clientes del mismo
+        // operador. Y el contexto de portal estricto siempre gana sobre el alcance
+        // operador-amplio, igual que ya hace el scoping SQL de la aplicación.
+        $operatorUserId = (! $strictPortal && $user->is_operator) ? (int) $user->id : null;
         $userClientId = app(TenantClientResolver::class)->resolve($user);
 
         self::set(self::BYPASS, $bypass ? 'true' : 'false');

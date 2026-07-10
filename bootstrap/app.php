@@ -4,6 +4,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Middleware\SubstituteBindings;
 use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
 use App\Http\Middleware\EnsureSessionForAuth;
 use App\Http\Middleware\EnforcePasswordChange;
@@ -68,6 +69,17 @@ return Application::configure(basePath: dirname(__DIR__))
             HandleInertiaRequests::class,
             EnsureOnboardingComplete::class,
         ]);
+
+        // SubstituteBindings (route model binding) corre por defecto ANTES que
+        // cualquier middleware nuestro appendeado al grupo — así, una ruta como
+        // /api/tickets/{ticket} resolvía el modelo bajo RLS sin las variables de
+        // sesión de tenant aún aplicadas (bloqueo total por FORCE ROW LEVEL
+        // SECURITY, visto como 404 en un recurso propio). Debe ir justo antes de
+        // SubstituteBindings, después del auth (que ya tiene prioridad por defecto).
+        $middleware->prependToPriorityList(
+            before: SubstituteBindings::class,
+            prepend: ApplyPgsqlTenantRls::class,
+        );
 
         // Alias para poder usarlo en rutas (y colocar después de auth)
         $middleware->alias([

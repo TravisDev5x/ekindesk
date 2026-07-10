@@ -99,6 +99,16 @@ trait CreatesTenantFixtures
     {
         $now = now();
 
+        // La migración 2026_07_09_000027 deja client_id NOT NULL en Postgres (a
+        // propósito, para producción). Estas fixtures simulan a propósito el
+        // estado "huérfano" pre-backfill para probar TenantBackfill/TenantIntegrity,
+        // así que hay que relajar el constraint aquí. RefreshDatabase envuelve cada
+        // test en una transacción y Postgres soporta DDL transaccional, así que el
+        // ALTER se revierte solo al terminar el test — no hace falta restaurarlo.
+        if ($clientId === null && DB::getDriverName() === 'pgsql') {
+            DB::statement('ALTER TABLE tickets ALTER COLUMN client_id DROP NOT NULL');
+        }
+
         return DB::table('tickets')->insertGetId([
             'subject' => 'Ticket tenant test',
             'area_origin_id' => $fixture['area_id'],

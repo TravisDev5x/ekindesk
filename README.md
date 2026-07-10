@@ -21,8 +21,8 @@ Modelo **MSP → empresas cliente** con aislamiento por tenant, portales por sub
 
 <br />
 
-![MySQL](https://img.shields.io/badge/MySQL-4479A1?style=for-the-badge&logo=mysql&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
+![SQLite](https://img.shields.io/badge/SQLite-07405E?style=for-the-badge&logo=sqlite&logoColor=white)
 ![Sanctum](https://img.shields.io/badge/Sanctum-Auth-FF2D20?style=for-the-badge&logo=laravel&logoColor=white)
 ![Radix UI](https://img.shields.io/badge/Radix_UI-Components-161618?style=for-the-badge&logo=radixui&logoColor=white)
 ![Zod](https://img.shields.io/badge/Zod-Validation-3E63DD?style=for-the-badge&logo=zod&logoColor=white)
@@ -62,7 +62,7 @@ Tikara centraliza tickets, incidencias, catálogos, usuarios y permisos en una s
 | Backend | PHP 8.2+, **Laravel 12**, Sanctum 4, Spatie Permission, Socialite (Google OAuth) |
 | Frontend | **React 19**, **Inertia.js 3**, Vite 7, Tailwind CSS 4 |
 | UI / datos | Radix UI, React Hook Form + Zod, Recharts, TanStack Table, Lucide Icons |
-| Datos | MySQL / MariaDB, SQLite (dev/tests), PostgreSQL + RLS (staging/prod opcional) |
+| Datos | SQLite (dev/tests), PostgreSQL + RLS (staging/prod) |
 | Auth | Sesión stateful Sanctum (cookies), Google OAuth vía Socialite (opcional) |
 
 ---
@@ -92,7 +92,7 @@ Detalle completo: [`ARCHITECTURE.md`](ARCHITECTURE.md).
 - PHP 8.2+
 - Composer 2.x
 - Node.js 20 LTS (o 18+)
-- MySQL 8+ / MariaDB, o SQLite para desarrollo local
+- SQLite para desarrollo local, PostgreSQL para staging/producción
 - Extensiones PHP: `openssl`, `pdo`, `mbstring`, `tokenizer`, `xml`, `ctype`, `json`, `bcmath` (y `zip` recomendado para Composer)
 
 ---
@@ -100,7 +100,7 @@ Detalle completo: [`ARCHITECTURE.md`](ARCHITECTURE.md).
 ## Instalación rápida
 
 ```bash
-git clone https://github.com/TravisDev5x/tikara.git
+git clone https://github.com/TravisDev5x/ekindesk.git tikara
 cd tikara
 
 composer install
@@ -108,7 +108,7 @@ cp .env.example .env
 php artisan key:generate
 ```
 
-Configura la base de datos en `.env` (SQLite o MySQL) y ejecuta:
+Configura la base de datos en `.env` (SQLite o PostgreSQL) y ejecuta:
 
 ```bash
 php artisan migrate:fresh --seed
