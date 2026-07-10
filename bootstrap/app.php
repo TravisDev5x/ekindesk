@@ -3,6 +3,7 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Request;
 use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
 use App\Http\Middleware\EnsureSessionForAuth;
 use App\Http\Middleware\EnforcePasswordChange;
@@ -23,6 +24,17 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+
+        // Detrás de un reverse proxy/túnel (nginx, Cloudflare Tunnel) que termina
+        // TLS antes de llegar a la app — sin esto, Laravel genera URLs con esquema
+        // http:// aunque el navegador esté en https://, rompiendo assets (mixed content).
+        $middleware->trustProxies(
+            at: '*',
+            headers: Request::HEADER_X_FORWARDED_FOR
+                | Request::HEADER_X_FORWARDED_HOST
+                | Request::HEADER_X_FORWARDED_PORT
+                | Request::HEADER_X_FORWARDED_PROTO
+        );
 
         // Webhooks externos no mandan CSRF token — excluirlos explícitamente.
         $middleware->validateCsrfTokens(except: [
