@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\OperatorProfile;
 use App\Models\Plan;
+use App\Services\OperatorScopeService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -11,10 +13,33 @@ use Inertia\Response;
 
 class CompanyController extends Controller
 {
+    public function __construct(protected OperatorScopeService $operatorScope) {}
+
+    /**
+     * Perfil de la empresa (operador) al que pertenece el usuario autenticado —
+     * no necesariamente el usuario mismo (puede ser staff de un cliente/operador).
+     * Devuelve [operatorId, profile]; operatorId es null para cuentas de
+     * plataforma sin operador resoluble (ej. super-admin).
+     *
+     * @return array{0: ?int, 1: ?OperatorProfile}
+     */
+    private function resolveOperatorAndProfile(): array
+    {
+        $operatorId = $this->operatorScope->resolveOperatorUserId(auth()->user());
+        $profile = $operatorId ? OperatorProfile::where('user_id', $operatorId)->first() : null;
+
+        return [$operatorId, $profile];
+    }
+
     public function show(): Response|RedirectResponse
     {
         $user = auth()->user();
-        $profile = $user->operatorProfile;
+        [$operatorId, $profile] = $this->resolveOperatorAndProfile();
+
+        if ($operatorId === null) {
+            return redirect()->route('home')
+                ->with('info', 'Tu cuenta no tiene una empresa asociada.');
+        }
 
         if (! $profile) {
             return redirect()->route('onboarding.show')
@@ -45,7 +70,12 @@ class CompanyController extends Controller
     {
         abort_unless(auth()->user()->can('company.edit'), 403);
 
-        $profile = auth()->user()->operatorProfile;
+        [$operatorId, $profile] = $this->resolveOperatorAndProfile();
+
+        if ($operatorId === null) {
+            return redirect()->route('home')
+                ->with('info', 'Tu cuenta no tiene una empresa asociada.');
+        }
 
         if (! $profile) {
             return redirect()->route('onboarding.show')
@@ -73,7 +103,12 @@ class CompanyController extends Controller
             'logo' => 'nullable|image|max:2048',
         ]);
 
-        $profile = auth()->user()->operatorProfile;
+        [$operatorId, $profile] = $this->resolveOperatorAndProfile();
+
+        if ($operatorId === null) {
+            return redirect()->route('home')
+                ->with('info', 'Tu cuenta no tiene una empresa asociada.');
+        }
 
         if (! $profile) {
             return redirect()->route('onboarding.show')
@@ -111,7 +146,7 @@ class CompanyController extends Controller
     {
         abort_unless(auth()->user()->can('company.edit'), 403);
 
-        $profile = auth()->user()->operatorProfile;
+        [, $profile] = $this->resolveOperatorAndProfile();
 
         if ($profile?->logo_path) {
             Storage::disk('public')->delete($profile->logo_path);
