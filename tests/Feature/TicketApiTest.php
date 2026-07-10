@@ -138,6 +138,11 @@ class TicketApiTest extends TestCase
             ->assertJsonPath('area_origin_id', $this->areaOrigin->id)
             ->assertJsonPath('site_id', $this->site->id);
 
+        // ApplyPgsqlTenantRls limpia las variables de sesión RLS al terminar la
+        // petición HTTP (por diseño, para no filtrar el tenant de una request a
+        // la siguiente en la misma conexión). assertDatabaseHas corre fuera de
+        // esa request, así que sin bypass la fila real queda invisible bajo RLS.
+        \App\Support\Tenancy\PgsqlRowLevelSecurity::setBypass(true);
         $this->assertDatabaseHas('tickets', ['subject' => 'Ticket de prueba']);
     }
 

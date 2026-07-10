@@ -3,7 +3,9 @@
 namespace Tests\Feature;
 
 use App\Models\Site;
+use App\Support\Tenancy\PgsqlRowLevelSecurity;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Testing\TestResponse;
 use Tests\Support\CreatesMspTwinClientFixtures;
 use Tests\TestCase;
 
@@ -13,6 +15,21 @@ use Tests\TestCase;
 class TenantApiIsolationTest extends TestCase
 {
     use CreatesMspTwinClientFixtures;
+
+    /**
+     * Con RLS (Postgres) las filas fuera del tenant son invisibles a nivel de
+     * BD antes de que la policy de autorización se ejecute (404 vía binding de
+     * ruta). Sin RLS (SQLite), la policy sí encuentra la fila y la rechaza
+     * explícitamente (403). Ambos casos niegan el acceso correctamente.
+     */
+    private function assertTenantBoundaryDenied(TestResponse $response): void
+    {
+        if (PgsqlRowLevelSecurity::enabled()) {
+            $response->assertNotFound();
+        } else {
+            $response->assertForbidden();
+        }
+    }
     use RefreshDatabase;
 
     public function test_portal_tickets_index_and_show_isolate_client_data(): void
@@ -38,7 +55,7 @@ class TenantApiIsolationTest extends TestCase
 
         $showForeign = $this->actingAs($world['agentA'], 'web')
             ->getJson($this->portalApiUrl($world['clientA'], '/api/tickets/'.$world['ticketB']->id));
-        $showForeign->assertForbidden();
+        $this->assertTenantBoundaryDenied($showForeign);
     }
 
     public function test_portal_incidents_index_and_show_isolate_client_data(): void
@@ -62,9 +79,10 @@ class TenantApiIsolationTest extends TestCase
             ->getJson($this->portalApiUrl($world['clientA'], '/api/incidents/'.$world['incidentA']->id))
             ->assertOk();
 
-        $this->actingAs($world['agentA'], 'web')
-            ->getJson($this->portalApiUrl($world['clientA'], '/api/incidents/'.$world['incidentB']->id))
-            ->assertForbidden();
+        $this->assertTenantBoundaryDenied(
+            $this->actingAs($world['agentA'], 'web')
+                ->getJson($this->portalApiUrl($world['clientA'], '/api/incidents/'.$world['incidentB']->id))
+        );
     }
 
     public function test_portal_sedes_and_clientes_lists_are_scoped_to_portal_client(): void
@@ -103,9 +121,10 @@ class TenantApiIsolationTest extends TestCase
             ->putJson('/api/clients/'.$world['clientB']->id, ['name' => 'Hackeado'])
             ->assertForbidden();
 
-        $this->actingAs($world['agentA'], 'web')
-            ->putJson('/api/sites/'.$world['siteB'], ['name' => 'Sede hackeada'])
-            ->assertForbidden();
+        $this->assertTenantBoundaryDenied(
+            $this->actingAs($world['agentA'], 'web')
+                ->putJson('/api/sites/'.$world['siteB'], ['name' => 'Sede hackeada'])
+        );
     }
 
     public function test_other_msp_operator_cannot_access_foreign_client_ticket(): void
@@ -127,9 +146,10 @@ class TenantApiIsolationTest extends TestCase
         $world['otherOperator']->update(['site_id' => $foreignSite->id]);
         $world['otherOperator']->givePermissionTo('tickets.manage_all');
 
-        $this->actingAs($world['otherOperator'], 'web')
-            ->getJson('/api/tickets/'.$world['ticketA']->id)
-            ->assertForbidden();
+        $this->assertTenantBoundaryDenied(
+            $this->actingAs($world['otherOperator'], 'web')
+                ->getJson('/api/tickets/'.$world['ticketA']->id)
+        );
     }
 
     public function test_msp_operator_on_root_sees_both_clients_but_portal_still_isolates(): void
