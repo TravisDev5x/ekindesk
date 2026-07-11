@@ -7,6 +7,7 @@ use App\Models\Client;
 use App\Models\OperatorProfile;
 use App\Models\Plan;
 use App\Models\Site;
+use App\Services\InternalCustomerService;
 use App\Services\OnboardingRedirectService;
 use App\Services\TenantContextService;
 use Illuminate\Http\Request;
@@ -104,6 +105,11 @@ class OperatorOnboardingController extends Controller
             'onboarding_completed' => false,
             'client_id' => null,
         ]);
+
+        // Customer implícito: SIEMPRE existe una fila de clients
+        // (is_internal=true) que representa a la propia empresa del tenant —
+        // mismo modelo de datos para IT Internal / MSP / Hybrid.
+        app(InternalCustomerService::class)->ensureFor($user->fresh(), $validated['business_name']);
 
         session()->forget(['invited_plan_slug', 'invited_plan_id']);
 

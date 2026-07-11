@@ -40,19 +40,17 @@ class ClientScopeService
     /**
      * Asigna sitio y cliente del usuario solicitante al crear un ticket.
      *
+     * Requester sin site "hogar" ya NO es error (Fase 2 del sprint maestro):
+     * el ticket se crea con site_id NULL — estado "sin site asignado",
+     * visible solo para admin/supervisor hasta que alguien lo asigne.
+     *
      * @return \Illuminate\Http\JsonResponse|null Error 422 o null si OK
      */
     public function stampTicketSiteFromUser(User $user, array &$data): ?\Illuminate\Http\JsonResponse
     {
         $user->loadMissing('site:id,name,client_id');
 
-        if (! $user->site_id) {
-            return response()->json([
-                'message' => 'Debes tener una sede asignada para crear tickets. Contacta a tu administrador.',
-            ], 422);
-        }
-
-        $data['site_id'] = (int) $user->site_id;
+        $data['site_id'] = $user->site_id ? (int) $user->site_id : null;
         $data['client_id'] = $this->resolveUserClientId($user);
 
         return null;

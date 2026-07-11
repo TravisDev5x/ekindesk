@@ -182,6 +182,12 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasOne(OperatorProfile::class);
     }
 
+    /** Customers del operador (filas de clients que le pertenecen). */
+    public function clients(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Client::class, 'operator_user_id');
+    }
+
     public function isOnboarded(): bool
     {
         return (bool) $this->onboarding_completed;

@@ -66,7 +66,13 @@ class Ticket extends Model
                 return;
             }
             if ($ticket->isDirty('site_id') || $ticket->client_id === null) {
-                $ticket->client_id = app(ClientScopeService::class)->syncClientIdFromSite((int) $ticket->site_id);
+                $siteClientId = app(ClientScopeService::class)->syncClientIdFromSite((int) $ticket->site_id);
+                // Un site global/compartido (client_id NULL, ej. "Remoto") no
+                // pisa el tenant del ticket — client_id es NOT NULL y el
+                // tenant ya viene resuelto del requester/portal.
+                if ($siteClientId !== null) {
+                    $ticket->client_id = $siteClientId;
+                }
             }
         });
     }

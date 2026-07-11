@@ -39,6 +39,7 @@ class Client extends Model
         'inbound_email',
         'mode',
         'ai_classification_enabled',
+        'is_internal',
     ];
 
     protected $appends = [
@@ -47,6 +48,7 @@ class Client extends Model
 
     protected $casts = [
         'is_active'               => 'boolean',
+        'is_internal'             => 'boolean',
         'subscription_expires_at' => 'datetime',
         'cancelled_at'            => 'datetime',
     ];
