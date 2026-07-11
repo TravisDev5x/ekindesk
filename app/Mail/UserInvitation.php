@@ -4,10 +4,11 @@ namespace App\Mail;
 
 use App\Models\UserInvitation as UserInvitationModel;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
 
-class UserInvitation extends Mailable
+class UserInvitation extends Mailable implements ShouldQueue
 {
     use Queueable, SerializesModels;
 
@@ -21,7 +22,8 @@ class UserInvitation extends Mailable
     {
         $acceptUrl = url('/register/accept?token='.$this->invitation->token);
 
-        return $this->subject('Invitación a HelpDesk')
+        return $this->from(TenantMailSender::resolve($this->invitation->client))
+            ->subject('Invitación a Tikara')
             ->view('emails.user-invitation')
             ->with([
                 'inviterName' => $this->invitation->invitedBy?->name ?? 'Un administrador',

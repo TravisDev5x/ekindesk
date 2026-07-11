@@ -165,6 +165,18 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->belongsTo(Client::class, 'client_id');
     }
 
+    /**
+     * Sobrescribe el comportamiento default de Laravel (notificación con link
+     * siempre al dominio principal) para usar App\Mail\ResetPasswordLink, que
+     * arma el link contra el subdominio del tenant del usuario si tiene uno.
+     */
+    public function sendPasswordResetNotification($token): void
+    {
+        \Illuminate\Support\Facades\Mail::to($this->email)->queue(
+            new \App\Mail\ResetPasswordLink($token, $this->email, $this->client)
+        );
+    }
+
     public function operatorProfile(): HasOne
     {
         return $this->hasOne(OperatorProfile::class);

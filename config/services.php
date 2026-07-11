@@ -18,6 +18,19 @@ return [
         'key' => env('POSTMARK_API_KEY'),
     ],
 
+    'mailgun' => [
+        // OUTBOUND — correo transaccional real (MAIL_MAILER=mailgun).
+        // Credenciales de API, NO la firma de webhook de abajo.
+        'domain' => env('MAILGUN_DOMAIN'),
+        'secret' => env('MAILGUN_SECRET'),
+        'endpoint' => env('MAILGUN_ENDPOINT', 'api.mailgun.net'),
+        'scheme' => 'https',
+
+        // INBOUND — firma HMAC de webhooks (InboundEmailService::verifyMailgunSignature).
+        // Credencial distinta de domain/secret de arriba: esta NUNCA se usa para enviar.
+        'webhook_signing_key' => env('MAILGUN_WEBHOOK_SIGNING_KEY'),
+    ],
+
     'resend' => [
         'key' => env('RESEND_API_KEY'),
     ],

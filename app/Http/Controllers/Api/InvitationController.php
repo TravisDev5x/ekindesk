@@ -125,7 +125,7 @@ class InvitationController extends Controller
             'client_id' => $clientId,
             'role_id' => $role?->id,
             'status' => UserInvitation::STATUS_PENDING,
-            'expires_at' => now()->addHours(48),
+            'expires_at' => now()->addHours(72),
         ]);
 
         $invitation->load(['role', 'client', 'invitedBy']);
@@ -166,7 +166,7 @@ class InvitationController extends Controller
 
         $invitation->update([
             'token' => (string) Str::uuid(),
-            'expires_at' => now()->addHours(48),
+            'expires_at' => now()->addHours(72),
             'status' => UserInvitation::STATUS_PENDING,
             'accepted_at' => null,
         ]);

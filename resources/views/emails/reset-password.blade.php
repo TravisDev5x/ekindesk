@@ -18,7 +18,7 @@
                                 <tr>
                                     <td style="padding: 24px 24px 16px 24px; border-bottom: 1px solid {{ $emailTheme['border'] }};">
                                         <h1 style="margin: 0; font-size: 1.25rem; font-weight: 600; color: {{ $emailTheme['foreground'] }}; letter-spacing: -0.025em;">
-                                            HelpDesk
+                                            Tikara
                                         </h1>
                                         <p style="margin: 4px 0 0 0; font-size: 0.875rem; color: {{ $emailTheme['muted'] }};">
                                             {{ __('passwords.subject') }}
@@ -61,7 +61,7 @@
                     <tr>
                         <td style="padding-top: 24px; text-align: center;">
                             <p style="margin: 0; font-size: 0.75rem; color: {{ $emailTheme['footer_muted'] }};">
-                                HelpDesk Empresarial
+                                Tikara
                             </p>
                         </td>
                     </tr>

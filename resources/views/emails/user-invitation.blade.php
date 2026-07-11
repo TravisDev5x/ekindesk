@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Invitación a HelpDesk</title>
+    <title>Invitación a Tikara</title>
 </head>
 <body style="margin: 0; padding: 0; background-color: {{ $emailTheme['page_bg'] }}; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; font-size: 16px; line-height: 1.6; color: {{ $emailTheme['foreground'] }};">
     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: {{ $emailTheme['page_bg'] }};">
@@ -17,7 +17,7 @@
                                 <tr>
                                     <td style="padding: 24px 24px 16px 24px; border-bottom: 1px solid {{ $emailTheme['border'] }};">
                                         <h1 style="margin: 0; font-size: 1.25rem; font-weight: 600; color: {{ $emailTheme['foreground'] }}; letter-spacing: -0.025em;">
-                                            HelpDesk
+                                            Tikara
                                         </h1>
                                         <p style="margin: 4px 0 0 0; font-size: 0.875rem; color: {{ $emailTheme['muted'] }};">
                                             Invitación para unirte al sistema
@@ -27,7 +27,7 @@
                                 <tr>
                                     <td style="padding: 24px;">
                                         <p style="margin: 0 0 16px 0; font-size: 1rem; color: {{ $emailTheme['foreground'] }};">
-                                            <strong>{{ $inviterName }}</strong> te ha invitado a unirte a HelpDesk
+                                            <strong>{{ $inviterName }}</strong> te ha invitado a unirte a Tikara
                                             @if(!empty($clientName))
                                                 en <strong>{{ $clientName }}</strong>
                                             @endif
@@ -56,7 +56,7 @@
                                         </table>
                                         <div style="clear: both; height: 24px;"></div>
                                         <p style="margin: 0 0 8px 0; font-size: 0.8125rem; color: {{ $emailTheme['muted'] }};">
-                                            Este enlace expira en 48 horas ({{ $expiresAt->timezone(config('app.timezone'))->format('d/m/Y H:i') }}).
+                                            Este enlace expira el {{ $expiresAt->timezone(config('app.timezone'))->format('d/m/Y H:i') }}.
                                         </p>
                                         <p style="margin: 0; font-size: 0.75rem; color: {{ $emailTheme['footer_muted'] }}; word-break: break-all;">
                                             Si el botón no funciona, copia y pega: <a href="{{ $acceptUrl }}" style="color: {{ $emailTheme['link'] }}; text-decoration: underline;">{{ $acceptUrl }}</a>
