@@ -3,10 +3,12 @@
 namespace Tests\Feature;
 
 use App\Models\Client;
+use App\Models\Customer;
 use App\Models\Site;
 use App\Models\User;
 use App\Services\InternalCustomerService;
 use App\Services\TicketCreationService;
+use App\Support\Tenancy\PgsqlRowLevelSecurity;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -14,8 +16,10 @@ use Tests\Support\CreatesTenantFixtures;
 use Tests\TestCase;
 
 /**
- * Fase 2 del sprint maestro (Opción B): customer implícito, site_id nullable
- * con herencia desde el requester, e integridad no-cross-tenant.
+ * Fase 2 del sprint maestro: jerarquía Client (tenant) -> Customer (empresa
+ * soportada) -> Site. Reemplaza "Opción B" (clients.is_internal) -- ver
+ * database/migrations/2026_07_11_000006..000009 y
+ * App\Services\InternalCustomerService.
  */
 class CustomerHierarchyTest extends TestCase
 {
@@ -24,22 +28,31 @@ class CustomerHierarchyTest extends TestCase
 
     // ── Customer implícito ──────────────────────────────────────────────
 
-    public function test_internal_customer_service_creates_implicit_customer_once(): void
+    public function test_internal_customer_service_creates_implicit_customer_and_its_client_together(): void
     {
         $operator = $this->makeOperator();
 
         $service = app(InternalCustomerService::class);
         $customer = $service->ensureFor($operator, 'Mi Empresa SA de CV');
 
+        $this->assertInstanceOf(Customer::class, $customer);
         $this->assertTrue($customer->is_internal);
-        $this->assertSame($operator->id, $customer->operator_user_id);
         $this->assertSame('Mi Empresa SA de CV', $customer->name);
-        $this->assertNotNull($customer->ticket_prefix);
 
-        // Idempotente: segunda llamada devuelve el mismo, no duplica
+        $client = $customer->client;
+        $this->assertNotNull($client);
+        $this->assertSame($operator->id, $client->operator_user_id);
+        $this->assertSame('Mi Empresa SA de CV', $client->name);
+        $this->assertNotNull($client->ticket_prefix);
+
+        // Idempotente: segunda llamada devuelve el mismo Customer, no duplica
+        // ni el Customer ni el Client que lo ancla.
         $again = $service->ensureFor($operator, 'Otro Nombre Ignorado');
         $this->assertSame($customer->id, $again->id);
-        $this->assertSame(1, Client::where('operator_user_id', $operator->id)->where('is_internal', true)->count());
+        $this->assertSame(1, Customer::where('is_internal', true)
+            ->whereHas('client', fn ($q) => $q->where('operator_user_id', $operator->id))
+            ->count());
+        $this->assertSame(1, Client::where('operator_user_id', $operator->id)->count());
     }
 
     public function test_backfill_internal_customer_command(): void
@@ -47,17 +60,37 @@ class CustomerHierarchyTest extends TestCase
         $operator = $this->makeOperator();
 
         $this->artisan('tenants:backfill-internal-customer --dry-run')->assertSuccessful();
-        $this->assertSame(0, Client::where('operator_user_id', $operator->id)->where('is_internal', true)->count());
+        $this->assertSame(0, Customer::where('is_internal', true)->count());
 
         $this->artisan('tenants:backfill-internal-customer')->assertSuccessful();
-        $this->assertSame(1, Client::where('operator_user_id', $operator->id)->where('is_internal', true)->count());
+        $this->assertSame(1, Customer::where('is_internal', true)->count());
 
         // Idempotente
         $this->artisan('tenants:backfill-internal-customer')->assertSuccessful();
-        $this->assertSame(1, Client::where('operator_user_id', $operator->id)->where('is_internal', true)->count());
+        $this->assertSame(1, Customer::where('is_internal', true)->count());
     }
 
-    // ── Herencia de site desde el requester ─────────────────────────────
+    public function test_backfill_internal_customer_command_links_orphan_sites_of_the_internal_client(): void
+    {
+        // ensureFor() SIEMPRE crea un Client nuevo si no encuentra un
+        // Customer interno existente -- no "adopta" un Client legacy
+        // preexistente (mismo comportamiento que ya tenía la versión
+        // Opción B). Por eso este test simula el caso real: una sede que
+        // quedó sin customer_id bajo el client_id del interno (ej. insert
+        // directo / seed), corrida DESPUÉS de que el customer ya existe --
+        // no la primera corrida que lo crea.
+        $operator = $this->makeOperator();
+        $customer = app(InternalCustomerService::class)->ensureFor($operator, 'Interno');
+
+        $site = Site::create(['name' => 'Oficina huérfana', 'client_id' => $customer->client_id, 'type' => 'physical', 'is_active' => true]);
+        $this->assertNull($site->customer_id);
+
+        $this->artisan('tenants:backfill-internal-customer')->assertSuccessful();
+
+        $this->assertSame($customer->id, $site->fresh()->customer_id);
+    }
+
+    // ── Herencia de site desde el requester (sin cambios en Fase 2) ─────
 
     public function test_ticket_inherits_site_from_requester(): void
     {
@@ -99,7 +132,7 @@ class CustomerHierarchyTest extends TestCase
         $this->assertSame($otherSite, $ticket->site_id);
     }
 
-    // ── Integridad no-cross-tenant ──────────────────────────────────────
+    // ── Integridad no-cross-tenant (sin cambios en Fase 2) ──────────────
 
     public function test_site_of_another_tenant_is_rejected(): void
     {
@@ -137,7 +170,7 @@ class CustomerHierarchyTest extends TestCase
         $this->assertSame($fixture['client_id'], $ticket->client_id);
     }
 
-    // ── sites.name único por client, ya no global ───────────────────────
+    // ── sites.name único por client, ya no global (sin cambios) ─────────
 
     public function test_two_customers_can_have_sites_with_the_same_name(): void
     {
@@ -152,6 +185,64 @@ class CustomerHierarchyTest extends TestCase
         // Pero dentro del MISMO customer sí colisiona
         $this->expectException(\Illuminate\Database\QueryException::class);
         Site::create(['name' => 'Oficina Central', 'client_id' => $a->id, 'type' => 'physical', 'is_active' => true]);
+    }
+
+    // ── Consistencia site.client_id <-> customer.client_id (Fase 2 nuevo) ─
+
+    public function test_site_customer_must_belong_to_the_same_client_as_the_site(): void
+    {
+        $clientA = Client::create(['name' => 'Client A', 'is_active' => true]);
+        $clientB = Client::create(['name' => 'Client B', 'is_active' => true]);
+        $customerOfB = Customer::create(['client_id' => $clientB->id, 'name' => 'Customer de B', 'is_internal' => false]);
+
+        $this->expectException(\InvalidArgumentException::class);
+        Site::create([
+            'name' => 'Sede inconsistente', 'client_id' => $clientA->id,
+            'customer_id' => $customerOfB->id, 'type' => 'physical', 'is_active' => true,
+        ]);
+    }
+
+    public function test_site_customer_of_the_same_client_is_accepted(): void
+    {
+        $client = Client::create(['name' => 'Client C', 'is_active' => true]);
+        $customer = Customer::create(['client_id' => $client->id, 'name' => 'Customer de C', 'is_internal' => false]);
+
+        $site = Site::create([
+            'name' => 'Sede consistente', 'client_id' => $client->id,
+            'customer_id' => $customer->id, 'type' => 'physical', 'is_active' => true,
+        ]);
+
+        $this->assertSame($customer->id, $site->customer_id);
+    }
+
+    // ── RLS de customers bajo PostgreSQL real ────────────────────────────
+    // PENDIENTE DE VERIFICAR: el entorno local no tiene acceso a Postgres
+    // con TENANCY_PGSQL_RLS=true en este momento (ver auditoría). El test
+    // está escrito y se salta solo si el driver activo no es pgsql -- correr
+    // `composer test:pgsql` (o el equivalente phpunit.pgsql.xml) apenas se
+    // resuelva el acceso a Postgres para confirmar que pasa de verdad.
+
+    public function test_rls_isolates_customers_between_tenants(): void
+    {
+        if (! PgsqlRowLevelSecurity::enabled()) {
+            $this->markTestSkipped('Requiere PostgreSQL con TENANCY_PGSQL_RLS=true.');
+        }
+
+        $clientA = Client::create(['name' => 'RLS Client A', 'is_active' => true]);
+        $clientB = Client::create(['name' => 'RLS Client B', 'is_active' => true]);
+        Customer::create(['client_id' => $clientA->id, 'name' => 'Customer A', 'is_internal' => true]);
+        Customer::create(['client_id' => $clientB->id, 'name' => 'Customer B', 'is_internal' => true]);
+
+        PgsqlRowLevelSecurity::setBypass(true);
+        $this->assertSame(2, Customer::query()->count());
+
+        DB::statement("SELECT set_config('app.tenant_client_id', ?, false)", [(string) $clientA->id]);
+        DB::statement("SELECT set_config('app.tenant_bypass', 'false', false)");
+
+        $this->assertSame(1, Customer::query()->count());
+        $this->assertSame('Customer A', Customer::query()->value('name'));
+
+        PgsqlRowLevelSecurity::clear();
     }
 
     // ── Helpers ─────────────────────────────────────────────────────────

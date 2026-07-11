@@ -15,6 +15,7 @@ class Site extends Model
 
     protected $fillable = [
         'client_id',
+        'customer_id',
         'name',
         'code',
         'type',      // physical | virtual
@@ -30,9 +31,35 @@ class Site extends Model
         'is_active' => 'boolean',
     ];
 
+    protected static function booted(): void
+    {
+        // Consistencia site.customer.client_id === site.client_id: un
+        // CHECK constraint con subquery entre tablas no es portable entre
+        // Postgres/SQLite, así que se valida aquí (mismo patrón que
+        // TicketCreationService::assertSiteBelongsToClient).
+        static::saving(function (self $site) {
+            if (! $site->customer_id) {
+                return;
+            }
+
+            $customerClientId = Customer::where('id', $site->customer_id)->value('client_id');
+
+            if ($customerClientId !== null && (int) $customerClientId !== (int) $site->client_id) {
+                throw new \InvalidArgumentException(
+                    "Customer {$site->customer_id} pertenece al client {$customerClientId}, no al client {$site->client_id} de la sede."
+                );
+            }
+        });
+    }
+
     public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class, 'client_id');
+    }
+
+    public function customer(): BelongsTo
+    {
+        return $this->belongsTo(Customer::class, 'customer_id');
     }
 
     public function users(): HasMany
