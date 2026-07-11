@@ -34,7 +34,8 @@ use App\Services\ClientScopeService;
 class TicketController extends Controller
 {
     public function __construct(
-        protected ClientScopeService $clientScope
+        protected ClientScopeService $clientScope,
+        protected \App\Services\TicketCreationService $ticketCreation
     ) {}
 
     public function index(Request $request)
@@ -462,15 +463,15 @@ class TicketController extends Controller
         $clientCreatedAt = Carbon::parse($data['created_at'])->timezone(config('app.timezone'));
         unset($data['created_at']);
 
+        $data['due_at'] = ! empty($data['due_at'])
+            ? Carbon::parse($data['due_at'])->timezone(config('app.timezone'))
+            : $clientCreatedAt->copy()->addHours(Ticket::SLA_LIMIT_HOURS);
+
         return DB::transaction(function () use ($data, $user, $clientCreatedAt) {
-            $ticket = new Ticket($data);
-            $ticket->created_at = $clientCreatedAt;
-            if (!empty($data['due_at'])) {
-                $ticket->due_at = Carbon::parse($data['due_at'])->timezone(config('app.timezone'));
-            } else {
-                $ticket->due_at = $clientCreatedAt->copy()->addHours(Ticket::SLA_LIMIT_HOURS);
-            }
-            $ticket->save();
+            // Folio atómico vía TicketSequence::nextFor() — este controlador
+            // (creación operativa/interna) tenía el mismo bug histórico que
+            // MyTicketsController::store(): nunca asignaba folio.
+            $ticket = $this->ticketCreation->create($data, $clientCreatedAt);
 
             foreach ([$ticket->area_origin_id, $ticket->area_current_id] as $areaId) {
                 try {

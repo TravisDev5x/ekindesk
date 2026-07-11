@@ -6,8 +6,8 @@ use App\Models\Client;
 use App\Models\Ticket;
 use App\Models\TicketHistory;
 use App\Models\TicketState;
-use App\Models\User;
 use App\Services\Tenant\TenantContextService;
+use App\Services\TicketCreationService;
 use App\Support\Tenancy\PgsqlRowLevelSecurity;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -31,7 +31,7 @@ class ProcessInboundReply implements ShouldQueue
         private array  $parsedEmail
     ) {}
 
-    public function handle(): void
+    public function handle(TicketCreationService $ticketCreation): void
     {
         $tenant = Client::find($this->clientId);
         if (! $tenant) {
@@ -55,14 +55,27 @@ class ProcessInboundReply implements ShouldQueue
             return;
         }
 
-        DB::transaction(function () use ($ticket) {
-            // Buscar actor por email (puede no existir como usuario)
-            $actor = User::where('email', $this->parsedEmail['from'])
-                ->where('client_id', $this->clientId)
-                ->first();
+        // Misma validación que la creación de tickets (Único punto de
+        // decisión: TicketCreationService::resolveActiveTenantUser). Antes,
+        // si el remitente no matcheaba un usuario activo del tenant, la
+        // respuesta se atribuía silenciosamente al requester original del
+        // ticket y se procesaba igual — ahora se rechaza.
+        $resolution = $ticketCreation->resolveActiveTenantUser($this->parsedEmail['from'], $this->clientId);
 
-            $actorId = $actor?->id ?? $ticket->requester_id;
+        if (! $resolution->allowed) {
+            Log::warning('ProcessInboundReply: remitente rechazado, no se agrega respuesta', [
+                'client_id' => $this->clientId,
+                'folio' => $this->folio,
+                'from' => $this->parsedEmail['from'],
+                'reason' => $resolution->reason,
+            ]);
 
+            return;
+        }
+
+        $actorId = $resolution->user->id;
+
+        DB::transaction(function () use ($ticket, $actorId) {
             TicketHistory::create([
                 'ticket_id'   => $ticket->id,
                 'actor_id'    => $actorId,
@@ -97,7 +110,8 @@ class ProcessInboundReply implements ShouldQueue
                 'from'      => $this->parsedEmail['from'],
             ]);
 
-            // TODO Sprint 3: event(new \App\Events\TicketUpdated($ticket));
+            // Antes ninguno de los dos flujos (email ni portal) disparaba esto.
+            \App\Events\TicketUpdated::dispatch($ticket);
         });
     }
 

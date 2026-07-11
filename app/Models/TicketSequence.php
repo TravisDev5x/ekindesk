@@ -15,17 +15,19 @@ class TicketSequence extends Model
     protected $fillable = ['client_id', 'last_number'];
 
     /**
-     * Genera el siguiente folio para un tenant de forma atómica.
+     * Siguiente número interno de la secuencia del tenant, de forma atómica.
      *
      * En PostgreSQL: INSERT ON CONFLICT DO NOTHING + UPDATE RETURNING — un round-trip,
-     * sin locks adicionales, seguro bajo carga concurrente.
+     * sin locks adicionales, seguro bajo carga concurrente (el UPDATE toma el
+     * row lock; dos llamadas concurrentes serializan y reciben números distintos).
      * En SQLite (tests): firstOrCreate + increment (suficiente, sin concurrencia real).
      *
-     * Retorna el número con zero-padding a 5 dígitos: "00042".
+     * Retorna el contador crudo (1, 2, 3...). El formateo a folio visible
+     * (letra por bloque + prefijo + random) vive en TicketCreationService.
      */
-    public static function nextFor(int $clientId): string
+    public static function nextNumberFor(int $clientId): int
     {
-        $number = DB::transaction(function () use ($clientId) {
+        return (int) DB::transaction(function () use ($clientId) {
             if (DB::connection()->getDriverName() === 'pgsql') {
                 DB::statement(
                     'INSERT INTO ticket_sequences (client_id, last_number, created_at, updated_at)
@@ -54,8 +56,6 @@ class TicketSequence extends Model
             $seq->increment('last_number');
             return $seq->fresh()->last_number;
         });
-
-        return str_pad((string) $number, 5, '0', STR_PAD_LEFT);
     }
 
     public function client(): BelongsTo

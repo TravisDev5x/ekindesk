@@ -53,6 +53,23 @@ class Client extends Model
 
     protected static function booted(): void
     {
+        // ticket_prefix: auto-asignado al crear, INMUTABLE después (los
+        // folios emitidos lo llevan embebido — nunca se recalcula aunque el
+        // cliente cambie de nombre). Ver TicketPrefixService.
+        static::creating(function (self $client) {
+            if (! $client->ticket_prefix && $client->name) {
+                $client->ticket_prefix = app(\App\Services\TicketPrefixService::class)
+                    ->uniquePrefixFor($client->name);
+            }
+        });
+
+        static::updating(function (self $client) {
+            $original = $client->getOriginal('ticket_prefix');
+            if ($original && $client->ticket_prefix !== $original) {
+                $client->ticket_prefix = $original;
+            }
+        });
+
         static::saved(function (self $client) {
             if ($client->wasChanged('is_active') || $client->wasChanged('portal_slug')) {
                 if ($client->portal_slug) {

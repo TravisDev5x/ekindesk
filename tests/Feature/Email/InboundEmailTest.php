@@ -46,30 +46,30 @@ class InboundEmailTest extends TestCase
     {
         $parsed = [
             'subject'     => 'Re: Tu caso fue recibido',
-            'in_reply_to' => '<ticket-00042@techsolve.tikara.mx>',
+            'in_reply_to' => '<ticket-TK-A00042-SYD-88291@techsolve.tikara.mx>',
         ];
 
-        $this->assertEquals('00042', $this->service->detectFolio($parsed));
+        $this->assertEquals('TK-A00042-SYD-88291', $this->service->detectFolio($parsed));
     }
 
     public function test_detect_folio_from_subject_brackets(): void
     {
         $parsed = [
-            'subject'     => 'Re: [#00015] Problema con impresora',
+            'subject'     => 'Re: [#TK-B00015-ACME-01234] Problema con impresora',
             'in_reply_to' => '',
         ];
 
-        $this->assertEquals('00015', $this->service->detectFolio($parsed));
+        $this->assertEquals('TK-B00015-ACME-01234', $this->service->detectFolio($parsed));
     }
 
     public function test_detect_folio_from_subject_hash(): void
     {
         $parsed = [
-            'subject'     => 'Re: Seguimiento #00099',
+            'subject'     => 'Re: Seguimiento #TK-A00099-TST2-55555',
             'in_reply_to' => '',
         ];
 
-        $this->assertEquals('00099', $this->service->detectFolio($parsed));
+        $this->assertEquals('TK-A00099-TST2-55555', $this->service->detectFolio($parsed));
     }
 
     public function test_no_folio_for_new_ticket(): void
@@ -82,6 +82,18 @@ class InboundEmailTest extends TestCase
         $this->assertNull($this->service->detectFolio($parsed));
     }
 
+    public function test_old_five_digit_folio_format_is_not_detected(): void
+    {
+        // Formato viejo retirado sin compatibilidad: no existía ni un folio
+        // en formato viejo en ninguna base al momento del cambio.
+        $parsed = [
+            'subject'     => 'Re: [#00015] Problema con impresora',
+            'in_reply_to' => '<ticket-00042@techsolve.tikara.mx>',
+        ];
+
+        $this->assertNull($this->service->detectFolio($parsed));
+    }
+
     public function test_ticket_sequence_increments_atomically(): void
     {
         $tenant = Client::factory()->create([
@@ -89,15 +101,13 @@ class InboundEmailTest extends TestCase
             'is_active'   => true,
         ]);
 
-        $folio1 = TicketSequence::nextFor($tenant->id);
-        $folio2 = TicketSequence::nextFor($tenant->id);
-        $folio3 = TicketSequence::nextFor($tenant->id);
+        $n1 = TicketSequence::nextNumberFor($tenant->id);
+        $n2 = TicketSequence::nextNumberFor($tenant->id);
+        $n3 = TicketSequence::nextNumberFor($tenant->id);
 
-        $this->assertMatchesRegularExpression('/^\d{5}$/', $folio1);
-        $this->assertMatchesRegularExpression('/^\d{5}$/', $folio2);
-        $this->assertGreaterThan((int) $folio1, (int) $folio2);
-        $this->assertGreaterThan((int) $folio2, (int) $folio3);
-        $this->assertNotEquals($folio1, $folio2);
+        $this->assertSame(1, $n1);
+        $this->assertSame(2, $n2);
+        $this->assertSame(3, $n3);
     }
 
     public function test_ticket_sequences_are_isolated_per_tenant(): void
@@ -105,16 +115,16 @@ class InboundEmailTest extends TestCase
         $tenantA = Client::factory()->create(['portal_slug' => 'tenant-a', 'is_active' => true]);
         $tenantB = Client::factory()->create(['portal_slug' => 'tenant-b', 'is_active' => true]);
 
-        $folioA1 = TicketSequence::nextFor($tenantA->id);
-        $folioA2 = TicketSequence::nextFor($tenantA->id);
-        $folioB1 = TicketSequence::nextFor($tenantB->id);
+        $nA1 = TicketSequence::nextNumberFor($tenantA->id);
+        $nA2 = TicketSequence::nextNumberFor($tenantA->id);
+        $nB1 = TicketSequence::nextNumberFor($tenantB->id);
 
         // Tenant A va por su propia secuencia
-        $this->assertEquals('00001', $folioA1);
-        $this->assertEquals('00002', $folioA2);
+        $this->assertSame(1, $nA1);
+        $this->assertSame(2, $nA2);
 
         // Tenant B empieza en 1, independiente de A
-        $this->assertEquals('00001', $folioB1);
+        $this->assertSame(1, $nB1);
     }
 
     public function test_resolve_tenant_from_tikara_subdomain(): void
@@ -151,6 +161,50 @@ class InboundEmailTest extends TestCase
 
         // Sin key configurada en local → permite siempre
         $this->assertTrue($this->service->verifyMailgunSignature($payload));
+    }
+
+    public function test_mailgun_signature_rejected_without_key_outside_local(): void
+    {
+        $this->app['env'] = 'production';
+
+        $payload = [
+            'timestamp' => time(),
+            'token'     => 'test-token',
+            'signature' => 'invalid',
+        ];
+
+        // Sin key configurada y fuera de local/testing → falla cerrado (rechaza).
+        $this->assertFalse($this->service->verifyMailgunSignature($payload));
+    }
+
+    public function test_mailgun_signature_valid_with_key_configured(): void
+    {
+        config(['services.mailgun.webhook_signing_key' => 'a-real-signing-key']);
+
+        $timestamp = (string) time();
+        $token = 'abc123token';
+        $signature = hash_hmac('sha256', $timestamp.$token, 'a-real-signing-key');
+
+        $payload = [
+            'timestamp' => $timestamp,
+            'token'     => $token,
+            'signature' => $signature,
+        ];
+
+        $this->assertTrue($this->service->verifyMailgunSignature($payload));
+    }
+
+    public function test_mailgun_signature_invalid_with_key_configured(): void
+    {
+        config(['services.mailgun.webhook_signing_key' => 'a-real-signing-key']);
+
+        $payload = [
+            'timestamp' => (string) time(),
+            'token'     => 'abc123token',
+            'signature' => 'not-the-right-signature',
+        ];
+
+        $this->assertFalse($this->service->verifyMailgunSignature($payload));
     }
 
     public function test_parse_email_without_name(): void

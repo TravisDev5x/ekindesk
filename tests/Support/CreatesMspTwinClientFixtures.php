@@ -5,6 +5,7 @@ namespace Tests\Support;
 use App\Models\Client;
 use App\Models\Incident;
 use App\Models\Ticket;
+use App\Models\TicketSequence;
 use App\Models\User;
 use App\Services\TenantContextService;
 use Illuminate\Support\Facades\DB;
@@ -155,6 +156,7 @@ trait CreatesMspTwinClientFixtures
 
         $ticketA = Ticket::create([
             'subject' => 'Ticket Alpha',
+            'folio' => str_pad((string) TicketSequence::nextNumberFor($clientA->id), 5, "0", STR_PAD_LEFT),
             'area_origin_id' => $areaId,
             'area_current_id' => $areaId,
             'site_id' => $siteA,
@@ -166,6 +168,7 @@ trait CreatesMspTwinClientFixtures
         ]);
         $ticketB = Ticket::create([
             'subject' => 'Ticket Beta',
+            'folio' => str_pad((string) TicketSequence::nextNumberFor($clientB->id), 5, "0", STR_PAD_LEFT),
             'area_origin_id' => $areaId,
             'area_current_id' => $areaId,
             'site_id' => $siteB,

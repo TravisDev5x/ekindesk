@@ -153,6 +153,7 @@ class TicketApiTest extends TestCase
     {
         $ticket = Ticket::create([
             'subject' => 'Ticket show test',
+            'folio' => '00001',
             'area_origin_id' => $this->areaOrigin->id,
             'area_current_id' => $this->areaCurrent->id,
             'site_id' => $this->site->id,

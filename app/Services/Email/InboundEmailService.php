@@ -61,23 +61,31 @@ class InboundEmailService
     /**
      * Detecta si el email es respuesta a un ticket existente.
      *
+     * Formato de folio: TK-{Letra}{Num5}-{PREFIX}-{Rand5} (ej. TK-A00042-SYD-88291).
+     * No hay compatibilidad con el formato viejo de 5 dígitos: al momento del
+     * cambio no existía ni un folio en formato viejo en ninguna base (dev/prod).
+     *
      * Busca en orden:
-     * 1. In-Reply-To: <ticket-00042@dominio>
-     * 2. Subject: [#00042] o Re: [#00042] o #00042
+     * 1. In-Reply-To: <ticket-TK-A00042-SYD-88291@dominio>
+     * 2. Subject: [#TK-A00042-SYD-88291] o #TK-A00042-SYD-88291
      */
+    private const FOLIO_PATTERN = 'TK-[A-Z]\d{5}-[A-Z0-9]{1,10}-\d{5}';
+
     public function detectFolio(array $parsedEmail): ?string
     {
+        $p = self::FOLIO_PATTERN;
+
         $inReplyTo = $parsedEmail['in_reply_to'] ?? '';
-        if ($inReplyTo && preg_match('/ticket-(\d{5})@/i', $inReplyTo, $m)) {
-            return $m[1];
+        if ($inReplyTo && preg_match("/ticket-({$p})@/i", $inReplyTo, $m)) {
+            return strtoupper($m[1]);
         }
 
         $subject = $parsedEmail['subject'] ?? '';
-        if (preg_match('/\[#(\d{5})\]/i', $subject, $m)) {
-            return $m[1];
+        if (preg_match("/\[#({$p})\]/i", $subject, $m)) {
+            return strtoupper($m[1]);
         }
-        if (preg_match('/#(\d{5})\b/i', $subject, $m)) {
-            return $m[1];
+        if (preg_match("/#({$p})\b/i", $subject, $m)) {
+            return strtoupper($m[1]);
         }
 
         return null;

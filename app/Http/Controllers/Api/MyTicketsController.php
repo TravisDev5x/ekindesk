@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Events\TicketCreated;
+use App\Events\TicketUpdated;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreTicketRequest;
 use App\Models\Ticket;
@@ -11,6 +12,7 @@ use App\Models\TicketAttachment;
 use App\Models\TicketHistory;
 use App\Services\ClientScopeService;
 use App\Services\RequesterTicketService;
+use App\Services\TicketCreationService;
 use Illuminate\Support\Facades\Gate;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -27,6 +29,7 @@ class MyTicketsController extends Controller
     public function __construct(
         protected RequesterTicketService $requesterTicketService,
         protected ClientScopeService $clientScope,
+        protected TicketCreationService $ticketCreation,
     ) {}
 
     /**
@@ -133,20 +136,33 @@ class MyTicketsController extends Controller
         if ($user->client_id !== null) {
             $data['client_id'] = (int) $user->client_id;
         }
+
+        // Mismo punto de decisión que email (TicketCreationService::
+        // resolveActiveTenantUser) — aquí siempre debería ser 'ok' (el
+        // usuario ya está autenticado vía Sanctum y client_id sale de él
+        // mismo, nunca de input externo), pero es el mismo lugar que decide
+        // para los tres caminos, no lógica duplicada.
+        if (! empty($data['client_id'])) {
+            $resolution = $this->ticketCreation->resolveActiveTenantUser($user->email, (int) $data['client_id']);
+            if (! $resolution->allowed) {
+                return response()->json(['message' => 'No autorizado para crear tickets en este tenant.'], 403);
+            }
+        }
+
         $data['requester_id'] = $user->id;
         $data['requester_position_id'] = $user->position_id ?? null;
         $clientCreatedAt = Carbon::parse($data['created_at'])->timezone(config('app.timezone'));
         unset($data['created_at']);
 
+        $data['due_at'] = ! empty($data['due_at'])
+            ? Carbon::parse($data['due_at'])->timezone(config('app.timezone'))
+            : $clientCreatedAt->copy()->addHours(Ticket::SLA_LIMIT_HOURS);
+
         return DB::transaction(function () use ($data, $user, $clientCreatedAt) {
-            $ticket = new Ticket($data);
-            $ticket->created_at = $clientCreatedAt;
-            if (! empty($data['due_at'])) {
-                $ticket->due_at = Carbon::parse($data['due_at'])->timezone(config('app.timezone'));
-            } else {
-                $ticket->due_at = $clientCreatedAt->copy()->addHours(Ticket::SLA_LIMIT_HOURS);
-            }
-            $ticket->save();
+            // Folio atómico vía TicketSequence::nextFor(), mismo mecanismo que
+            // el flujo de email (ProcessInboundTicket) — antes este controlador
+            // creaba el ticket directamente y nunca le asignaba folio.
+            $ticket = $this->ticketCreation->create($data, $clientCreatedAt);
 
             foreach ([$ticket->area_origin_id, $ticket->area_current_id] as $areaId) {
                 try {
@@ -249,6 +265,10 @@ class MyTicketsController extends Controller
         } catch (\InvalidArgumentException $e) {
             return response()->json(['message' => $e->getMessage()], 422);
         }
+
+        // Antes esto no disparaba nada; ahora usa el mismo evento que el reply
+        // por email (ProcessInboundReply), unificando el gancho de notificación.
+        TicketUpdated::dispatch($ticket);
 
         $ticket->load([
             'histories' => function ($q) {

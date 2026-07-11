@@ -109,6 +109,15 @@ trait CreatesTenantFixtures
             DB::statement('ALTER TABLE tickets ALTER COLUMN client_id DROP NOT NULL');
         }
 
+        // tickets.folio también es NOT NULL en Postgres (Paso 1 del sprint de
+        // correo saliente, tras el backfill de folios de portal). Con
+        // client_id real, usa el mismo mecanismo atómico de producción; sin
+        // client_id (fixtures de huérfanos pre-backfill), un placeholder
+        // único basta — esos tests no verifican el valor del folio.
+        $folio = $clientId !== null
+            ? str_pad((string) \App\Models\TicketSequence::nextNumberFor($clientId), 5, '0', STR_PAD_LEFT)
+            : 'X'.random_int(100000, 999999);
+
         return DB::table('tickets')->insertGetId([
             'subject' => 'Ticket tenant test',
             'area_origin_id' => $fixture['area_id'],
@@ -119,6 +128,7 @@ trait CreatesTenantFixtures
             'priority_id' => $fixture['priority_id'],
             'ticket_state_id' => $fixture['ticket_state_id'],
             'client_id' => $clientId,
+            'folio' => $folio,
             'created_at' => $now,
             'updated_at' => $now,
         ]);
