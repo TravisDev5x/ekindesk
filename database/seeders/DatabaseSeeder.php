@@ -19,7 +19,8 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             PlanSeeder::class,
-            FullDemoSeeder::class,       // Configuración mínima (catálogos, roles, admin)
+            FullDemoSeeder::class,       // Configuración mínima (catálogos, roles legacy, admin)
+            TenantRoleSeeder::class,     // Fase 3: admin/supervisor/agente/solicitante, coexisten con los legacy
             PriorityMatrixSeeder::class, // Matriz Impacto x Urgencia -> Prioridad (requiere priorities)
             EmpresaSedeSeeder::class,    // 2 sedes (Toluca, CDMX) y 5 campañas
         ]);
