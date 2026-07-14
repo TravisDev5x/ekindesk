@@ -221,6 +221,30 @@ class TicketPolicy
     }
 
     /**
+     * Staff (supervisor/agente) vinculado por site_user al site del ticket,
+     * filtrado por el mismo criterio de alcance que withinStaffSiteScope()
+     * usa para autorizar acciones (Fase 5.3) -- para resolver DESTINATARIOS
+     * de notificación (SendTicketNotification::recipients()), no para
+     * autorizar nada. No duplica el criterio: llama al mismo método
+     * protected que view()/update()/assign() ya usan.
+     *
+     * Ticket sin site_id -- igual que en view(), nadie de esta lista lo ve,
+     * devuelve colección vacía (el admin/manage_all se resuelve aparte, en
+     * el propio listener, vía tickets.manage_all).
+     */
+    public function notifiableStaff(Ticket $ticket): \Illuminate\Support\Collection
+    {
+        if (! $ticket->site_id) {
+            return collect();
+        }
+
+        return User::whereHas('sites', fn ($q) => $q->where('sites.id', $ticket->site_id))
+            ->get()
+            ->filter(fn (User $user) => $this->withinStaffSiteScope($user, $ticket))
+            ->values();
+    }
+
+    /**
      * Devuelve el tipo de alcance de visibilidad (Fase 4, por rol/site):
      * - all: is_operator o tickets.manage_all (admin)
      * - supervisor: rol supervisor

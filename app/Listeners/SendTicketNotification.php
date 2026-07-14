@@ -101,17 +101,23 @@ class SendTicketNotification
         }
     }
 
+    /**
+     * Fase 5.3: reemplaza la resolución legacy por area_current_id/area_id
+     * (un agente/supervisor vinculado al ticket SOLO por site_user, sin
+     * area_id coincidente, nunca recibía notificación de un ticket que sí
+     * podía ver y atender según TicketPolicy -- misma clase de bug que los
+     * Obstáculos A/B de la Sub-fase 5.1, en este código path). Reusa
+     * TicketPolicy::notifiableStaff(), que aplica el mismo criterio de
+     * alcance que view()/update()/assign() (supervisor: todo su site;
+     * agente: sin asignar o suyo) -- no se reinventa el criterio aquí.
+     */
     private function recipients(Ticket $ticket): Collection
     {
-        $areaId = $ticket->area_current_id;
-
-        $areaUsers = $areaId
-            ? User::where('area_id', $areaId)->get()
-            : collect();
+        $siteStaff = app(\App\Policies\TicketPolicy::class)->notifiableStaff($ticket);
 
         $globalUsers = User::permission('tickets.manage_all')->get()
             ->filter(fn (User $user) => $this->operatorScope->userInTicketOperatorScope($user, $ticket));
 
-        return $areaUsers->merge($globalUsers)->unique('id');
+        return $siteStaff->merge($globalUsers)->unique('id');
     }
 }

@@ -232,10 +232,18 @@ class MailablesTest extends TestCase
             'email' => 'agente-'.uniqid().'@empresa.test', 'password' => Hash::make('x'),
             'employee_number' => (string) random_int(100000, 999999),
             'area_id' => $fixture['area_id'], 'position_id' => DB::table('positions')->value('id'),
-            'site_id' => $fixture['site_id'], 'status' => 'active',
+            'site_id' => $fixture['site_id'], 'client_id' => $client->id, 'status' => 'active',
         ]);
         Permission::firstOrCreate(['name' => 'tickets.manage_all', 'guard_name' => 'web']);
         $agent->givePermissionTo('tickets.manage_all');
+        // site_user explícito (Fase 5.3): sin esto, SendTicketNotification::recipients()
+        // ya no lo alcanza -- antes colaba por area_id (areaUsers, sin ningún scope de
+        // operador); notifiableStaff() exige site_user. La otra ruta posible
+        // (globalUsers vía tickets.manage_all) tampoco lo alcanzaría aquí: este fixture
+        // (CreatesTenantFixtures) no le pone operator_user_id al client, así que
+        // userInTicketOperatorScope() siempre da false para cualquiera en este test --
+        // nunca dependió de esa ruta, solo de la legacy que se acaba de quitar.
+        DB::table('site_user')->insert(['site_id' => $fixture['site_id'], 'user_id' => $agent->id]);
 
         $requester = User::create([
             'first_name' => 'Cliente', 'paternal_last_name' => 'Final',
