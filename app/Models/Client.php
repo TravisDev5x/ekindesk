@@ -39,6 +39,7 @@ class Client extends Model
         'inbound_email',
         'mode',
         'ai_classification_enabled',
+        'show_agent_names',
     ];
 
     protected $appends = [
@@ -49,6 +50,7 @@ class Client extends Model
         'is_active'               => 'boolean',
         'subscription_expires_at' => 'datetime',
         'cancelled_at'            => 'datetime',
+        'show_agent_names'        => 'boolean',
     ];
 
     protected static function booted(): void

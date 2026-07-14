@@ -114,6 +114,8 @@ class MyTicketsController extends Controller
             $ticket->histories->reject(fn ($h) => $h->action === 'comment' && $h->is_internal)->values()
         );
 
+        $this->maskAgentIdentity($ticket);
+
         return $this->withRequesterAbilities($ticket);
     }
 
@@ -238,6 +240,8 @@ class MyTicketsController extends Controller
             'state:id,name,code',
         ]);
 
+        $this->maskAgentIdentity($ticket);
+
         return response()->json([
             'alert' => $result['alert'],
             'ticket' => $this->withRequesterAbilities($ticket),
@@ -277,6 +281,12 @@ class MyTicketsController extends Controller
             },
         ]);
 
+        $this->maskAgentIdentity($ticket);
+
+        // El history recién creado es siempre del propio solicitante
+        // (RequesterTicketService::addComment fija actor_id = $user->id) --
+        // no necesita masking, a diferencia de los del historial completo
+        // arriba, que sí pueden incluir comentarios de agentes.
         return response()->json([
             'history' => $history->load(['actor:id,name,email', 'state:id,name,code']),
             'ticket' => $this->withRequesterAbilities($ticket),
@@ -360,6 +370,8 @@ class MyTicketsController extends Controller
             },
         ]);
 
+        $this->maskAgentIdentity($ticket);
+
         return response()->json($this->withRequesterAbilities($ticket));
     }
 
@@ -409,6 +421,49 @@ class MyTicketsController extends Controller
         }
         if ($request->filled('date_to')) {
             $query->whereDate('created_at', '<=', $request->input('date_to'));
+        }
+    }
+
+    /**
+     * Sub-fase 5.2: si el tenant tiene clients.show_agent_names = false,
+     * reemplaza nombre y email del agente por una etiqueta genérica en todo
+     * lo que ve el solicitante -- assignedUser y cada entrada de histories
+     * cuyo actor no sea el propio solicitante (sus propios comentarios no
+     * se tocan). No aplica al lado staff (TicketController): exclusivo de
+     * este controlador ("Mis Tickets"). Default de la columna es true
+     * (mostrar), así que si el ticket no tiene client o el flag está en
+     * true, no hace nada.
+     */
+    protected function maskAgentIdentity(Ticket $ticket): Ticket
+    {
+        $ticket->loadMissing('client');
+
+        if (! $ticket->client || $ticket->client->show_agent_names !== false) {
+            return $ticket;
+        }
+
+        if ($ticket->relationLoaded('assignedUser') && $ticket->assignedUser) {
+            $this->maskAgentUser($ticket->assignedUser);
+        }
+
+        if ($ticket->relationLoaded('histories')) {
+            foreach ($ticket->histories as $history) {
+                if ($history->relationLoaded('actor')
+                    && $history->actor
+                    && (int) $history->actor->id !== (int) $ticket->requester_id) {
+                    $this->maskAgentUser($history->actor);
+                }
+            }
+        }
+
+        return $ticket;
+    }
+
+    protected function maskAgentUser(\App\Models\User $agent): void
+    {
+        $agent->setAttribute('name', 'Agente de soporte');
+        if (array_key_exists('email', $agent->getAttributes())) {
+            $agent->setAttribute('email', null);
         }
     }
 
