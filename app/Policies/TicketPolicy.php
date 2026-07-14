@@ -90,28 +90,48 @@ class TicketPolicy
     }
 
     /**
-     * Supervisor: cualquier ticket de sus sites (asignado o no). Agente:
-     * mismo conjunto que puede ver -- sin asignar, o asignado a él (Fase 4,
-     * ver withinStaffSiteScope()).
+     * Tomar/asignar un ticket SIN responsable (Fase 5, Paso 1 -- antes esta
+     * misma ability cubría también mover un ticket ya asignado, ver
+     * reassign()). $newUser es obligatorio incluso para autoasignación
+     * (take() se llama a sí mismo como destino) porque el endpoint HTTP
+     * también permite asignar un ticket sin dueño a UN TERCERO (no solo
+     * autoasignarse) -- el legacy Obstáculo B (newUser->area_id ===
+     * ticket->area_current_id, TicketController.php) validaba justo eso,
+     * y al quitarlo había que reponerlo aquí en vez de dejarlo sin validar.
      *
-     * DECISIÓN: sigue gateado por el permiso legacy tickets.assign, no por
-     * tickets.reassign (creado en Fase 3, sin usar todavía). tickets.reassign
-     * queda reservado para Fase 5, cuando exista la acción real de
-     * "reasignar" con notificación correo+in-app -- conectarlo aquí
-     * anticiparía esa fase sin sus notificaciones. Hoy agente y supervisor
-     * tienen ambos permisos (tickets.assign vía TenantRoleSeeder), así que
-     * el comportamiento no cambia por esta decisión.
+     * Requiere tickets.assign + que el actor tenga alcance sobre el ticket
+     * (withinStaffSiteScope) + que el DESTINO tenga site_user en el site
+     * del ticket (canAssignTo()).
      */
-    public function assign(User $user, Ticket $ticket): bool
+    public function assign(User $user, Ticket $ticket, User $newUser): bool
     {
-        if ($user->can('tickets.manage_all')) {
-            return true;
-        }
-        if (! $user->can('tickets.assign')) {
+        if ($ticket->assigned_user_id) {
             return false;
         }
 
-        return $this->withinStaffSiteScope($user, $ticket);
+        return $this->canAssignTo($user, $ticket, $newUser, 'tickets.assign');
+    }
+
+    /**
+     * Mover un ticket que YA tiene responsable, a otro usuario (Fase 5).
+     * Requiere tickets.reassign -- con los permisos actuales de
+     * TenantRoleSeeder esto deja la acción en supervisor/admin (agente no
+     * tiene tickets.reassign): un agente no puede quitarle un ticket a
+     * otro agente, ni siquiera al suyo propio para dárselo a un colega --
+     * la vía para eso es release() (vuelve a la cola sin asignar) seguido
+     * de assign() por quien lo tome. Consistente con la regla de negocio
+     * confirmada en la auditoría del Paso 0 ("agente no le quita tickets a
+     * otro agente").
+     *
+     * Mismo tratamiento de $newUser que assign() -- ver canAssignTo().
+     */
+    public function reassign(User $user, Ticket $ticket, User $newUser): bool
+    {
+        if (! $ticket->assigned_user_id) {
+            return false;
+        }
+
+        return $this->canAssignTo($user, $ticket, $newUser, 'tickets.reassign');
     }
 
     /**
@@ -263,7 +283,7 @@ class TicketPolicy
         if ($scope !== 'supervisor' && $scope !== 'agente') {
             return false;
         }
-        if (! $ticket->site_id || ! $this->userSiteIds($user)->contains((int) $ticket->site_id)) {
+        if (! $this->userLinkedToTicketSite($user, $ticket)) {
             return false;
         }
         if ($scope === 'supervisor') {
@@ -272,6 +292,44 @@ class TicketPolicy
 
         // agente: asignado a él, o sin asignar (cola abierta del site).
         return ! $ticket->assigned_user_id || $this->isAssignee($user, $ticket);
+    }
+
+    /**
+     * Pertenencia cruda site_user↔site del ticket, sin mirar rol ni estado
+     * de asignación -- el bloque de membresía que withinStaffSiteScope()
+     * usa para el actor, y que assign()/reassign() (vía canAssignTo())
+     * reusan para validar al DESTINO de la asignación (Fase 5). Separado en
+     * su propio método para no duplicar la condición en los dos lugares.
+     */
+    protected function userLinkedToTicketSite(User $user, Ticket $ticket): bool
+    {
+        return (bool) $ticket->site_id && $this->userSiteIds($user)->contains((int) $ticket->site_id);
+    }
+
+    /**
+     * Núcleo compartido por assign() y reassign() (Fase 5): autoriza al
+     * actor igual que el resto de acciones de mutación (manage_all
+     * absoluto, permiso puntual + withinStaffSiteScope), y ADEMÁS valida
+     * que el destino ($newUser) tenga site_user en el site del ticket --
+     * sin esto, un actor autorizado podría asignar/reasignar a cualquier
+     * usuario de la base sin relación con ese site (el legacy Obstáculo B,
+     * por área, cubría este mismo caso para ambos flujos). manage_all
+     * exime también de la validación del destino, igual que exime al
+     * actor -- mismo criterio que el resto de esta policy.
+     */
+    protected function canAssignTo(User $actor, Ticket $ticket, User $newUser, string $permission): bool
+    {
+        if ($actor->can('tickets.manage_all')) {
+            return true;
+        }
+        if (! $actor->can($permission)) {
+            return false;
+        }
+        if (! $this->withinStaffSiteScope($actor, $ticket)) {
+            return false;
+        }
+
+        return $this->userLinkedToTicketSite($newUser, $ticket);
     }
 
     protected function isAssignee(User $user, Ticket $ticket): bool

@@ -11,6 +11,7 @@ use App\Models\TicketAreaAccess;
 use App\Models\TicketState;
 use App\Models\User;
 use App\Models\PriorityMatrix;
+use App\Mail\TicketReassignedMail;
 use App\Notifications\Tickets\TicketAssignedNotification;
 use App\Notifications\Tickets\TicketReassignedNotification;
 use App\Notifications\Tickets\TicketEscalatedNotification;
@@ -28,6 +29,7 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Carbon\Carbon;
 use App\Services\ClientScopeService;
 
@@ -733,7 +735,9 @@ class TicketController extends Controller
         $user = Auth::user();
         if (!$user) return response()->json(['message' => 'No autorizado'], 401);
 
-        Gate::authorize('assign', $ticket);
+        // take() siempre es autoasignación: actor y destino son la misma
+        // persona (Fase 5 -- assign() ahora requiere el destino explícito).
+        Gate::authorize('assign', [$ticket, $user]);
 
         if ($ticket->assigned_user_id) {
             return response()->json(['message' => 'Ticket ya asignado'], 409);
@@ -797,34 +801,35 @@ class TicketController extends Controller
         });
     }
 
+    /**
+     * Tomar/asignar (ticket sin responsable) o reasignar (ticket ya
+     * asignado a alguien más) -- mismo endpoint, la ability a autorizar
+     * depende del estado ACTUAL del ticket (Fase 5). Los dos obstáculos
+     * legacy que vivían aquí (línea "solo el responsable actual puede
+     * reasignar" y el chequeo de newUser->area_id === ticket->area_current_id)
+     * se quitaron -- ambos ya viven en TicketPolicy::assign()/reassign()
+     * (withinStaffSiteScope() para el actor, userLinkedToTicketSite() para
+     * el destino), no hay chequeo duplicado aquí.
+     */
     public function assign(Request $request, Ticket $ticket)
     {
         $user = Auth::user();
         if (!$user) return response()->json(['message' => 'No autorizado'], 401);
-
-        Gate::authorize('assign', $ticket);
-
-        if ($ticket->assigned_user_id && (int) $ticket->assigned_user_id !== (int) $user->id && !$user->can('tickets.manage_all')) {
-            return response()->json(['message' => 'Solo el responsable actual puede reasignar este ticket'], 403);
-        }
 
         $data = $request->validate([
             'assigned_user_id' => 'required|exists:users,id',
         ]);
 
         $newUser = User::findOrFail((int) $data['assigned_user_id']);
+        $isReassignment = (bool) $ticket->assigned_user_id;
 
-        if (!$user->can('tickets.manage_all')) {
-            if (!$newUser->area_id || (int) $newUser->area_id !== (int) $ticket->area_current_id) {
-                return response()->json(['message' => 'Responsable fuera del area actual'], 422);
-            }
-        }
+        Gate::authorize($isReassignment ? 'reassign' : 'assign', [$ticket, $newUser]);
 
         if ((int) $ticket->assigned_user_id === (int) $newUser->id) {
             return response()->json(['message' => 'Ticket ya asignado a ese usuario'], 409);
         }
 
-        return DB::transaction(function () use ($ticket, $user, $newUser) {
+        return DB::transaction(function () use ($ticket, $user, $newUser, $isReassignment) {
             $prevAssignee = $ticket->assigned_user_id;
 
             $ticket->assigned_user_id = $newUser->id;
@@ -835,7 +840,7 @@ class TicketController extends Controller
                 'ticket_id' => $ticket->id,
                 'actor_id' => $user->id,
                 'ticket_state_id' => $ticket->ticket_state_id,
-                'action' => 'reassigned',
+                'action' => $isReassignment ? 'reassigned' : 'assigned',
                 'is_internal' => false,
                 'from_assignee_id' => $prevAssignee,
                 'to_assignee_id' => $newUser->id,
@@ -845,7 +850,23 @@ class TicketController extends Controller
                 'assigned_user_id' => ['from' => $prevAssignee, 'to' => $newUser->id],
             ]);
 
-            $this->notifyAssignment($ticket, $user, $newUser->id, 'reassigned');
+            if ($isReassignment) {
+                $this->notifyAssignment($ticket, $user, $newUser->id, 'reassigned');
+                $this->notifyPreviousAssignee($ticket, $user, $prevAssignee, $newUser->id);
+                if ($newUser->email) {
+                    try {
+                        Mail::to($newUser->email)->queue(new TicketReassignedMail($ticket, $user));
+                    } catch (\Throwable $e) {
+                        Log::warning('ticket reassigned mail failed', [
+                            'ticket_id' => $ticket->id,
+                            'user_id' => $newUser->id,
+                            'error' => $e->getMessage(),
+                        ]);
+                    }
+                }
+            } else {
+                $this->notifyAssignment($ticket, $user, $newUser->id, 'assigned');
+            }
 
             $ticket->load(
                 'areaOrigin:id,name',
@@ -1271,6 +1292,33 @@ class TicketController extends Controller
         }
     }
 
+    /**
+     * Al responsable ANTERIOR de un ticket reasignado: solo in-app, sin
+     * correo -- decisión de Fase 5. notifyAssignment() (arriba) ya cubre al
+     * nuevo responsable y al solicitante; este método cubre al único
+     * destinatario que notifyAssignment() no contempla, porque nunca
+     * conoce al responsable anterior (solo recibe el nuevo assigneeId).
+     */
+    protected function notifyPreviousAssignee(Ticket $ticket, User $actor, ?int $prevAssigneeId, int $newAssigneeId): void
+    {
+        if (! $prevAssigneeId || (int) $prevAssigneeId === $newAssigneeId) {
+            return;
+        }
+
+        $prevUser = User::find($prevAssigneeId);
+        if (! $prevUser || ! $this->hasTicketPermission($prevUser)) {
+            return;
+        }
+
+        $message = "Tu ticket #{$ticket->id} ya no está asignado a ti (reasignado a otro responsable)";
+        $this->safeNotify(
+            $prevUser,
+            new TicketReassignedNotification($ticket->id, $message, $actor->id),
+            $ticket->id,
+            'reassigned'
+        );
+    }
+
     protected function notifyEscalated(Ticket $ticket, User $actor, int $areaId): void
     {
         $recipients = User::permission('tickets.view_area')
@@ -1317,10 +1365,24 @@ class TicketController extends Controller
         }
     }
 
+    /**
+     * assign()/reassign() ya no aceptan solo el ticket -- necesitan un
+     * destino ($newUser) desde Fase 5 (TicketPolicy::canAssignTo()). Aquí
+     * todavía no hay un destino elegido (el picker de agente vive en el
+     * frontend, después de este flag), así que se usa al propio actor como
+     * candidato placeholder: refleja "¿tiene sentido mostrarme la acción
+     * en este ticket?" (alcance del actor), no "¿puedo asignarlo a
+     * cualquiera?" -- esa segunda validación (destino con site_user en el
+     * site del ticket) se aplica de verdad recién en el submit real, con
+     * Gate::authorize() en assign()/unassign() de este mismo controlador.
+     */
     protected function withAbilities(Ticket $ticket): Ticket
     {
+        $user = Auth::user();
+
         $ticket->setAttribute('abilities', [
-            'assign' => Gate::allows('assign', $ticket),
+            'assign' => $user ? Gate::allows('assign', [$ticket, $user]) : false,
+            'reassign' => $user ? Gate::allows('reassign', [$ticket, $user]) : false,
             'release' => Gate::allows('release', $ticket),
             'escalate' => Gate::allows('escalate', $ticket),
             'comment' => Gate::allows('comment', $ticket),

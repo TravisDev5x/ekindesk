@@ -231,7 +231,7 @@ class TicketSiteScopingTest extends TestCase
         $ticket = $this->makeTicket($this->siteA->id);
 
         $this->assertTrue($this->canView($agentA, $ticket));
-        $this->assertTrue($this->authorizes('assign', $agentA, $ticket));
+        $this->assertTrue($this->authorizes('assign', $agentA, $ticket, $agentA));
 
         $update = $this->actingAs($agentA, 'web')->patchJson($this->ticketUrl($ticket->id), [
             'note' => 'Atendiendo desde mi site',
@@ -245,10 +245,11 @@ class TicketSiteScopingTest extends TestCase
         $escalate->assertStatus(200);
     }
 
-    public function test_supervisor_can_assign_and_release_tickets_of_their_site_regardless_of_area_current_id(): void
+    public function test_supervisor_can_reassign_and_release_tickets_of_their_site_regardless_of_area_current_id(): void
     {
         $supervisor = $this->makeStaff('supervisor', [$this->siteA->id]);
         $agentA = $this->makeStaff('agente', [$this->siteA->id]);
+        $agentA2 = $this->makeStaff('agente', [$this->siteA->id]);
         $ticket = $this->makeTicket($this->siteA->id, $agentA->id);
 
         // area_current_id deliberadamente distinta al area_id de nadie
@@ -258,8 +259,9 @@ class TicketSiteScopingTest extends TestCase
         $ticket->update(['area_current_id' => $this->makeArea()]);
 
         // Supervisor puede reasignar/liberar un ticket de su site aunque no
-        // sea el responsable actual (agentA lo es, no el supervisor).
-        $this->assertTrue($this->authorizes('assign', $supervisor, $ticket));
+        // sea el responsable actual (agentA lo es, no el supervisor) -- a
+        // otro agente (agentA2) también vinculado a ese site.
+        $this->assertTrue($this->authorizes('reassign', $supervisor, $ticket, $agentA2));
         $this->assertTrue($this->authorizes('release', $supervisor, $ticket));
     }
 
@@ -368,11 +370,18 @@ class TicketSiteScopingTest extends TestCase
      * tocado). Probar assign()/release() por HTTP contaminaría el test del
      * bug que se está corrigiendo aquí con ese otro bug sin relación.
      */
-    private function authorizes(string $ability, User $user, Ticket $ticket): bool
+    /**
+     * $target: destino de assign()/reassign() (Fase 5) -- ambas abilities
+     * requieren un tercer argumento ($newUser) desde que se separaron.
+     */
+    private function authorizes(string $ability, User $user, Ticket $ticket, ?User $target = null): bool
     {
         \App\Support\Tenancy\PgsqlRowLevelSecurity::setBypass(true);
 
-        return app(\App\Policies\TicketPolicy::class)->{$ability}($user, $ticket->fresh());
+        $policy = app(\App\Policies\TicketPolicy::class);
+        $ticket = $ticket->fresh();
+
+        return $target ? $policy->{$ability}($user, $ticket, $target) : $policy->{$ability}($user, $ticket);
     }
 
     private function ticketUrl(int $id): string
