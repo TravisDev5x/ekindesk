@@ -76,7 +76,12 @@ class TenantRoleSeeder extends Seeder
         $supervisorPerms = array_values(array_unique(array_merge(
             $agentePerms,
             [
-                'tickets.manage_all',
+                // NO tickets.manage_all: bajo Fase 4 (scoping por site vía
+                // TicketPolicy::siteScopeType), esa permission significa "ve
+                // TODO sin restricción de site" -- es lo que distingue a
+                // admin. Dársela a supervisor lo colapsaría al bucket de
+                // admin en vez de "sus sites" (bug real que se detectó
+                // escribiendo los tests de Fase 4, ver TicketSiteScopingTest).
                 'tickets.reassign',
                 'incidents.view_area',
                 'incidents.manage_all',

@@ -160,6 +160,12 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->belongsTo(Site::class, 'site_id');
     }
 
+    /** Sites a los que este usuario tiene acceso vía site_user (Fase 4) -- para supervisor/agente, distinto de site() (su site "hogar"). */
+    public function sites(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(Site::class, 'site_user');
+    }
+
     public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class, 'client_id');

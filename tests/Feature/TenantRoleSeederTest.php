@@ -45,7 +45,10 @@ class TenantRoleSeederTest extends TestCase
         $this->assertFalse($agente->hasPermissionTo('tickets.manage_all'));
         $this->assertFalse($agente->hasPermissionTo('tickets.reassign'));
 
-        $this->assertTrue($supervisor->hasPermissionTo('tickets.manage_all'));
+        // NO tickets.manage_all: bajo el scoping por site de Fase 4, esa
+        // permission es "ve todo sin restricción de site" -- exclusiva de
+        // admin. Supervisor ve sus sites vía el rol, no vía este permiso.
+        $this->assertFalse($supervisor->hasPermissionTo('tickets.manage_all'));
         $this->assertTrue($supervisor->hasPermissionTo('tickets.reassign'));
 
         $this->assertTrue($admin->hasPermissionTo('tickets.reassign'));

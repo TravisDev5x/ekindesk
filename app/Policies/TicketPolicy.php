@@ -24,7 +24,7 @@ class TicketPolicy
 
     public function viewAny(User $user): bool
     {
-        return $this->scopeType($user) !== null;
+        return $this->siteScopeType($user) !== null;
     }
 
     public function create(User $user): bool
@@ -33,8 +33,14 @@ class TicketPolicy
     }
 
     /**
-     * Vista: manage_all ve todo; por área solo tickets con area_current_id = su área (al escalar deja de verse en el área anterior).
-     * area+own: además ve sus propios tickets como solicitante.
+     * Vista (Fase 4 del sprint maestro -- reemplaza el alcance legacy por
+     * área): admin ve todo; supervisor ve cualquier ticket de sus sites
+     * (site_user); agente ve, de sus sites, solo los asignados a él o sin
+     * asignar (un ticket asignado a OTRO agente desaparece de su vista de
+     * inmediato); solicitante ve solo los suyos (requester_id).
+     *
+     * Un ticket sin site_id ("sin site asignado", Fase 2) solo lo ve admin
+     * -- ni supervisor ni agente, hasta que alguien le asigne site.
      */
     public function view(User $user, Ticket $ticket): bool
     {
@@ -42,33 +48,25 @@ class TicketPolicy
             return false;
         }
 
-        $scope = $this->scopeType($user);
-        if ($scope === 'all') {
-            return true;
-        }
-        $areaId = $user->area_id;
-        $own = (int) $ticket->requester_id === (int) $user->id;
-        $inCurrentArea = $areaId && (int) $ticket->area_current_id === (int) $areaId;
-        if ($scope === 'area+own') {
-            return $inCurrentArea || $own;
-        }
-        if ($scope === 'area') {
-            return $inCurrentArea;
-        }
-        if ($scope === 'own') {
-            return $own;
+        if ($this->siteScopeType($user) === 'solicitante') {
+            return (int) $ticket->requester_id === (int) $user->id;
         }
 
-        return false;
+        return $this->withinStaffSiteScope($user, $ticket);
     }
 
-    /** Solo agentes con área/asignación pueden modificar. El solicitante no actualiza ni comenta; usa alertas como observaciones. */
+    /**
+     * Solo agentes/supervisores con acceso al site pueden modificar (Fase 4
+     * -- antes usaba isCurrentArea(), ver withinStaffSiteScope()). El
+     * solicitante no actualiza ni comenta; usa alertas como observaciones
+     * (alert()), decisión de producto que este sprint no cambia.
+     */
     public function update(User $user, Ticket $ticket): bool
     {
         if ($user->can('tickets.manage_all')) {
             return true;
         }
-        if (! $this->isCurrentArea($user, $ticket) && ! $this->isAssignee($user, $ticket)) {
+        if (! $this->withinStaffSiteScope($user, $ticket)) {
             return false;
         }
 
@@ -91,7 +89,19 @@ class TicketPolicy
         return $this->canManageAction($user, $ticket, 'tickets.comment');
     }
 
-    /** Solo el responsable actual (o admin) puede reasignar; si no hay responsable, cualquiera con permiso en el área puede tomar/reasignar. */
+    /**
+     * Supervisor: cualquier ticket de sus sites (asignado o no). Agente:
+     * mismo conjunto que puede ver -- sin asignar, o asignado a él (Fase 4,
+     * ver withinStaffSiteScope()).
+     *
+     * DECISIÓN: sigue gateado por el permiso legacy tickets.assign, no por
+     * tickets.reassign (creado en Fase 3, sin usar todavía). tickets.reassign
+     * queda reservado para Fase 5, cuando exista la acción real de
+     * "reasignar" con notificación correo+in-app -- conectarlo aquí
+     * anticiparía esa fase sin sus notificaciones. Hoy agente y supervisor
+     * tienen ambos permisos (tickets.assign vía TenantRoleSeeder), así que
+     * el comportamiento no cambia por esta decisión.
+     */
     public function assign(User $user, Ticket $ticket): bool
     {
         if ($user->can('tickets.manage_all')) {
@@ -100,14 +110,15 @@ class TicketPolicy
         if (! $user->can('tickets.assign')) {
             return false;
         }
-        if ($ticket->assigned_user_id) {
-            return $this->isAssignee($user, $ticket);
-        }
 
-        return $this->isCurrentArea($user, $ticket) || $this->isAssignee($user, $ticket);
+        return $this->withinStaffSiteScope($user, $ticket);
     }
 
-    /** Solo el responsable actual (o admin) puede liberar el ticket para otros agentes. */
+    /**
+     * Supervisor: puede liberar cualquier ticket asignado de sus sites,
+     * aunque no sea el responsable actual. Agente: solo el suyo (Fase 4 --
+     * antes solo el responsable actual, sin distinción de rol).
+     */
     public function release(User $user, Ticket $ticket): bool
     {
         if ($user->can('tickets.manage_all')) {
@@ -117,19 +128,19 @@ class TicketPolicy
             return false;
         }
 
-        return $this->isAssignee($user, $ticket);
+        return $this->withinStaffSiteScope($user, $ticket);
     }
 
-    /** Solo el responsable actual (o admin) puede escalar cuando el ticket está asignado; evita conflictos. */
+    /**
+     * Mismo criterio de site que el resto de acciones de mutación (Fase 4).
+     * Antes bloqueaba a cualquiera que no fuera el responsable actual con un
+     * pre-check aparte (isAssignee) -- eso colapsaba al supervisor al mismo
+     * trato que un agente cualquiera. canManageAction() ya resuelve ese caso
+     * (supervisor: todo su site; agente: sin asignar o suyo), así que el
+     * pre-check se quita en vez de traducirlo a site, sería redundante.
+     */
     public function escalate(User $user, Ticket $ticket): bool
     {
-        if ($user->can('tickets.manage_all')) {
-            return true;
-        }
-        if ($ticket->assigned_user_id && ! $this->isAssignee($user, $ticket)) {
-            return false;
-        }
-
         return $this->canManageAction($user, $ticket, 'tickets.escalate');
     }
 
@@ -151,66 +162,116 @@ class TicketPolicy
     }
 
     /**
-     * Alcance por área: solo tickets cuyo area_current_id es la del usuario.
-     * Soporte ve solo tickets en área Soporte, Infra solo en Infra; al escalar el ticket pasa al área destino y deja de verse en la origen.
-     * area+own: además incluye tickets donde el usuario es el solicitante (requester_id).
+     * Alcance por site (Fase 4 -- reemplaza el alcance legacy por área).
+     * Mismas reglas que view(): admin todo, supervisor sus sites completos,
+     * agente sus sites solo asignados-a-él-o-sin-asignar, solicitante solo
+     * los suyos.
      */
     public function scopeFor(User $user, Builder $query): Builder
     {
-        $scope = $this->scopeType($user);
+        $scope = $this->siteScopeType($user);
+
         if ($scope === 'all') {
             return app(\App\Services\ClientScopeService::class)->applyTicketScope($query, $user);
         }
 
-        $areaId = $user->area_id;
-        $query = $query->where(function ($q) use ($scope, $user, $areaId) {
-            if (in_array($scope, ['area', 'area+own']) && $areaId) {
-                $q->where('area_current_id', $areaId);
-                if ($scope === 'area+own') {
-                    $q->orWhere('requester_id', $user->id);
-                }
-            } elseif ($scope === 'own') {
-                $q->where('requester_id', $user->id);
-            } else {
-                $q->whereRaw('0 = 1');
-            }
-        });
+        if ($scope === 'solicitante') {
+            $query->where('requester_id', $user->id);
+
+            return app(\App\Services\ClientScopeService::class)->applyTicketScope($query, $user);
+        }
+
+        if ($scope === null) {
+            $query->whereRaw('0 = 1');
+
+            return app(\App\Services\ClientScopeService::class)->applyTicketScope($query, $user);
+        }
+
+        // supervisor / agente
+        $siteIds = $this->userSiteIds($user);
+        $query->whereIn('site_id', $siteIds);
+
+        if ($scope === 'agente') {
+            $query->where(function ($q) use ($user) {
+                $q->whereNull('assigned_user_id')->orWhere('assigned_user_id', $user->id);
+            });
+        }
 
         return app(\App\Services\ClientScopeService::class)->applyTicketScope($query, $user);
     }
 
     /**
-     * Devuelve el tipo de alcance:
-     * - all: tickets.manage_all
-     * - area+own: tiene view_area (con area_id) y view_own
-     * - area: solo view_area (area actual o historica)
-     * - own: solo view_own
-     * - null: sin acceso
+     * Devuelve el tipo de alcance de visibilidad (Fase 4, por rol/site):
+     * - all: is_operator o tickets.manage_all (admin)
+     * - supervisor: rol supervisor
+     * - agente: rol agente
+     * - solicitante: rol solicitante
+     * - null: ninguno de los roles nuevos -- sin acceso.
+     *
+     * OJO: usuarios que SOLO tienen un rol legacy (gerente, soporte*,
+     * usuario, consultor) sin su equivalente nuevo asignado (ver
+     * App\Console\Commands\MigrateLegacyRoles) devuelven null aquí, es
+     * decir, pierden toda visibilidad de tickets hasta que se les asigne el
+     * rol nuevo. Deliberado: Fase 4 reemplaza el área por site como
+     * mecanismo de alcance, no lo hace convivir con el legacy.
      */
-    protected function scopeType(User $user): ?string
+    protected function siteScopeType(User $user): ?string
     {
         if ($user->is_operator || $user->can('tickets.manage_all')) {
             return 'all';
         }
-        $hasAreaPerm = $user->can('tickets.view_area') && $user->area_id;
-        $hasOwnPerm = $user->can('tickets.view_own');
-
-        if ($hasAreaPerm && $hasOwnPerm) {
-            return 'area+own';
+        if ($user->hasRole('supervisor')) {
+            return 'supervisor';
         }
-        if ($hasAreaPerm) {
-            return 'area';
+        if ($user->hasRole('agente')) {
+            return 'agente';
         }
-        if ($hasOwnPerm) {
-            return 'own';
+        if ($user->hasRole('solicitante')) {
+            return 'solicitante';
         }
 
         return null;
     }
 
-    protected function isCurrentArea(User $user, Ticket $ticket): bool
+    protected function userSiteIds(User $user): \Illuminate\Support\Collection
     {
-        return $user->area_id && $ticket->area_current_id === $user->area_id;
+        return $user->sites()->pluck('sites.id');
+    }
+
+    /**
+     * Alcance de site compartido por view() y por todas las acciones de
+     * mutación (update/assign/release/escalate/canManageAction) -- Fase 4,
+     * reemplaza al legacy isCurrentArea()/area_current_id como fuente de
+     * autorización. No cubre 'solicitante': ese rol nunca actúa por site,
+     * solo por ser el requester (alert()/cancel()), cada método que lo
+     * permite lo resuelve aparte.
+     *
+     * - all: true sin restricción de site (admin).
+     * - supervisor: true si el ticket está en uno de sus sites, sin
+     *   importar a quién esté asignado.
+     * - agente: true si el ticket está en uno de sus sites Y (sin asignar O
+     *   asignado a él) -- el mismo conjunto que puede ver, no un subconjunto.
+     * - solicitante / null: false.
+     */
+    protected function withinStaffSiteScope(User $user, Ticket $ticket): bool
+    {
+        $scope = $this->siteScopeType($user);
+
+        if ($scope === 'all') {
+            return true;
+        }
+        if ($scope !== 'supervisor' && $scope !== 'agente') {
+            return false;
+        }
+        if (! $ticket->site_id || ! $this->userSiteIds($user)->contains((int) $ticket->site_id)) {
+            return false;
+        }
+        if ($scope === 'supervisor') {
+            return true;
+        }
+
+        // agente: asignado a él, o sin asignar (cola abierta del site).
+        return ! $ticket->assigned_user_id || $this->isAssignee($user, $ticket);
     }
 
     protected function isAssignee(User $user, Ticket $ticket): bool
@@ -226,6 +287,7 @@ class TicketPolicy
             || $user->can('tickets.escalate');
     }
 
+    /** changeStatus/changeArea/comment (vía canManageAction) usan site scope, no area (Fase 4). */
     protected function canManageAction(User $user, Ticket $ticket, string $permission): bool
     {
         if ($user->can('tickets.manage_all')) {
@@ -235,6 +297,6 @@ class TicketPolicy
             return false;
         }
 
-        return $this->isCurrentArea($user, $ticket) || $this->isAssignee($user, $ticket);
+        return $this->withinStaffSiteScope($user, $ticket);
     }
 }
